@@ -13,7 +13,6 @@
 MR Automatic Classification TOols (macuto)
 """
 
-
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
 
@@ -27,10 +26,4 @@ def configuration(parent_package='', top_path=None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(name='macuto',
-          description='MR Automatic Classification TOols (macuto)',
-          author='Alexandre Manhaes Savio',
-          author_email='alexsavio@gmail.com',
-          url='http://www.github.com/alexsavio/macuto/',
-          **configuration(top_path='').todict()
-          )
+    setup(**configuration(top_path='').todict())
