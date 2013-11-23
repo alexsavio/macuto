@@ -51,7 +51,7 @@ def spatialimg_to_hdf(fname, spatial_img, h5path='/img', append=True):
     'data', 'extra', 'affine', the header information will
     be set as attributes of the 'data' dataset.
 
-    @param append=False
+    @param append: bool
     True if you don't want to erase the content of the file
     if it already exists, False otherwise.
 
