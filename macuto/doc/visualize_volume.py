@@ -2,18 +2,6 @@
 
 import numpy as np
 
-#-------------------------------------------------------------------------------------
-def takespread (sequence, num):
-    length = float(len(sequence))
-    for i in range(num):
-        yield sequence[int(np.ceil(i * length / num))]
-
-#-------------------------------------------------------------------------------------
-def makespread (sequence, num):
-    length = float(len(sequence))
-    seq = np.array(sequence)
-    return seq[np.ceil(np.arange(num) * length / num).astype(int)]
-
 ##==============================================================================
 def save_fig_to_png (fig, fname, facecolor=None):
 

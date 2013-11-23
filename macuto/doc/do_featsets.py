@@ -126,58 +126,6 @@ def get_aal_info(aal_data, roi_idx):
    return aal_data[aal_data[:,3] == str(roi_idx)].flatten()
 
 #-------------------------------------------------------------------------------
-def list_filter (list, filter):
-    return [ (l) for l in list if filter(l) ]
-
-#-------------------------------------------------------------------------------
-def dir_search (regex, wd='.'):
-    ls = os.listdir(wd)
-
-    filt = re.compile(regex).search
-    return list_filter(ls, filt)
-
-#-------------------------------------------------------------------------------
-def dir_match (regex, wd='.'):
-    ls = os.listdir(wd)
-
-    filt = re.compile(regex).match
-    return list_filter(ls, filt)
-
-#-------------------------------------------------------------------------------
-def list_match (regex, list):
-    filt = re.compile(regex).match
-    return list_filter(list, filt)
-
-#-------------------------------------------------------------------------------
-def list_search (regex, list):
-    filt = re.compile(regex).search
-    return list_filter(list, filt)
-
-#-------------------------------------------------------------------------------
-def shelve_vars (ofname, varlist):
-   mashelf = shelve.open(ofname, 'n')
-
-   for key in varlist:
-      try:
-         mashelf[key] = globals()[key]
-      except:
-         log.error('ERROR shelving: {0}'.format(key))
-
-   mashelf.close()
-
-#-------------------------------------------------------------------------------
-def append_to_keys (mydict, preffix):
-    return {preffix + str(key) : (transform(value) if isinstance(value, dict) else value) for key, value in mydict.items()}
-
-#-------------------------------------------------------------------------------
-def append_to_list (mylist, preffix):
-    return list({preffix + str(item) for item in mylist})
-
-#-------------------------------------------------------------------------------
-def join_path_to_filelist (path, mylist):
-    return list({os.path.join(path, str(item)) for item in mylist})
-
-#-------------------------------------------------------------------------------
 def save_feats_file (feats, otype, outfname):
     if   otype == '.npy': np.save(outfname + '.npy', feats)
     elif otype == '.mat': sio.savemat(outfname + '.mat', dict(feats = feats))
@@ -274,25 +222,6 @@ def parse_subjects_list (fname, datadir=''):
 
     return [labels, subjs]
 
-#-------------------------------------------------------------------------------
-def smooth_volume(imf, smoothmm):
-    from nipype.interfaces.fsl.maths import IsotropicSmooth
-
-    if smoothmm > 0:
-        omf = imf + '_smooth' + str(smoothmm) + 'mm.nii.gz'
-
-        isosmooth = IsotropicSmooth()
-        isosmooth.inputs.in_file  = imf
-        isosmooth.inputs.fwhm     = smoothmm
-        isosmooth.inputs.out_file = omf
-        isosmooth.run()
-
-        data = nib.load(omf).get_data()
-        os.remove(omf)
-    else:
-        data = nib.load(imf).get_data()
-
-    return data
 
 #-------------------------------------------------------------------------------
 def load_data (subjsf, datadir, msk, smoothmm=0):
@@ -344,33 +273,6 @@ def load_data (subjsf, datadir, msk, smoothmm=0):
 
     return X, y, scores, imgsiz, indices 
 
-#-------------------------------------------------------------------------------
-def calculate_stats (data):
-    n_subjs = data.shape[0]
-
-    feats  = np.zeros((n_subjs, 7))
-
-    feats[:,0] = fs.max (axis=1)
-    feats[:,1] = fs.min (axis=1)
-    feats[:,2] = fs.mean(axis=1)
-    feats[:,3] = fs.var (axis=1)
-    feats[:,4] = np.median      (fs, axis=1)
-    feats[:,5] = stats.kurtosis (fs, axis=1)
-    feats[:,6] = stats.skew     (fs, axis=1)
-
-    return feats
-
-#-------------------------------------------------------------------------------
-def calculate_hist3d (data, bins):
-    n_subjs = data.shape[0]
-
-    feats = np.zeros((n_subjs, bins*bins*bins))
-
-    for s in np.arange(n_subjs):
-        H, edges = np.histogramdd(data[s,], bins = (bins, bins, bins))
-        feats[s,:] = H.flatten()
-
-    return feats
 
 #-------------------------------------------------------------------------------
 def create_feature_sets (fsmethod, fsgrid, data, msk, y, outdir, outbasename, otype):

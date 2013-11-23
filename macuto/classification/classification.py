@@ -22,7 +22,7 @@ from sklearn.preprocessing import StandardScaler
 from .io import load_data
 from ..files import get_extension
 from ..io import save_varlist_to_shelve
-
+from .threshold import robust_range_threshold, percentile_threshold, rank_threshold
 
 def perform_classification (subjsf, labelsf, outfile, datadir, maskf, clfmethod, fsmethod1,
                             fsmethod2, prefsmethod, prefsthr, cvmethod, thrmethod, stratified, stddize, n_cpus):
@@ -78,12 +78,7 @@ def perform_classification (subjsf, labelsf, outfile, datadir, maskf, clfmethod,
 
     return cv, truth, preds, probs, presels
 
-def apply_distance_threshold (distances, thr, method='robust'):
-    if   method == 'robust':     return au.robust_range_threshold (distances, thr)
-    elif method == 'rank':       return au.rank_threshold         (distances, thr)
-    elif method == 'percentile': return au.percentile_threshold   (distances, thr)
 
-#-------------------------------------------------------------------------------
 def pre_featsel (X, y, method, thr=95, dist_function=None, thr_method='robust'):
     '''
     INPUT

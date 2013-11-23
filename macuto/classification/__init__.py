@@ -20,6 +20,25 @@ from .io import (parse_subjects_list,
                  write_arff,
                  write_svmperf_dat)
 
+from .classification import (perform_classification)
+
+from .sklearn import ()
+
+from .results import ()
+
+from .threshold import (apply__threshold,
+                        binarise,
+                        find_histogram,
+                        find_thresholds,
+                        is_symmetric,
+                        percentile_threshold,
+                        rank_threshold,
+                        robust_max,
+                        robust_min,
+                        robust_range_threshold,
+                        threshold,
+                        threshold_robust_range)
+
 __all_io__ = ['parse_subjects_list',
               'load_data',
               'write_arff',

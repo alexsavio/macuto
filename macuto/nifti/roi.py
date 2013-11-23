@@ -11,7 +11,9 @@
 
 
 import numpy as np
+import nibabel as nib
 import scipy.ndimage as scn
+
 
 def drain_rois(img_data):
     """
@@ -46,3 +48,27 @@ def drain_rois(img_data):
 
     return out
 
+
+def create_rois_mask (roislist, filelist):
+    """
+
+    @param roislist:
+    @param filelist:
+    @return:
+    """
+
+    shape = nib.load(filelist[0]).shape
+    mask  = np.zeros(shape)
+
+    #create space for all features and read from subjects
+    for roi in roislist:
+        try:
+            roif   = list_search('_' + roi + '.', filelist)[0]
+            roivol = nib.load(roif).get_data()
+            mask += roivol
+        except exc:
+            log.error(exc.message + '\n' + exc.argument)
+            return 0
+
+
+    return mask > 0

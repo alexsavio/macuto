@@ -12,6 +12,27 @@
 import h5py
 import numpy as np
 import nibabel as nib
+import logging as log
+
+
+def save_nibabel(ofname, vol, affine, header=None):
+    """
+    Saves a volume into a Nifti (.nii.gz) file.
+
+    Parameters
+    ===========
+    @param ofname: string
+        File relative path and name
+    @param vol: Numpy 3D or 4D array
+        Volume with the data to be saved.
+    @param affine: 4x4 Numpy array
+        Array with the affine transform of the file.
+    @param header: nibabel.nifti1.Nifti1Header, optional
+        Header for the file, optional but recommended.
+    """
+    log.debug('Saving nifti file: ' + ofname)
+    ni = nib.Nifti1Image(vol, affine, header)
+    nib.save(ni, ofname)
 
 
 def spatialimg_to_hdf(fname, spatial_img, h5path='/img', append=True):

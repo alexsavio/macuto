@@ -46,7 +46,11 @@ from .plot import (save_fig_to_png)
 
 from .strings import (filter_objlist,
                       append_to_keys,
-                      pretty_mapping)
+                      pretty_mapping,
+                      list_filter,
+                      list_search,
+                      append_to_list,
+                      list_match)
 
 from .files import (add_extension_if_needed,
                     get_extension,
@@ -54,7 +58,12 @@ from .files import (add_extension_if_needed,
                     write_lines,
                     grep_one,
                     create_subjects_file,
-                    parse_subjects_list)
+                    parse_subjects_list,
+                    join_path_to_filelist,
+                    remove_all)
+
+from .math import (makespread,
+                   takespread)
 
 __io_all__ = ['save_varlist_to_shelve',
               'save_varlist_to_mat',
@@ -71,7 +80,11 @@ __file_search_all__ = ['find',
 
 __strings_all__ = ['filter_objlist',
                    'append_to_keys',
-                   'pretty_mapping']
+                   'pretty_mapping',
+                   'list_filter',
+                   'list_search',
+                   'append_to_list',
+                   'list_match']
 
 __files_all__ = ['add_extension_if_needed',
                  'get_extension',
@@ -79,12 +92,18 @@ __files_all__ = ['add_extension_if_needed',
                  'write_lines',
                  'grep_one',
                  'create_subjects_file',
-                 'parse_subjects_list']
+                 'parse_subjects_list',
+                 'join_path_to_filelist',
+                 'remove_all']
+
+__math_all__ = ['makespread',
+                'takespread']
 
 __plot_all__ = ['save_fig_to_png']
 
 __all__.extend(__io_all__)
 __all__.extend(__plot_all__)
+__all__.extend(__math_all__)
 __all__.extend(__files_all__)
 __all__.extend(__strings_all__)
 __all__.extend(__file_search_all__)

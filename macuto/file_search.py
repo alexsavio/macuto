@@ -11,6 +11,34 @@
 
 import re
 import os
+from .strings import list_search, list_filter
+
+
+def dir_search (regex, wd='.'):
+    """
+    @param regex: string
+    @param wd: string
+     working directory
+    @return:
+    """
+    ls = os.listdir(wd)
+
+    filt = re.compile(regex).search
+    return list_filter(ls, filt)
+
+
+def dir_match (regex, wd='.'):
+    """
+    Filter
+    @param regex: string
+    @param wd: string
+    working directory
+    @return:
+    """
+    ls = os.listdir(wd)
+
+    filt = re.compile(regex).match
+    return list_filter(ls, filt)
 
 
 def find(lst, regex):
@@ -42,12 +70,12 @@ def get_file_list(file_dir, search_regex=''):
     file_list.sort()
 
     if search_regex:
-        file_list = find(file_list, search_regex)
+        file_list = list_search(file_list, search_regex)
 
     file_list = [os.path.join(file_dir, fname) for fname in file_list]
 
     return file_list
-#------------------------------------------------------------------------------
+
 
 def recursive_find(folder_path, regex=''):
     """
@@ -74,7 +102,7 @@ def recursive_find(folder_path, regex=''):
 
     return outlist
 
-#------------------------------------------------------------------------------
+
 def iter_recursive_find(folder_path, *regex):
     '''
     Returns absolute paths of files that match the regexs within file_dir and

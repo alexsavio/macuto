@@ -1,40 +1,16 @@
+# coding=utf-8
 #-------------------------------------------------------------------------------
-#License BSD 3-Clause License
+#License GNU/GPL v3
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
 #
-#Copyright (c) 2013, Alexandre Manhaes Savio
-#All rights reserved.
-#
-#Redistribution and use in source and binary forms, with or without modification,
-#are permitted provided that the following conditions are met:
-#
-#- Redistributions of source code must retain the above copyright notice, 
-#this list of conditions and the following disclaimer.
-#- Redistributions in binary form must reproduce the above copyright notice, 
-#this list of conditions and the following disclaimer in the documentation 
-#and/or other materials provided with the distribution.
-#- Neither the name of the University of the Basque Country nor the names 
-#of its contributors may be used to endorse or promote products derived from
-#this software without specific prior written permission.
-#
-#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-#AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-#THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-#ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-#LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-#CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-#SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-#INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-#CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-#ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-#POSSIBILITY OF SUCH DAMAGE.
-#
+#2013, Alexandre Manhaes Savio
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
 import nibabel as nib
+
 
 def is_valid_coordinate(img, i, j, k):
     """
@@ -45,9 +21,9 @@ def is_valid_coordinate(img, i, j, k):
     @return:
     """
     imgX, imgY, imgZ = img.shape
-    return ((i >= 0 and i < imgX) and
-            (j >= 0 and j < imgY) and
-            (k >= 0 and k < imgZ))
+    return (i >= 0 and i < imgX) and \
+           (j >= 0 and j < imgY) and \
+           (k >= 0 and k < imgZ)
 
 
 def are_compatible_imgs(one_img, another_img):
@@ -71,7 +47,7 @@ def have_same_shapes(array1, array2):
     @param array2:
     @return:
     """
-    return (array1.shape == array2.shape)
+    return array1.shape == array2.shape
 
 
 def have_same_geometry(fname1, fname2):
@@ -87,7 +63,7 @@ def have_same_geometry(fname1, fname2):
     """
     img1 = nib.load(fname1)
     img2 = nib.load(fname2)
-    return (img1.get_shape() == img2.get_shape())
+    return img1.get_shape() == img2.get_shape()
 
 
 def check_have_same_geometry (fname1, fname2):

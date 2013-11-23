@@ -16,7 +16,7 @@ handling/processing
 
 __all__ = []
 
-from .nifti_data_import import (get_nii_data,
+from .nifti_import import (get_nii_data,
                                 get_masked_nii_data,
                                 get_nii_info,
                                 niftilist_mask_to_array,
@@ -36,7 +36,8 @@ from .coord_transform import (voxcoord_to_mm,
 
 from .io import (spatialimg_to_hdf,
                  hdfgroup_to_nifti1image,
-                 get_nifti1hdr_from_h5attrs)
+                 get_nifti1hdr_from_h5attrs,
+                 save_nibabel)
 
 from .roi import (drain_rois)
 
@@ -60,7 +61,8 @@ __ct_all__ = ['voxcoord_to_mm',
 
 __io_all__ = ['spatialimg_to_hdf',
               'hdfgroup_to_nifti1image',
-              'get_nifti1hdr_from_h5attrs']
+              'get_nifti1hdr_from_h5attrs',
+              'save_nibabel']
 
 __roi_all__ = ['drain_rois']
 

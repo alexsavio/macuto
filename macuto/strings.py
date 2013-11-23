@@ -10,6 +10,9 @@
 #-------------------------------------------------------------------------------
 
 
+import re
+
+
 def filter_objlist(olist, fieldname, fieldval):
     """
     Returns a list with of the objetcts in olist that have a fieldname valued as fieldval
@@ -99,3 +102,49 @@ def pretty_mapping(mapping, getterfunc=None):
     #    out.append(fmt % (name, value))
     return '\n'.join(out)
 
+
+def list_filter(lst, filter):
+    """
+    @param lst: list
+    @param filter: function
+    @return:
+    """
+    return [(l) for l in lst if filter(l)]
+
+
+def list_match(regex, lst):
+    """
+    @param regex: string
+    @param lst: list
+    @return:
+    """
+    filt = re.compile(regex).match
+    return list_filter(lst, filt)
+
+
+def list_search(regex, lst):
+    """
+    @param regex: string
+    @param lst: list
+    @return:
+    """
+    filt = re.compile(regex).search
+    return list_filter(lst, filt)
+
+
+def append_to_keys(adict, preffix):
+    """
+    @param adict:
+    @param preffix:
+    @return:
+    """
+    return {preffix + str(key) : (value if isinstance(value, dict) else value) for key, value in mydict.items()}
+
+
+def append_to_list (lst, preffix):
+    """
+    @param lst:
+    @param preffix:
+    @return:
+    """
+    return [preffix + str(item) for item in lst]

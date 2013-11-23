@@ -14,6 +14,7 @@ import sys
 import numpy as np
 import logging as log
 
+
 def get_extension(fpath, check_if_exists=False):
     """
     @param fpath: string
@@ -145,13 +146,49 @@ def parse_subjects_list(fname, datadir='', split=':'):
     return [labels, subjs]
 
 
-def create_subjects_file (subjs_list, labels, output, split=':'):
+def create_subjects_file(filelist, labels, output, split=':'):
+    """
+    @param filelist:
+    @param labels:
+    @param output:
+    @param split:
+    @return:
+    """
     lines = []
-    for s in range(len(subjs_list)):
-        subj = subjs_list[s]
+    for s in range(len(filelist)):
+        subj = filelist[s]
         lab  = labels[s]
         line = subj + split + str(lab)
         lines.append(line)
 
     lines = np.array(lines)
     np.savetxt(output, lines, fmt='%s')
+
+
+def join_path_to_filelist(path, filelist):
+    """
+    @param path: string
+    @param filelist: list of strings
+    @return:
+    """
+    return [os.path.join(path, str(item)) for item in filelist]
+
+
+def remove_all(filelist, folder=''):
+    """
+    @param filelist: list of strings
+    @param folder: string
+    @return:
+    """
+    if folder:
+        try:
+            for f in filelist:
+                os.remove(f)
+        except OSError, err:
+            pass
+    else:
+        try:
+            for f in filelist:
+                os.remove(os.path.join(folder, f))
+        except OSError, err:
+            pass
