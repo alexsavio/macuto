@@ -17,11 +17,11 @@ handling/processing
 __all__ = []
 
 from .nifti_import import (get_nii_data,
-                                get_masked_nii_data,
-                                get_nii_info,
-                                niftilist_mask_to_array,
-                                niftilist_to_array,
-                                smooth_volume)
+                           get_masked_nii_data,
+                           get_nii_info,
+                           niftilist_mask_to_array,
+                           niftilist_to_array,
+                           smooth_volume)
 
 from .image_info import (is_valid_coordinate,
                          are_compatible_imgs,
@@ -39,7 +39,8 @@ from .io import (spatialimg_to_hdf,
                  get_nifti1hdr_from_h5attrs,
                  save_nibabel)
 
-from .roi import (drain_rois)
+from .roi import (drain_rois,
+                  create_rois_mask)
 
 __ndi_all__ = ['get_nii_data',
                'get_masked_nii_data',
@@ -64,7 +65,8 @@ __io_all__ = ['spatialimg_to_hdf',
               'get_nifti1hdr_from_h5attrs',
               'save_nibabel']
 
-__roi_all__ = ['drain_rois']
+__roi_all__ = ['drain_rois',
+               'create_rois_mask']
 
 __all__.extend(__ndi_all__)
 __all__.extend(__roi_all__)

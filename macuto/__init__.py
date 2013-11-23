@@ -37,12 +37,13 @@ from .io import(save_varlist_to_shelve,
                 load_variables_from_hdf5,
                 load_varnames_from_hdf5,)
 
-from .file_search import (find, 
-                          get_file_list,
+from .file_search import (get_file_list,
                           recursive_find,
                           iter_recursive_find,)
 
-from .plot import (save_fig_to_png)
+from .plot import (save_fig_to_png,
+                   plot_results,
+                   subplot_this)
 
 from .strings import (filter_objlist,
                       append_to_keys,
@@ -61,6 +62,13 @@ from .files import (add_extension_if_needed,
                     parse_subjects_list,
                     join_path_to_filelist,
                     remove_all)
+
+from .render import (show_3slices,
+                     show_contour,
+                     show_cutplanes,
+                     show_dynplane,
+                     show_many_slices,
+                     show_render)
 
 from .math import (makespread,
                    takespread)
@@ -99,11 +107,23 @@ __files_all__ = ['add_extension_if_needed',
 __math_all__ = ['makespread',
                 'takespread']
 
-__plot_all__ = ['save_fig_to_png']
+__render_all__ = ['show_3slices',
+                  'show_contour',
+                  'show_cutplanes',
+                  'show_dynplane',
+                  'show_many_slices',
+                  'show_render']
+
+
+__plot_all__ = ['save_fig_to_png',
+                'plot_results',
+                'subplot_this']
+
 
 __all__.extend(__io_all__)
 __all__.extend(__plot_all__)
 __all__.extend(__math_all__)
 __all__.extend(__files_all__)
+__all__.extend(__render_all__)
 __all__.extend(__strings_all__)
 __all__.extend(__file_search_all__)

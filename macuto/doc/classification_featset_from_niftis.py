@@ -125,57 +125,6 @@ def set_parser():
 def get_aal_info(aal_data, roi_idx):
    return aal_data[aal_data[:,3] == str(roi_idx)].flatten()
 
-#-------------------------------------------------------------------------------
-def list_filter (list, filter):
-    return [ (l) for l in list if filter(l) ]
-
-#-------------------------------------------------------------------------------
-def dir_search (regex, wd='.'):
-    ls = os.listdir(wd)
-
-    filt = re.compile(regex).search
-    return list_filter(ls, filt)
-
-#-------------------------------------------------------------------------------
-def dir_match (regex, wd='.'):
-    ls = os.listdir(wd)
-
-    filt = re.compile(regex).match
-    return list_filter(ls, filt)
-
-#-------------------------------------------------------------------------------
-def list_match (regex, list):
-    filt = re.compile(regex).match
-    return list_filter(list, filt)
-
-#-------------------------------------------------------------------------------
-def list_search (regex, list):
-    filt = re.compile(regex).search
-    return list_filter(list, filt)
-
-#-------------------------------------------------------------------------------
-def shelve_vars (ofname, varlist):
-   mashelf = shelve.open(ofname, 'n')
-
-   for key in varlist:
-      try:
-         mashelf[key] = globals()[key]
-      except:
-         log.error('ERROR shelving: {0}'.format(key))
-
-   mashelf.close()
-
-#-------------------------------------------------------------------------------
-def append_to_keys (mydict, preffix):
-    return {preffix + str(key) : (transform(value) if isinstance(value, dict) else value) for key, value in mydict.items()}
-
-#-------------------------------------------------------------------------------
-def append_to_list (mylist, preffix):
-    return list({preffix + str(item) for item in mylist})
-
-#-------------------------------------------------------------------------------
-def join_path_to_filelist (path, mylist):
-    return list({os.path.join(path, str(item)) for item in mylist})
 
 #-------------------------------------------------------------------------------
 def get_fsmethod (fsmethod, n_feats, n_subjs):

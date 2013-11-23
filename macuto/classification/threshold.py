@@ -31,7 +31,7 @@ def binarise(data, lower_bound, upper_bound, inclusive=True):
     return (lowers.astype(int) * uppers.astype(int))
 
 
-def apply__threshold(values, thr, method='robust'):
+def apply_threshold(values, thr, method='robust'):
     """
     @param values: numpy array
 

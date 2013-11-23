@@ -16,6 +16,7 @@ import nibabel as nib
 
 import aizkolari_utils as au
 
+
 def set_parser():
    parser = argparse.ArgumentParser(description='Save thresholded NifTi volumes computed from the given volume.')
    parser.add_argument('-i', '--input', dest='input', required=True,
@@ -30,10 +31,12 @@ def set_parser():
                       help='Output files extension.')
    parser.add_argument('-a', '--absolute', default=False, action='append', dest='abs', required=False,
                       help='Indicates whether to use absolute value of the volume before thresholding.')
-    parser.add_argument('-v', '--verbosity', dest='verbosity', required=False, type=int, default=1,
+   parser.add_argument('-v', '--verbosity', dest='verbosity', required=False, type=int, default=1,
                         help='Verbosity level: Integer where 0 for Errors, 1 for Input/Output, 2 for Progression reports')
 
    return parser
+
+
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------

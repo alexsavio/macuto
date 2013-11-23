@@ -41,16 +41,6 @@ def dir_match (regex, wd='.'):
     return list_filter(ls, filt)
 
 
-def find(lst, regex):
-    """
-    Filters lst using re.search and regex.
-    @param lst: list of strings
-    @param regex: string
-    @return:
-    """
-    return [i for i in lst if re.search(regex, i)]
-
-
 def get_file_list(file_dir, search_regex=''):
     """
     Creates a list of files that match the search_regex within file_dir.

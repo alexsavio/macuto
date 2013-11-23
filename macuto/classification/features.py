@@ -10,8 +10,10 @@
 #-------------------------------------------------------------------------------
 
 import numpy as np
+import logging as log
 import scipy.stats as stats
 
+from .threshold import apply_threshold
 
 def calculate_stats (data):
     n_subjs = data.shape[0]
@@ -77,3 +79,186 @@ def create_feature_sets (fsmethod, data, msk, y, outdir, outbasename, otype):
 
     #save file
     save_feats_file (feats, otype, outfname)
+
+
+def pearson_correlation (X, y):
+    """
+    Calculates for each feature in X the
+    pearson correlation with y.
+
+    @param X: numpy array
+    Shape: n_samples x n_features
+
+    @param y: numpy array or list
+    Size: n_samples
+
+    @return: numpy array
+    Size: n_features
+    """
+    return distance_computation(X, y, stats.pearsonr)
+
+
+#-------------------------------------------------------------------------------
+def distance_computation(X, y, dist_function):
+    """
+    Calculates for each feature in X the
+    given dist_function with y.
+
+    @param X: numpy array
+    Shape: n_samples x n_features
+
+    @param y: numpy array or list
+    Size: n_samples
+
+    @param dist_function: function
+    distance function
+
+    @return: numpy array
+    Size: n_features
+
+    @note:
+    Apply any given 1-D distance function to X and y.
+    Have a look at:
+    http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
+    """
+    #number of features
+    n_feats = X.shape[1]
+
+    #creating output volume file
+    p = np.zeros(n_feats)
+
+    #calculating dist_function across all subjects
+    for i in range(X.shape[1]):
+        p[i] = dist_function(X[:, i], y)[0]
+
+    p[np.isnan(p)] = 0
+
+    return p
+
+
+def bhattacharyya_dist(X, y):
+    """
+    Univariate Gaussian Bhattacharyya distance
+    between the groups in X, labeled by y.
+
+    @param X:
+    @param y:
+    @return:
+    """
+    classes = np.unique(y)
+    n_class = len(classes)
+    n_feats = X.shape[1]
+
+    b = np.zeros(n_feats)
+    for i in np.arange(n_class):
+        for j in np.arange(i+1, n_class):
+            if j > i:
+                xi = X[y == i, :]
+                xj = X[y == j, :]
+
+                mi = np.mean (xi, axis=0)
+                mj = np.mean (xj, axis=0)
+
+                vi = np.var  (xi, axis=0)
+                vj = np.var  (xj, axis=0)
+
+                si = np.std  (xi, axis=0)
+                sj = np.std  (xj, axis=0)
+
+                d  = 0.25 * (np.square(mi - mj) / (vi + vj)) + 0.5  * (np.log((vi + vj) / (2*si*sj)))
+                d[np.isnan(d)] = 0
+                d[np.isinf(d)] = 0
+
+                b = np.maximum(b, d)
+
+    return b
+
+
+
+def welch_ttest(X, y):
+    """
+    Welch's t-test between the groups in X, labeled by y.
+
+    @param X:
+    @param y:
+    @return:
+    """
+    classes = np.unique(y)
+    n_class = len(classes)
+    n_feats = X.shape[1]
+
+    b = np.zeros(n_feats)
+    for i in np.arange(n_class):
+        for j in np.arange(i+1, n_class):
+            if j > i:
+                xi = X[y == i, :]
+                xj = X[y == j, :]
+                yi = y[y == i]
+                yj = y[y == j]
+
+                mi = np.mean (xi, axis=0)
+                mj = np.mean (xj, axis=0)
+
+                vi = np.var  (xi, axis=0)
+                vj = np.var  (xj, axis=0)
+
+                n_subjsi = len(yi)
+                n_subjsj = len(yj)
+
+                t = (mi - mj) / np.sqrt((np.square(vi) / n_subjsi) + (np.square(vj) / n_subjsj))
+                t[np.isnan(t)] = 0
+                t[np.isinf(t)] = 0
+
+                b = np.maximum(b, t)
+
+    return b
+
+
+def feature_selection(X, y, method, thr=95, dist_function=None, thr_method='robust'):
+    """
+    Parameters
+    ----------
+    @param: X             : data ([n_samps x n_feats] matrix)
+    @param: y             : class labels
+    @param: method        : distance measure: 'pearson', 'bhattacharyya', 'welcht', ''
+                            if method == '', will use dist_function
+    @param: thr           : percentile distance threshold
+    @param: dist_function :
+    @param: thr_method    : method for thresholding: 'none', 'robust', 'ranking', 'percentile'
+                            See .threshold.apply_threshold docstring.
+
+    Returns
+    -------
+    @return m          : distance measure (thresholded or not)
+    """
+    #pre feature selection, measuring distances
+    #Pearson correlation
+    if method == 'pearson':
+        log.info ('Calculating Pearson correlation')
+        m = np.abs(pearson_correlation (X, y))
+
+    #Bhattacharyya distance
+    elif method == 'bhattacharyya':
+        log.info ('Calculating Bhattacharyya distance')
+        m = bhattacharyya_dist (X, y)
+
+    #Welch's t-test
+    elif method == 'welcht':
+        log.info ("Calculating Welch's t-test")
+        m = welch_ttest (X, y)
+
+    elif method == '':
+        log.info ("Calculating distance between data and class labels")
+        #http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
+        m = distance_computation(X, y, dist_function)
+
+    #if all distance values are 0
+    if not m.any():
+        log.info("No differences between groups have been found. Are you sure you want to continue?")
+        return m
+
+    #threshold data
+    if thr_method != 'none':
+        return apply_threshold(m, thr, thr_method)
+
+    return m
