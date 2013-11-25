@@ -1,6 +1,7 @@
 numpy
 scipy
-sklearn
+scikit-learn
+pyside
 matplotlib
 nibabel
 h5py
