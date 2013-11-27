@@ -64,7 +64,7 @@ def show_many_slices(vol, vol2=None, volaxis=1, n_slices=[8, 8], slices_idx=None
     n_cols = max(n_slices)
 
     if not slices_idx:
-        slice_idx = makespread(range(size), np.sum(n_slices))
+        slice_idx = makespread(list(range(size)), np.sum(n_slices))
 
     fig  = plt.figure(figtitle)
 

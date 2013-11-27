@@ -288,8 +288,8 @@ def do_experiment_paramgrid (wd, masks, dataf, labelsf, param_grid, thrmethod, s
         if not os.path.exists(of + '.pyshelf'):
             cv, truth, preds, probs, presels = do_classification (subjsf, labelsf, of, wd, maskf, cl, fs1, fs2, prefs, prefs_thr, cvfolds, thrmethod, stratified, stddize, n_cpus)
         else:
-            print ('Previously done.')
-            print ('Loading ' + of)
+            print('Previously done.')
+            print('Loading ' + of)
             res = shelve.open(of + '.pyshelf')
             cv, truth, preds, probs, presels = res['cv'], res['truth'], res['preds'], res['probs'], res['presels']
 
@@ -303,7 +303,7 @@ def do_experiment_paramgrid (wd, masks, dataf, labelsf, param_grid, thrmethod, s
         j['metrics'] = metrics
         j['presels'] = presels
 
-        if not results.has_key(subjsf):
+        if subjsf not in results:
             results[subjsf] = []
 
         results[subjsf].append(Result(**j))
@@ -372,8 +372,8 @@ def print_all_summary_tables(results):
 
         wd, xd, dd, labelsf, phenof, subjsf, masks, dilmasks, templates, pipe = get_filepaths(**j)
 
-        print str(j)
-        print 'Doing pipeline ' + pipe + '\n'
+        print(str(j))
+        print('Doing pipeline ' + pipe + '\n')
 
         sum_tab[str(j)] = print_summary_table(results[str(j)], wd, masks, subjsf, prefs_methods, prefs_thrs, clf_methods)
 
@@ -569,14 +569,14 @@ def do_localization_images (temporal_filtering=True, global_nuis_correction=True
         #overwrite?
         if not overwrite:
             if os.path.exists(fig1name) and os.path.exists(fig2name):
-                print ("File " + fig1name + " already exists, jumping to next.")
+                print("File " + fig1name + " already exists, jumping to next.")
                 continue
 
         print("Running " + prefs + " " + str(prefs_thr) + " " + str(j))
 
         #loading data file
         data_file = of + '.pyshelf'
-        print ('Loading ' + data_file)
+        print('Loading ' + data_file)
         res = shelve.open(data_file)
 
         try:
@@ -605,7 +605,7 @@ def do_localization_images (temporal_filtering=True, global_nuis_correction=True
             aizc.save_fig_to_png (fig1, fig1name, facecolor='white')
             #call_innercrop (xd, fig1name)
         else:
-            raw_input("Press Enter to continue...")
+            input("Press Enter to continue...")
 
         #feature_importances figure
         if supvecs_done:
@@ -614,23 +614,23 @@ def do_localization_images (temporal_filtering=True, global_nuis_correction=True
                 aizc.save_fig_to_png (fig2, fig2name, facecolor='white')
                 #call_innercrop(xd, fig2name)
             else:
-                raw_input("Press Enter to continue...")
+                input("Press Enter to continue...")
 
 ##==============================================================================
-def call_innercrop (xd, figname):
+def call_innercrop(xd, figname):
     if os.access (os.path.join(xd,'innercrop'), os.X_OK):
         comm = os.path.join(xd,'innercrop') + ' -o white ' + figname + ' ' + figname
-        print ('Calling: ' + comm)
-        au.sys_call (comm)
+        print('Calling: ' + comm)
+        au.sys_call(comm)
     else:
         print('Could not find innercrop for execution.')
 
 
 ##==============================================================================
-def call_autoaq (xd, maskf, thresh, atlas, outfile):
+def call_autoaq(xd, maskf, thresh, atlas, outfile):
     if os.access (os.path.join(xd,'autoaq'), os.X_OK):
         comm = os.path.join(xd,'autoaq') + ' -i ' + maskf + ' -t ' + str(thresh) + ' -a ' + '"' + atlas + '"' + ' -o ' + outfile
-        print ('Calling: ' + comm)
+        print('Calling: ' + comm)
         au.exec_command (comm)
     else:
         print('Could not find autoaq for execution.')
@@ -639,7 +639,7 @@ def call_autoaq (xd, maskf, thresh, atlas, outfile):
 def call_atlasquery(xd, maskf, atlas, outfile):
     if os.access ('/usr/bin/atlasquery', os.X_OK):
         comm = 'atlasquery' + ' -m ' + maskf + ' -a ' + '"' + atlas + '"' + ' > ' + outfile
-        print ('Calling: ' + comm)
+        print('Calling: ' + comm)
         au.exec_command (comm)
     else:
         print('Could not find atlasquery for execution.')
@@ -651,7 +651,7 @@ def call_atlasquerpy(xd, maskf, atlas, outfile):
     atlasquerpy = '/home/alexandre/Dropbox/Documents/work/atlasquerpy/atlasquerpy'
     if os.access (atlasquerpy, os.X_OK):
         comm = atlasquerpy + ' -t roiover -m ' + maskf + ' -a ' + '"' + atlas + '"' + ' > ' + outfile
-        print ('Calling: ' + comm)
+        print('Calling: ' + comm)
         process = subprocess.Popen(comm, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, error = process.communicate()
         #subprocess.call (comm, shell=True)

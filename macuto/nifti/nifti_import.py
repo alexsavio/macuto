@@ -26,8 +26,8 @@ def get_nii_info(nii_file):
         hdr = nibf.get_header()
 
     except:
-        print ('get_nii_info: Error on reading file ' + nii_file)
-        print ("Unexpected error:", sys.exc_info()[0])
+        print('get_nii_info: Error on reading file ' + nii_file)
+        print("Unexpected error:", sys.exc_info()[0])
         raise
 
     return hdr, aff
@@ -43,8 +43,8 @@ def get_nii_data(nii_file):
         vol = nibf.get_data()
 
     except:
-        print ('get_nii_data: Error on reading file ' + nii_file)
-        print ("Unexpected error:", sys.exc_info()[0])
+        print('get_nii_data: Error on reading file ' + nii_file)
+        print("Unexpected error:", sys.exc_info()[0])
         raise
 
     return vol
@@ -65,8 +65,8 @@ def get_masked_nii_data(nii_file, mask_file):
         mask_indices = np.where(mask > 0)
 
     except:
-        print ('get_nii_data: Error on reading file ' + nii_file)
-        print ("Unexpected error:", sys.exc_info()[0])
+        print('get_nii_data: Error on reading file ' + nii_file)
+        print("Unexpected error:", sys.exc_info()[0])
         raise
 
     return vol[mask_indices], mask_indices, mask.shape
@@ -114,8 +114,8 @@ def niftilist_to_array(nii_filelist, smoothmm=0, outdtype=None):
                 vol = get_nii_data(vf)
                 outmat[i, :] = vol.flatten()
         except:
-            print ('niftilist_to_array: Error on reading file ' + vf)
-            print ("Unexpected error:", sys.exc_info()[0])
+            print('niftilist_to_array: Error on reading file ' + vf)
+            print("Unexpected error:", sys.exc_info()[0])
             raise
     else:
         try:
@@ -123,8 +123,8 @@ def niftilist_to_array(nii_filelist, smoothmm=0, outdtype=None):
                 vol = smooth_volume(vf, smoothmm)
                 outmat[i, :] = vol.flatten()
         except:
-            print ('niftilist_to_array: Error on reading file ' + vf)
-            print ("Unexpected error:", sys.exc_info()[0])
+            print('niftilist_to_array: Error on reading file ' + vf)
+            print("Unexpected error:", sys.exc_info()[0])
             raise
 
     return outmat, vol.shape
@@ -183,8 +183,8 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, smoothmm=0,
                 vol = get_nii_data(vf)
                 outmat[i, :] = vol[mask_indices]
         except:
-            print ('niftilist_to_array: Error on reading file ' + vf)
-            print ("Unexpected error:", sys.exc_info()[0])
+            print('niftilist_to_array: Error on reading file ' + vf)
+            print("Unexpected error:", sys.exc_info()[0])
             raise
     else:
         try:
@@ -192,8 +192,8 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, smoothmm=0,
                 vol = smooth_volume(vf, smoothmm)
                 outmat[i, :] = vol[mask_indices]
         except:
-            print ('niftilist_to_array: Error on reading file ' + vf)
-            print ("Unexpected error:", sys.exc_info()[0])
+            print('niftilist_to_array: Error on reading file ' + vf)
+            print("Unexpected error:", sys.exc_info()[0])
             raise
 
     return outmat, mask_indices, mask.shape

@@ -87,7 +87,7 @@ def enlist_cv_results(cv_targets, cv_preds, cv_probs=None):
 
     if (isinstance(cv_targets, dict)):
         c = 0
-        for i in cv_targets.keys():
+        for i in list(cv_targets.keys()):
             try:
                 targets.append(cv_targets[i])
                 preds.append  (cv_preds  [i])
@@ -96,7 +96,7 @@ def enlist_cv_results(cv_targets, cv_preds, cv_probs=None):
                     if len(cv_probs) > 0:
                         probs.append(cv_probs  [i])
             except:
-                print( "Unexpected error: ", sys.exc_info()[0] )
+                print("Unexpected error: ", sys.exc_info()[0])
             c += 1
 
     else:

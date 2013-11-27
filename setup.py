@@ -15,7 +15,7 @@ import shutil
 from distutils.command.clean import clean as Clean
 
 if sys.version_info[0] < 3:
-    import __builtin__ as builtins
+    import builtins as builtins
 else:
     import builtins
 

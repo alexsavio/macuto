@@ -57,33 +57,33 @@ def spatialimg_to_hdf(fname, spatial_img, h5path='/img', append=True):
 
     @note:
     HDF5 open modes
-    >>> f = h5py.File('filename.hdf5')       # opens, or creates if it doesn't exist
-    >>> f = h5py.File('filename.hdf5','r')   # readonly
-    >>> f = h5py.File('filename.hdf5','r+')  # read/write
-    >>> f = h5py.File('filename.hdf5','w')   # new file overwriting any existing file
-    >>> f = h5py.File('filename.hdf5','w-')  # new file only if one doesn't exist
+    >>> 'r' Readonly, file must exist
+    >>> 'r+' Read/write, file must exist
+    >>> 'w' Create file, truncate if exists
+    >>> 'w-' Create file, fail if exists
+    >>> 'a' Read/write if exists, create otherwise (default)
+
     """
     mode = 'w'
     if append:
-        mode = 'r+'
+        mode = 'a'
 
-    f = h5py.File(fname, mode)
+    with h5py.File(fname, mode) as f:
 
-    h5img = f.create_group(h5path)
-    h5img['data']   = spatial_img.get_data()
-    h5img['extra']  = spatial_img.get_extra()
-    h5img['affine'] = spatial_img.get_affine()
+        h5img = f.create_group(h5path)
+        h5img['data']   = spatial_img.get_data()
+        h5img['extra']  = spatial_img.get_extra()
+        h5img['affine'] = spatial_img.get_affine()
 
-    hdr = spatial_img.get_header()
-    for k in hdr.keys():
-        h5img['data'].attrs[k] = hdr[k]
+        hdr = spatial_img.get_header()
+        for k in list(hdr.keys()):
+            h5img['data'].attrs[k] = hdr[k]
 
-    f.close()
 
 
 def hdfgroup_to_nifti1image(fname, h5path):
     """
-    Returns a nibabel Nifti1Image from an HDF5 group datasets
+    Returns a nibabel Nifti1Image from a HDF5 group datasets
 
     @param fname: string
     HDF5 file path
@@ -93,16 +93,14 @@ def hdfgroup_to_nifti1image(fname, h5path):
 
     @return: nibabel Nifti1Image
     """
-    f = h5py.File(fname, 'r')
+    with h5py.File(fname, 'r') as f: 
 
-    h5img  = f[h5path]
-    data   = h5img['data'].value
-    extra  = h5img['extra'].value
-    affine = h5img['affine'].value
+        h5img  = f[h5path]
+        data   = h5img['data'].value
+        extra  = h5img['extra'].value
+        affine = h5img['affine'].value
 
-    header = get_nifti1hdr_from_h5attrs(h5img['data'].attrs)
-
-    f.close()
+        header = get_nifti1hdr_from_h5attrs(h5img['data'].attrs)
 
     img = nib.Nifti1Image(data, affine, header=header, extra=extra)
 
@@ -120,7 +118,7 @@ def get_nifti1hdr_from_h5attrs(h5attrs):
     @return: dict
     """
     hdr = nib.Nifti1Header()
-    for k in h5attrs.keys():
+    for k in list(h5attrs.keys()):
         hdr[str(k)] = np.array(h5attrs[k])
 
     return hdr

@@ -33,7 +33,7 @@ def append_to_keys(adict, prefix):
     @param prefix: string
     @return:
     """
-    return {prefix + str(key): (transform(value) if isinstance(value, dict) else value) for key, value in adict.items()}
+    return {prefix + str(key): (transform(value) if isinstance(value, dict) else value) for key, value in list(adict.items())}
 
 
 def pretty_mapping(mapping, getterfunc=None):
@@ -109,7 +109,7 @@ def list_filter(lst, filter):
     @param filter: function
     @return:
     """
-    return [(l) for l in lst if filter(l)]
+    return [(l) for l in lst if list(filter(l))]
 
 
 def list_match(regex, lst):
@@ -138,7 +138,7 @@ def append_to_keys(adict, preffix):
     @param preffix:
     @return:
     """
-    return {preffix + str(key) : (value if isinstance(value, dict) else value) for key, value in mydict.items()}
+    return {preffix + str(key) : (value if isinstance(value, dict) else value) for key, value in list(mydict.items())}
 
 
 def append_to_list (lst, preffix):

@@ -86,7 +86,7 @@ def write_lines(fname, lines):
         f = open(fname, 'w')
         f.writelines(lines)
         f.close()
-    except IOError, err:
+    except IOError as err:
         log.error ('Unexpected error: ', err)
     except:
         log.error ('Unexpected error: ', str(sys.exc_info()))
@@ -184,11 +184,11 @@ def remove_all(filelist, folder=''):
         try:
             for f in filelist:
                 os.remove(f)
-        except OSError, err:
+        except OSError as err:
             pass
     else:
         try:
             for f in filelist:
                 os.remove(os.path.join(folder, f))
-        except OSError, err:
+        except OSError as err:
             pass

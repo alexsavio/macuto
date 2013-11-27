@@ -84,9 +84,9 @@ def get_clfmethod (clfmethod, n_feats):
 
     #Classifiers parameter values for grid search
     if n_feats < 10:
-        max_feats = range(1, n_feats, 2)
+        max_feats = list(range(1, n_feats, 2))
     else:
-        max_feats = range(1, 30, 4)
+        max_feats = list(range(1, 30, 4))
     max_feats.extend([None, 'auto', 'sqrt', 'log2'])
 
     clgrid =      { 'cart'   : dict(criterion = ['gini', 'entropy'], max_depth = [None, 10, 20, 30]),
@@ -150,11 +150,11 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
     #feature selection parameter values for grid search
     max_feats = ['auto']
     if n_feats < 10:
-        feats_to_sel = range(2, n_feats, 2)
-        n_comps = range(1, n_feats, 2)
+        feats_to_sel = list(range(2, n_feats, 2))
+        n_comps = list(range(1, n_feats, 2))
     else:
-        feats_to_sel = range(2, 20, 4)
-        n_comps = range(1, 30, 4)
+        feats_to_sel = list(range(2, 20, 4))
+        n_comps = list(range(1, 30, 4))
     max_feats.extend(feats_to_sel)
 
     n_comps_pca = list(n_comps)
@@ -265,7 +265,7 @@ def get_pipeline(fsmethod1, fsmethod2, clfmethod, n_samps, n_feats, n_cpus):
             fs2p = append_to_keys(fs2p, fs2n + '__')
 
             combined_features = FeatureUnion([(fs1n, fs1), (fs2n, fs2)])
-            fsp = dict(fs1p.items() + fs2p.items())
+            fsp = dict(list(fs1p.items()) + list(fs2p.items()))
         else:
             combined_features = FeatureUnion([(fs1n, fs1)])
             fsp = fs1p
@@ -285,7 +285,7 @@ def get_pipeline(fsmethod1, fsmethod2, clfmethod, n_samps, n_feats, n_cpus):
         #arranging parameters for the whole pipeline
         clp = append_to_keys(clp, 'cl__')
         fsp = append_to_keys(fsp, 'fs__')
-        params = dict(clp.items() + fsp.items())
+        params = dict(list(clp.items()) + list(fsp.items()))
     else:
         #pipe does not work
         #pipe = Pipeline([ ('cl', classif) ])

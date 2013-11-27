@@ -47,7 +47,7 @@ def save_varlist_to_shelve(fname, varnames, varlist):
             mashelf[vn] = varlist[i]
         except:
             print('ERROR shelving: {0}'.format(varnames[i]))
-            print sys.exc_info()
+            print(sys.exc_info())
 
     mashelf.close()
 
@@ -67,7 +67,7 @@ def save_varlist_to_mat(fname, varnames, varlist):
         sio.savemat(fname, mdict, format='4')
     except:
         print('ERROR saving to .mat: {0}'.format(varnames[i]))
-        print sys.exc_info()
+        print(sys.exc_info())
 
 
 def save_varlist_to_hdf5(fname, varnames, varlist, mode='w', h5path='/'):
@@ -97,7 +97,7 @@ def save_varlist_to_hdf5(fname, varnames, varlist, mode='w', h5path='/'):
 
     except:
         print('ERROR saving to .hdf5: {0}'.format(varnames[i]))
-        print sys.exc_info()
+        print(sys.exc_info())
 
     h5file.close()
 
@@ -144,7 +144,7 @@ def load_varnames_from_hdf5(fname, h5path='/'):
     List of variable names contained in fpath
     """
     def walk(group, node_type=h5py.Dataset):
-        for node in group.values():
+        for node in list(group.values()):
             if isinstance(node, node_type):
                 yield node
 
@@ -158,7 +158,7 @@ def load_varnames_from_hdf5(fname, h5path='/'):
 
     except:
         print('ERROR reading .hdf5: {0}'.fpath)
-        print sys.exc_info()
+        print(sys.exc_info())
 
     h5file.close()
 
@@ -182,7 +182,7 @@ def load_variables_from_hdf5(fname, h5path='/'):
     Dict with variables contained in fpath
     """
     def walk(group, node_type=h5py.Dataset):
-        for node in group.values():
+        for node in list(group.values()):
             if isinstance(node, node_type):
                 yield node
 
@@ -197,7 +197,7 @@ def load_variables_from_hdf5(fname, h5path='/'):
 
     except:
         print('ERROR reading .hdf5: {0}'.fpath)
-        print sys.exc_info()
+        print(sys.exc_info())
 
     h5file.close()
 

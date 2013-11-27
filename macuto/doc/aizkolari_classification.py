@@ -146,7 +146,7 @@ def enlist_cv_results (cv_targets, cv_preds, cv_probs=None):
     probs   = []
 
     if (isinstance(cv_targets, dict)):
-        rango   = cv_targets.keys()
+        rango = list(cv_targets.keys())
 
         c = 0
         for i in rango:
@@ -158,7 +158,7 @@ def enlist_cv_results (cv_targets, cv_preds, cv_probs=None):
                     if len(cv_probs) > 0:
                         probs.append(cv_probs  [i])
             except:
-                print( "Unexpected error: ", sys.exc_info()[0] )
+                print("Unexpected error: ", sys.exc_info()[0])
 
             c += 1
 
@@ -472,7 +472,7 @@ def welch_ttest (X, y):
 
 #-------------------------------------------------------------------------------
 def append_to_keys (mydict, preffix):
-    return {preffix + str(key) : (transform(value) if isinstance(value, dict) else value) for key, value in mydict.items()}
+    return {preffix + str(key) : (transform(value) if isinstance(value, dict) else value) for key, value in list(mydict.items())}
 
 #-------------------------------------------------------------------------------
 def apply_distance_threshold (distances, thr, method='robust'):
@@ -553,9 +553,9 @@ def get_clfmethod (clfmethod, n_feats, n_subjs):
 
     #Classifiers parameter values for grid search
     if n_feats < 10:
-        max_feats = range(1, n_feats, 2)
+        max_feats = list(range(1, n_feats, 2))
     else:
-        max_feats = range(1, 30, 4)
+        max_feats = list(range(1, 30, 4))
     max_feats.extend([None, 'auto', 'sqrt', 'log2'])
 
     clgrid =      { 'cart'   : dict(criterion = ['gini', 'entropy'], max_depth = [None, 10, 20, 30]),
@@ -600,11 +600,11 @@ def get_fsmethod (fsmethod, n_feats, n_subjs, n_jobs=1):
     #feature selection parameter values for grid search
     max_feats = ['auto']
     if n_feats < 10:
-        feats_to_sel = range(2, n_feats, 2)
-        n_comps = range(1, n_feats, 2)
+        feats_to_sel = list(range(2, n_feats, 2))
+        n_comps = list(range(1, n_feats, 2))
     else:
-        feats_to_sel = range(2, 20, 4)
-        n_comps = range(1, 30, 4)
+        feats_to_sel = list(range(2, 20, 4))
+        n_comps = list(range(1, 30, 4))
     max_feats.extend(feats_to_sel)
 
     n_comps_pca = list(n_comps)
@@ -685,7 +685,7 @@ def get_pipeline (fsmethod1, fsmethod2, clfmethod, n_subjs, n_feats, n_cpus):
             fs2p = append_to_keys(fs2p, fs2n + '__')
 
             combined_features = FeatureUnion([(fs1n, fs1), (fs2n, fs2)])
-            fsp  = dict(fs1p.items() + fs2p.items())
+            fsp  = dict(list(fs1p.items()) + list(fs2p.items()))
         else:
             combined_features = FeatureUnion([(fs1n, fs1)])
             fsp = fs1p
@@ -705,7 +705,7 @@ def get_pipeline (fsmethod1, fsmethod2, clfmethod, n_subjs, n_feats, n_cpus):
         #arranging parameters for the whole pipeline
         clp = append_to_keys(clp, 'cl__')
         fsp = append_to_keys(fsp, 'fs__')
-        params = dict(clp.items() + fsp.items())
+        params = dict(list(clp.items()) + list(fsp.items()))
     else:
         #pipe does not work 
         #pipe = Pipeline([ ('cl', classif) ])
@@ -849,7 +849,7 @@ def save_fig_to_png (fig, fname, facecolor=None):
 
     import pylab as plt
 
-    print ("Saving " + fname)
+    print("Saving " + fname)
     fig.set_size_inches(22,16)
     fig.tight_layout()
     fig.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=600, facecolor=facecolor)

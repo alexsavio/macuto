@@ -20,7 +20,7 @@ def save_fig_to_png(fig, fname, facecolor=None, dpi=300):
 
     import pylab as plt
 
-    print ("Saving " + fname)
+    print("Saving " + fname)
     fig.set_size_inches(22,16)
     fig.tight_layout()
     fig.savefig(fname, bbox_inches='tight', pad_inches=0,
@@ -85,19 +85,19 @@ def plot_results (results, wd, dataf, prefs_methods, prefs_thrs, clf_methods):
     for fi, f in enumerate(subjsf):
 
         f = subjsf[fi]
-        print f
+        print(f)
         resf = results[f]
-        print len(resf)
+        print(len(resf))
 
         for p in prefs_methods:
-            print p
+            print(p)
             resfp = aizc.filter_objlist (resf, 'prefs', p)
 
             fig = plt.figure(p + '_' + os.path.basename(f))
 
             i = 0
             for c in clf_methods:
-                print c
+                print(c)
                 resfpc = aizc.filter_objlist (resfp, 'cl', c)
 
                 clor = colors[i]
