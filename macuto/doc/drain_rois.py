@@ -50,9 +50,9 @@ def main(argv=None):
 
     try:
         args = parser.parse_args ()
-    except argparse.ArgumentError, exc:
-        print (exc.message + '\n' + exc.argument)
-        parser.error(str(msg))
+    except argparse.ArgumentError as exc:
+        print(exc.message + '\n' + exc.argument)
+        parser.error(str(exc.message))
         return 0
 
     ifname  = args.input.strip()

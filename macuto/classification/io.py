@@ -13,10 +13,12 @@ import os
 import numpy as np
 import nibabel as nib
 import logging as log
+
 from sklearn.preprocessing import LabelEncoder
 
 from ..files import parse_subjects_list
 from ..files import grep_one
+
 
 def load_data(subjsf, datadir, maskf, labelsf=None):
     """
@@ -26,6 +28,7 @@ def load_data(subjsf, datadir, maskf, labelsf=None):
     @param maskf:
     @param labelsf:
     @return:
+    x, y, scores, imgsiz, msk, indices
     """
 
     #loading mask
@@ -34,7 +37,7 @@ def load_data(subjsf, datadir, maskf, labelsf=None):
     indices = np.where(msk > 0)
 
     #reading subjects list
-    [scores, subjs] = parse_subjects_list(subjsf, datadir)
+    [scores, subjs] = parse_subjects_list(subjsf, datadir, labelsf=labelsf)
     scores = np.array(scores)
 
     imgsiz  = nib.load(subjs[0]).shape
@@ -43,8 +46,8 @@ def load_data(subjsf, datadir, maskf, labelsf=None):
 
     #checking mask and first subject dimensions match
     if imgsiz != msk.shape:
-        log.error ('Subject image and mask dimensions should coincide.')
-        exit(1)
+        log.error('Subject image and mask dimensions should coincide.')
+        raise
 
     #relabeling scores to integers, if needed
     if not np.all(scores.astype(np.int) == scores):
@@ -62,16 +65,16 @@ def load_data(subjsf, datadir, maskf, labelsf=None):
     y = y.astype(int)
 
     #loading data
-    log.info ('Loading data...')
-    X = np.zeros((n_subjs, n_vox), dtype=dtype)
+    log.info('Loading data...')
+    x = np.zeros((n_subjs, n_vox), dtype=dtype)
     for f in np.arange(n_subjs):
         imf = subjs[f]
         log.info('Reading ' + imf)
 
         img = nib.load(imf).get_data()
-        X[f,:] = img[indices]
+        x[f, :] = img[indices]
 
-    return X, y, scores, imgsiz, msk, indices
+    return x, y, scores, imgsiz, msk, indices
 
 
 def write_svmperf_dat(filename, dataname, data, labels):
@@ -182,7 +185,7 @@ def write_arff(filename, dataname, featnames, data, labels):
         raise IOError(err)
 
     # Open/create file
-    fd = open(filename,'w')
+    fd = open(filename, 'w')
 
     #Write headings
     fd.write('@RELATION ' + dataname + '\n')
@@ -194,7 +197,7 @@ def write_arff(filename, dataname, featnames, data, labels):
     # Write classes
     #classes = str(np.unique(labels)).replace('[','').replace(']','');
     classes = np.unique(labels).astype(int)
-    classes = classes.reshape(1,len(classes))
+    classes = classes.reshape(1, len(classes))
     fd.write  ('@ATTRIBUTE class {')
     np.savetxt(fd, classes, fmt='%d', delimiter=',', newline='}')
     fd.write  ('\n')
@@ -230,12 +233,12 @@ def read_svmperf_results(logpath, predspath='', testlabels=''):
 
     if not os.path.exists(logpath):
         err = 'read_svmperf_results: Could not find file ' + logpath
-        raise IOError (err)
+        raise IOError(err)
 
     if predspath:
         if not os.path.exists(predspath):
             err = 'read_svmperf_results: Could not find file ' + predspath
-            raise IOError (err)
+            raise IOError(err)
 
     results = np.zeros(9, dtype=float)
 
@@ -248,14 +251,15 @@ def read_svmperf_results(logpath, predspath='', testlabels=''):
     results[6] = float(grep_one('AvgPrec',   logpath).strip().split(':')[1])
 
     predsok = False
-    if (testlabels):
+    if testlabels:
         try:
             preds   = np.loadtxt(predspath, dtype=float)
             predsok = True
-        except IOError:
+        except IOError as err:
+            log.error(err.msg())
             pass
 
-    if (predsok):
+    if predsok:
         res = np.sign(preds)
         n   = len(testlabels)
 

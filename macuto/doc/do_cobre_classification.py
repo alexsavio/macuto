@@ -118,9 +118,9 @@ def main(argv=None):
 
     try:
         args = parser.parse_args ()
-    except argparse.ArgumentError, exc:
-        print (exc.message + '\n' + exc.argument)
-        parser.error(str(msg))
+    except argparse.ArgumentError as exc:
+        log.error(exc.message + '\n' + exc.argument)
+        parser.error(str(exc.message))
         return 0
 
     subjsf      = args.infile.strip     ()
@@ -180,7 +180,7 @@ def get_experiment_parameters ():
 
     return stratified, stddize, cvfolds, thrmethod, clf_methods, prefs_methods, prefs_thrs
 
-#-------------------------------------------------------------------------------
+
 def do_experiment_paramgrid (wd, masks, dataf, labelsf, param_grid, thrmethod, stratified, stddize, cvfolds, n_cpus):
 
     results = {}
@@ -223,7 +223,7 @@ def do_experiment_paramgrid (wd, masks, dataf, labelsf, param_grid, thrmethod, s
         j['metrics'] = metrics
         j['presels'] = presels
 
-        if not results.has_key(subjsf):
+        if not subjsf in results:
             results[subjsf] = []
 
         results[subjsf].append(Result(**j))

@@ -20,7 +20,7 @@ from ..strings import list_search
 
 def drain_rois(img_data):
     """
-    Retrieves the ROIs in img_data and returns a similar matrix with the ROIs
+    Find all the ROIs in img_data and returns a similar volume with the ROIs
     emptied, keeping only their border voxels.
 
     This is useful for DTI tractography.
@@ -52,26 +52,85 @@ def drain_rois(img_data):
     return out
 
 
-def create_rois_mask (roislist, filelist):
+def create_rois_mask(roislist, filelist):
     """
+    Looks for the files in filelist containing the names
+    in roislist, these files will be opened, binarised
+    and merged in one mask.
 
-    @param roislist:
-    @param filelist:
-    @return:
+    @param roislist: list of strings
+    Names of the ROIs, which will have to be in the
+    names of the files in filelist.
+
+    @param filelist: list of strings
+    List of paths to the volume files containing the ROIs.
+
+    @return: ndarray
+    Mask volume
     """
+    roifiles = []
 
+    for roi in roislist:
+        try:
+            roifiles.apend(list_search(roi, filelist)[0])
+        except Exception as exc:
+            log.error(exc.message + '\n' + exc.argument)
+            return 0
+
+    return create_mask_from(roifiles)
+
+
+def create_mask_from(filelist):
+    """
+    Creates a binarised mask with the files in
+    filelist.
+
+    @param filelist: list of strings
+    List of paths to the volume files containing the ROIs.
+
+    @return: ndarray of int
+    Mask volume
+    """
     shape = nib.load(filelist[0]).shape
     mask  = np.zeros(shape)
 
     #create space for all features and read from subjects
-    for roi in roislist:
+    for volf in filelist:
         try:
-            roif   = list_search('_' + roi + '.', filelist)[0]
-            roivol = nib.load(roif).get_data()
+            roivol = nib.load(volf).get_data()
             mask += roivol
-        except exc:
+        except Exception as exc:
             log.error(exc.message + '\n' + exc.argument)
             return 0
 
+    return (mask > 0).astype(int)
 
-    return mask > 0
+
+def extract_timeseries(tsvol, roivol):
+    """
+    Partitions the timeseries in tsvol according to the
+    ROIs in roivol.
+
+    @param tsvol: ndarray
+    4D timeseries volume
+
+    @param roivol: ndarray
+    3D ROIs volume
+
+    @return: dict
+    A dict with the timeseries as items and
+    keys as the ROIs voxel values.
+    """
+    assert(tsvol.ndim == 4)
+    assert(tsvol.shape[0:2] == roivol.shape)
+
+    rois = np.unique(roivol)
+    rois = rois[np.nonzero(rois)]
+
+    tsmat = tsvol.reshape((np.prod(tsvol.shape[0:2]), tsvol.shape[3]))
+
+    ts_dict = {}
+    for r in rois:
+        ts_dict[r] = tsmat[roivol == r, :]
+
+    return ts_dict

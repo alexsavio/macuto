@@ -20,6 +20,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('nifti')
     config.add_subpackage('classification')
+    config.add_subpackage('timeseries')
 
     return config
 

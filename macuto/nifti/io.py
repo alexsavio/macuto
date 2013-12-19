@@ -80,7 +80,6 @@ def spatialimg_to_hdf(fname, spatial_img, h5path='/img', append=True):
             h5img['data'].attrs[k] = hdr[k]
 
 
-
 def hdfgroup_to_nifti1image(fname, h5path):
     """
     Returns a nibabel Nifti1Image from a HDF5 group datasets
@@ -96,9 +95,9 @@ def hdfgroup_to_nifti1image(fname, h5path):
     with h5py.File(fname, 'r') as f: 
 
         h5img  = f[h5path]
-        data   = h5img['data'].value
-        extra  = h5img['extra'].value
-        affine = h5img['affine'].value
+        data   = h5img['data'][()]
+        extra  = h5img['extra'][()]
+        affine = h5img['affine'][()]
 
         header = get_nifti1hdr_from_h5attrs(h5img['data'].attrs)
 

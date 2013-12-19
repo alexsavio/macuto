@@ -40,7 +40,9 @@ from .io import (spatialimg_to_hdf,
                  save_nibabel)
 
 from .roi import (drain_rois,
-                  create_rois_mask)
+                  create_rois_mask,
+                  extract_timeseries,
+                  create_mask_from)
 
 __ndi_all__ = ['get_nii_data',
                'get_masked_nii_data',
@@ -66,7 +68,9 @@ __io_all__ = ['spatialimg_to_hdf',
               'save_nibabel']
 
 __roi_all__ = ['drain_rois',
-               'create_rois_mask']
+               'create_rois_mask',
+               'extract_timeseries',
+               'create_mask_from']
 
 __all__.extend(__ndi_all__)
 __all__.extend(__roi_all__)

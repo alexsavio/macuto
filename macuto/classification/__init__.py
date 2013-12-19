@@ -15,13 +15,6 @@ The :mod:`macuto.io` module includes input/output and file handling functions
 
 __all__ = []
 
-
-from .io import (parse_subjects_list,
-                 load_data,
-                 write_arff,
-                 write_svmperf_dat)
-
-
 from .classification import (perform_classification)
 
 
@@ -37,21 +30,6 @@ from .results import (Result,
                       get_confusion_matrix_fisher_significance,
                       get_cv_classification_metrics,
                       get_cv_significance)
-
-
-from .threshold import (apply_threshold,
-                        binarise,
-                        find_histogram,
-                        find_thresholds,
-                        is_symmetric,
-                        percentile_threshold,
-                        rank_threshold,
-                        robust_max,
-                        robust_min,
-                        robust_range_threshold,
-                        threshold,
-                        threshold_robust_range)
-
 
 from .features import (calculate_hist3d,
                        create_feature_sets,
@@ -75,20 +53,6 @@ __all_io__ = ['parse_subjects_list',
               'write_svmperf_dat']
 
 
-__all_thr__ = ['apply__threshold',
-               'binarise',
-               'find_histogram',
-               'find_thresholds',
-               'is_symmetric',
-               'percentile_threshold',
-               'rank_threshold',
-               'robust_max',
-               'robust_min',
-               'robust_range_threshold',
-               'threshold',
-               'threshold_robust_range']
-
-
 __all_rslts__ = ['Result',
                  'classification_metrics',
                  'enlist_cv_results',
@@ -108,6 +72,5 @@ __all_feats__ = ['calculate_hist3d',
 
 __all__.extend(__all_io__)
 __all__.extend(__all_skl__)
-__all__.extend(__all_thr__)
 __all__.extend(__all_feats__)
 __all__.extend(__all_rslts__)

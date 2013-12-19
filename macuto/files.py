@@ -105,10 +105,10 @@ def grep_one(srch_str, filepath):
             return line
 
 
-def parse_subjects_list(fname, datadir='', split=':'):
+def parse_subjects_list(fname, datadir='', split=':', labelsf=None):
     """
     @param fname: string
-    File with a list of: <subject_file>:<subject_class_label>.
+    Path to file with a list of: <subject_file>:<subject_class_label>.
     Where ':' can be any split character
 
     @param datadir: string
@@ -117,6 +117,10 @@ def parse_subjects_list(fname, datadir='', split=':'):
 
     @param split: string
     Split character for each line
+
+    @param labelsf: string
+    Path to file with a list of the labels if it is not included in
+    fname. It will overwrite the labels from fname.
 
     @return:
     [labels, subjs]
@@ -131,8 +135,12 @@ def parse_subjects_list(fname, datadir='', split=':'):
         f = open(fname, 'r')
         for s in f:
             line = s.strip().split(split)
-            labels.append(np.float(line[1]))
-            subjf = line[0].strip()
+            if len(line) == 2:
+                labels.append(np.float(line[1]))
+                subjf = line[0].strip()
+            else:
+                subjf = line.strip()
+
             if not os.path.isabs(subjf):
                 subjs.append(datadir + subjf)
             else:
@@ -142,6 +150,9 @@ def parse_subjects_list(fname, datadir='', split=':'):
     except:
         log.error("Unexpected error: ", sys.exc_info()[0])
         sys.exit(-1)
+
+    if labelsf is not None:
+        labels = np.loadtxt(labelsf)
 
     return [labels, subjs]
 

@@ -28,7 +28,7 @@ def binarise(data, lower_bound, upper_bound, inclusive=True):
         lowers = data >  lower_bound
         uppers = data <  upper_bound
 
-    return (lowers.astype(int) * uppers.astype(int))
+    return lowers.astype(int) * uppers.astype(int)
 
 
 def apply_threshold(values, thr, method='robust'):
@@ -44,16 +44,17 @@ def apply_threshold(values, thr, method='robust'):
     @return: numpy array
     Thresholded array
     """
-    if   method == 'robust':     return robust_range_threshold (distances, thr)
-    elif method == 'rank':       return rank_threshold         (distances, thr)
-    elif method == 'percentile': return percentile_threshold   (distances, thr)
+    if   method == 'robust':     return robust_range_threshold(values, thr)
+    elif method == 'rank':       return rank_threshold        (values, thr)
+    elif method == 'percentile': return percentile_threshold  (values, thr)
 
 
 def find_histogram(vol, hist, mini, maxi, mask, use_mask):
     """
     For robust limits calculation
 
-    @param vol:
+    @param vol: ndarray
+
     @param hist:
     @param mini:
     @param maxi:
@@ -94,7 +95,7 @@ def is_symmetric(mat):
     return np.allclose(mat.T, mat)
 
 
-def rank_threshold (distances, thr=95):
+def rank_threshold(distances, thr=95):
     """
     @param distances:
     @param thr:
@@ -113,17 +114,8 @@ def percentile_threshold(distances, thr=95):
     @return:
     """
     sels = np.select([distances >= np.percentile(distances, thr)], [distances])
-    sels[isnan(sels)] = 0
+    sels[np.isnan(sels)] = 0
     return sels
-
-
-def robust_range_threshold (distances, thr=95):
-    """
-    @param distances:
-    @param thr:
-    @return:
-    """
-    return threshold_robust_range(distances, thr)
 
 
 def find_thresholds(vol, mask, use_mask=True):
@@ -174,7 +166,8 @@ def find_thresholds(vol, mask, use_mask=True):
                 mini = vol.min()
                 maxi = vol.max()
 
-        hist,validsize = find_histogram(vol,hist,mini,maxi,mask,use_mask);
+        hist, validsize = find_histogram(vol, hist, mini, maxi,
+                                         mask, use_mask)
 
         if validsize < 1:
             thresh2  = mini
@@ -252,7 +245,7 @@ def threshold (data, lower_bound, upper_bound, inclusive=True):
     return data * mask
 
 
-def threshold_robust_range (vol, thrP):
+def robust_range_threshold(vol, thrP):
     """
 
     @param vol:

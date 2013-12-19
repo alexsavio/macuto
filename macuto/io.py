@@ -9,21 +9,21 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
-import os
 import sys
 import shelve
 import h5py
 import scipy.io as sio
+import logging as log
 
 from .files import get_extension, add_extension_if_needed
 
 
-def save_varlist_to_shelve(fname, varnames, varlist):
+def save_variables_to_shelve(fname, variables):
     """
 
-    @param fname:
-    @param varnames:
-    @param varlist:
+    @param fname: string
+    @param variables: dict
+    Dictionary with objects. Object name -> object
 
     @return:
 
@@ -42,41 +42,36 @@ def save_varlist_to_shelve(fname, varnames, varlist):
     """
     mashelf = shelve.open(fname, 'n')
 
-    for i, vn in enumerate(varnames):
+    for vn in variables.keys():
         try:
-            mashelf[vn] = varlist[i]
+            mashelf[vn] = variables[vn]
         except:
-            print('ERROR shelving: {0}'.format(varnames[i]))
-            print(sys.exc_info())
+            log.error('ERROR shelving: {0}'.format(vn))
+            log.error(sys.exc_info())
 
     mashelf.close()
 
 
-def save_varlist_to_mat(fname, varnames, varlist):
+def save_variables_to_mat(fname, variables):
     """
     @param fname: string
-    @param varnames: list of strings
-    @param varlist: list of variables
+    @param variables: dict
+    Dictionary with objects. Object name -> object
     """
 
-    mdict = {}
     try:
-        for i, var in enumerate(varlist):
-            mdict[varnames[i]] = var
-
-        sio.savemat(fname, mdict, format='4')
+        sio.savemat(fname, variables, format='4')
     except:
-        print('ERROR saving to .mat: {0}'.format(varnames[i]))
-        print(sys.exc_info())
+        log.error('ERROR saving to' + fname)
+        log.error(sys.exc_info())
 
 
-def save_varlist_to_hdf5(fname, varnames, varlist, mode='w', h5path='/'):
+def save_variables_to_hdf5(fname, variables, mode='w', h5path='/'):
     """
     @param fname: string
 
-    @param varnames: list of strings
-
-    @param varlist: list of variables
+    @param variables: dict
+    Dictionary with objects. Object name -> object
 
     @param mode: string
     HDF5 file access mode
@@ -92,39 +87,63 @@ def save_varlist_to_hdf5(fname, varnames, varlist, mode='w', h5path='/'):
     h5group = h5file.require_group(h5path)
 
     try:
-        for i, var in enumerate(varlist):
-            h5group[varnames[i]] = var
+        for vn in variables.keys():
+            h5group[vn] = variables[vn]
 
     except:
-        print('ERROR saving to .hdf5: {0}'.format(varnames[i]))
-        print(sys.exc_info())
+        log.error('ERROR saving to .hdf5: {0}'.format(vn))
+        log.error(sys.exc_info())
 
     h5file.close()
 
 
 class ExportData(object):
 
-    def __init__(self, filename, varnames, varlist):
-        self.save_varlist(filename, varnames, varlist)
+    def __init__(self):
+        pass
 
-
-    def save_varlist(self, filename, varnames, varlist):
-        '''
+    @staticmethod
+    def save_variables(filename, variables):
+        """
         Valid extensions '.pyshelf', '.mat', '.hdf5' or '.h5'
-        '''
+
+        @param filename: string
+
+        @param variables: dict
+        Dictionary varname -> variable
+        """
         ext = get_extension(filename)
         if ext != '.pyshelf' and ext != '.mat' and ext != '.hdf5':
             output_file = add_extension_if_needed(filename, '.pyshelf')
             ext = get_extension(filename)
 
         if ext == '.pyshelf':
-            save_varlist_to_shelve(output_file, varnames, varlist)
+            save_varlist_to_shelve(output_file, variables)
 
         elif ext == '.mat':
-            save_varlist_to_mat(output_file, varnames, varlist)
+            save_varlist_to_mat(output_file, variables)
 
         elif ext == '.hdf5' or ext == '.h5':
-            save_varlist_to_hdf5(output_file, varnames, varlist)
+            save_varlist_to_hdf5(output_file, variables)
+
+    @staticmethod
+    def save_varlist(filename, varnames, varlist):
+        """
+        Valid extensions '.pyshelf', '.mat', '.hdf5' or '.h5'
+
+        @param filename: string
+
+        @param varnames: list of strings
+        Names of the variables
+
+        @param varlist: list of objects
+        The objects to be saved
+        """
+        variables = {}
+        for i, vn in enumerate(varnames):
+            variables[vn] = varlist[i]
+
+        ExportData.save_variables(filename, variables)
 
 
 def load_varnames_from_hdf5(fname, h5path='/'):
@@ -157,8 +176,8 @@ def load_varnames_from_hdf5(fname, h5path='/'):
             varlist.append(node.name)
 
     except:
-        print('ERROR reading .hdf5: {0}'.fpath)
-        print(sys.exc_info())
+        log.error('ERROR reading .hdf5: {0}'.fpath)
+        log.error(sys.exc_info())
 
     h5file.close()
 
@@ -196,8 +215,8 @@ def load_variables_from_hdf5(fname, h5path='/'):
             vardict[node_name] = node.value
 
     except:
-        print('ERROR reading .hdf5: {0}'.fpath)
-        print(sys.exc_info())
+        log.error('ERROR reading .hdf5: {0}'.fpath)
+        log.error(sys.exc_info())
 
     h5file.close()
 

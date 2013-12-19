@@ -12,7 +12,7 @@
 import numpy as np
 
 
-def takespread (sequence, num):
+def takespread(sequence, num):
     """
     @param sequence:
     @param num:
@@ -23,7 +23,7 @@ def takespread (sequence, num):
         yield sequence[int(np.ceil(i * length / num))]
 
 
-def makespread (sequence, num):
+def makespread(sequence, num):
     """
     @param sequence:
     @param num:

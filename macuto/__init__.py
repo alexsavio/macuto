@@ -73,6 +73,19 @@ from .render import (show_3slices,
 from .math import (makespread,
                    takespread)
 
+from .threshold import (apply_threshold,
+                        binarise,
+                        find_histogram,
+                        find_thresholds,
+                        is_symmetric,
+                        percentile_threshold,
+                        rank_threshold,
+                        robust_max,
+                        robust_min,
+                        robust_range_threshold,
+                        threshold)
+
+
 __io_all__ = ['save_varlist_to_shelve',
               'save_varlist_to_mat',
               'save_varlist_to_hdf5',
@@ -114,10 +127,21 @@ __render_all__ = ['show_3slices',
                   'show_many_slices',
                   'show_render']
 
-
 __plot_all__ = ['save_fig_to_png',
                 'plot_results',
                 'subplot_this']
+
+__thresh_all__ = ['apply__threshold',
+                  'binarise',
+                  'find_histogram',
+                  'find_thresholds',
+                  'is_symmetric',
+                  'percentile_threshold',
+                  'rank_threshold',
+                  'robust_max',
+                  'robust_min',
+                  'robust_range_threshold',
+                  'threshold',]
 
 
 __all__.extend(__io_all__)
@@ -125,5 +149,6 @@ __all__.extend(__plot_all__)
 __all__.extend(__math_all__)
 __all__.extend(__files_all__)
 __all__.extend(__render_all__)
+__all__.extend(__thresh_all__)
 __all__.extend(__strings_all__)
 __all__.extend(__file_search_all__)

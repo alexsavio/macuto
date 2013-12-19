@@ -22,7 +22,7 @@ from sklearn.preprocessing import StandardScaler
 from .io import load_data
 from ..files import get_extension
 from ..io import save_varlist_to_shelve
-from .threshold import robust_range_threshold, percentile_threshold, rank_threshold
+from ..threshold import robust_range_threshold, percentile_threshold, rank_threshold
 
 def perform_classification (subjsf, labelsf, outfile, datadir, maskf, clfmethod, fsmethod1,
                             fsmethod2, prefsmethod, prefsthr, cvmethod, thrmethod, stratified, stddize, n_cpus):
@@ -54,15 +54,15 @@ def perform_classification (subjsf, labelsf, outfile, datadir, maskf, clfmethod,
         X = np.load(subjsf)
         y = np.loadtxt(labelsf)
         mask = nib.load(maskf).get_data()
-        indices = np.where(mask > 0)
+        #indices = np.where(mask > 0)
 
     #for COBRE ONLY, removing last two subjects:
-    X = X[:-2,:]
+    X = X[:-2, :]
     y = y[:-2]
 
     preds, probs, best_pars, presels, cv, \
-    importance, scores, y, truth = extract_and_classify (X, y, scores, prefsmethod, prefsthr, fsmethod1, fsmethod2,
-                                                     clfmethod, cvmethod, stratified, stddize, thrmethod, n_cpus)
+    importance, scores, y, truth = extract_and_classify(X, y, scores, prefsmethod, prefsthr, fsmethod1, fsmethod2,
+                                                        clfmethod, cvmethod, stratified, stddize, thrmethod, n_cpus)
 
     #save results with pickle
     log.info('Saving results in ' + outfile)
@@ -79,7 +79,7 @@ def perform_classification (subjsf, labelsf, outfile, datadir, maskf, clfmethod,
     return cv, truth, preds, probs, presels
 
 
-def pre_featsel (X, y, method, thr=95, dist_function=None, thr_method='robust'):
+def pre_featsel(X, y, method, thr=95, dist_function=None, thr_method='robust'):
     '''
     INPUT
     X             : data ([n_samps x n_feats] matrix)
@@ -98,7 +98,7 @@ def pre_featsel (X, y, method, thr=95, dist_function=None, thr_method='robust'):
     #Pearson correlation
     if method == 'pearson':
         au.log.info ('Calculating Pearson correlation')
-        m = np.abs(pearson_correlation (X, y))
+        m = np.abs(pearson_correlation(X, y))
 
     #Bhattacharyya distance
     elif method == 'bhattacharyya':
