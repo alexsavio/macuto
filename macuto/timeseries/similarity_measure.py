@@ -1,8 +1,36 @@
 
+import abc
 import numpy as np
 
+# class Pizza(object):
+#     def __init__(self, ingredients):
+#         self.ingredients = ingredients
+#
+#     @classmethod
+#     def from_fridge(cls, fridge):
+#         return cls(fridge.get_cheese() + fridge.get_vegetables())
 
-class CorrelationMeasure(object):
+class TimeSeriesGroupMeasure(object):
+    __metaclass__ = abc.ABCMeta
+
+    @staticmethod
+    @abc.abstractmethod
+    def fit(ts_set1, ts_set2):
+        """
+        Returns the group measure value between both
+        sets of timeseries.
+
+        @param ts_set1: ndarray
+        n_timeseries x ts_size
+
+        @param ts_set2: ndarray
+        n_timeseries x ts_size
+
+        @return:
+        """
+
+
+class CorrelationMeasure(TimeSeriesGroupMeasure):
 
     def __init__(self):
         pass
@@ -10,33 +38,30 @@ class CorrelationMeasure(object):
     @staticmethod
     def fit(ts_set1, ts_set2, lb=0, ub=None, **kwargs):
         """
-        Returns a list of coherence values between the time series in ts_set1 
+        Returns a list of correlation values between the time series in ts_set1
         and ts_set2.
-        See: http://nipy.org/nitime/examples/seed_analysis.html
-        #---------------------------------------------------------------------------
-        Inputs
-        ------
-        ts_set1        : Time series matrix: n_samps x time_size
-        ts_set2        : Time series matrix: n_samps x time_size
 
-        Outputs
-        -------
-        List of coherence values between each ts_set1 timeseries and the 
+        @param ts_set1: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param ts_set2: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param lb: float (optional)
+        @param ub: float (optional)
+        Lower and upper band of a pass-band into which the data will be
+        filtered. Default: lb=0, ub=None (max frequency)
+        Define a frequency band of interest
+
+        @param kwargs:
+
+        @return: list
+        List of correlation values between each ts_set1 timeseries and the
         timeseries in ts_set2
         """
-
         import nitime.analysis as nta
 
-        analyzer = nta.SeedCorrelationAnalyzer(ts_set1, ts_set2)
-
-        f_lb = lb
-        f_ub = ub
-        if f_lb and f_ub:
-            freq_idx = np.where((analyzer.frequencies > f_lb) * (analyzer.frequencies < f_ub))[0]
-        elif f_lb:
-            freq_idx = np.where(analyzer.frequencies > f_lb)[0]
-        elif f_ub:
-            freq_idx = np.where(analyzer.frequencies < f_ub)[0]
+        analyzer = nta.SeedCorrelationAnalyzer(ts_set1, ts_set2, lb=lb, ub=ub)
 
         n_seeds = ts_set1.data.shape[0] if ts_set1.data.ndim > 1 else 1
         if n_seeds == 1:
@@ -55,37 +80,62 @@ class MeanCorrelationMeasure(CorrelationMeasure):
         CorrelationMeasure.__init__(self)
 
     @staticmethod
-    def fit(ts_set1, ts_set2, **kwargs):
-        cor = CorrelationMeasure.fit(ts_set1, ts_set2, **kwargs)
+    def fit(ts_set1, ts_set2, lb=0, ub=None, **kwargs):
+        """
+        Returns the mean correlation value of all coherences the time series in ts_set1
+        and ts_set2.
+
+        @param ts_set1: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param ts_set2: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param lb: float (optional)
+        @param ub: float (optional)
+        Lower and upper band of a pass-band into which the data will be
+        filtered. Default: lb=0, ub=None (max frequency)
+        Define a frequency band of interest
+
+        @param kwargs:
+        'NFFT'
+
+        @return: list
+        List of correlation values between each ts_set1 timeseries and the
+        timeseries in ts_set2
+        """
+        cor = CorrelationMeasure.fit(ts_set1, ts_set2, lb=lb, ub=ub, **kwargs)
         return np.mean(cor)
 
 
-class CoherenceMeasure(object):
+class CoherenceMeasure(TimeSeriesGroupMeasure):
 
     def __init__(self):
         pass
 
     @staticmethod
-    def fit(ts_set1, ts_set2, **kwargs):
+    def fit(ts_set1, ts_set2, lb=0, ub=None, **kwargs):
         """
         Returns a list of coherence values between the time series in ts_set1 
         and ts_set2.
-        See: http://nipy.org/nitime/examples/seed_analysis.html
-        #---------------------------------------------------------------------------
-        Inputs
-        ------
-        ts_set1        : Time series matrix: n_samps x time_size
-        ts_set2        : Time series matrix: n_samps x time_size
 
-        Kwargs
-        ------
-        lb,ub: float (optional)
+        @param ts_set1: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param ts_set2: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param lb: float (optional)
+        @param ub: float (optional)
         Lower and upper band of a pass-band into which the data will be
-        filtered. Default: 0, Nyquist
+        filtered. Default: lb=0, ub=None (max frequency)
+        Define a frequency band of interest
 
-        Outputs
-        -------
-        List of coherence values between each ts_set1 timeseries and the 
+        @param kwargs:
+        'NFFT'
+
+        @return: list
+        List of correlation values between each ts_set1 timeseries and the
         timeseries in ts_set2
         """
 
@@ -93,26 +143,18 @@ class CoherenceMeasure(object):
 
         if 'NFFT' in kwargs:
             fft_par = kwargs['NFFT']
-            analyzer = nta.SeedCoherenceAnalyzer(ts_set1, ts_set2, method={'NFFT': kwargs['NFFT']})
+            analyzer = nta.SeedCoherenceAnalyzer(ts_set1, ts_set2, lb=lb, ub=ub, method={'NFFT': kwargs['NFFT']})
         else:
-            analyzer = nta.SeedCoherenceAnalyzer(ts_set1, ts_set2)
-
-        f_lb = kwargs.get('lb', 0)
-        f_ub = kwargs.get('ub', None)
-        if f_lb and f_ub:
-            freq_idx = np.where((analyzer.frequencies > f_lb) * (analyzer.frequencies < f_ub))[0]
-        elif f_lb:
-            freq_idx = np.where(analyzer.frequencies > f_lb)[0]
-        elif f_ub:
-            freq_idx = np.where(analyzer.frequencies < f_ub)[0]
+            analyzer = nta.SeedCoherenceAnalyzer(ts_set1, ts_set2, lb=lb, ub=ub)
 
         n_seeds = ts_set1.data.shape[0] if ts_set1.data.ndim > 1 else 1
-        if n_seeds == 1: return np.mean(analyzer.coherence[:, freq_idx], -1)
+        if n_seeds == 1:
+            return np.mean(analyzer.coherence, -1)
         else:
             coh = []
             for seed in range(n_seeds):
-                coh.append(np.mean(analyzer.coherence[seed][:, freq_idx], -1)) # Averaging on the
-                                                                               # last dimension
+                # Averaging on the last dimension
+                coh.append(np.mean(analyzer.coherence[seed], -1))
 
         return coh
 
@@ -123,12 +165,35 @@ class MeanCoherenceMeasure(CoherenceMeasure):
         CoherenceMeasure.__init__(self)
 
     @staticmethod
-    def fit(ts_set1, ts_set2, **kwargs):
-        coh = CoherenceMeasure.fit(ts_set1, ts_set2, **kwargs)
+    def fit(ts_set1, ts_set2, lb=0, ub=None, **kwargs):
+        """
+        Returns the mean coherence value of all coherences the time series in ts_set1
+        and ts_set2.
+
+        @param ts_set1: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param ts_set2: ndarray
+        Time series matrix: n_samps x time_size
+
+        @param lb: float (optional)
+        @param ub: float (optional)
+        Lower and upper band of a pass-band into which the data will be
+        filtered. Default: lb=0, ub=None (max frequency)
+        Define a frequency band of interest
+
+        @param kwargs:
+        'NFFT'
+
+        @return: list
+        List of correlation values between each ts_set1 timeseries and the
+        timeseries in ts_set2
+        """
+        coh = CoherenceMeasure.fit(ts_set1, ts_set2, lb=lb, ub=ub, **kwargs)
         return np.mean(coh)
 
 
-class CrossCorrelationMeasure(object):
+class CrossCorrelationMeasure(TimeSeriesGroupMeasure):
 
     def __init__(self):
         pass
@@ -169,21 +234,20 @@ class SimilarityMeasureFactory(object):
     def __init__(self):
         pass
 
-    @classmethod
-    def create_method(cls, method_name):
+    @staticmethod
+    def create_method(method_name):
         """
-        Returns a Timeseries selection method class given its name.
-        Inputs
-        ------
-        method_name: a string
-        'crosscorrelation', 'correlation', 'coherence', 
+        Returns a TimeSeriesGroupMeasure class given its name.
+
+        @param method_name: string
+        Choices: 'crosscorrelation', 'correlation', 'coherence',
         'mean_coherence', 'mean_correlation'
 
-        See: http://nipy.org/nitime/examples/seed_analysis.html
-
-        Outputs
-        -------
+        @return:
         Timeseries selection method class, use its fit() method.
+
+        @note: See: http://nipy.org/nitime/examples/seed_analysis.html
+        for more information
         """
         if method_name == 'crosscorrelation' : return CrossCorrelationMeasure()
         if method_name == 'correlation'      : return      CorrelationMeasure()

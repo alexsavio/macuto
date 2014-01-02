@@ -14,6 +14,7 @@ import numpy as np
 import nibabel as nib
 import logging as log
 import scipy.ndimage as scn
+from macuto.nifti.image_info import check_have_same_spatial_geometry
 
 from ..strings import list_search
 
@@ -106,6 +107,27 @@ def create_mask_from(filelist):
     return (mask > 0).astype(int)
 
 
+def get_roilist_from_atlas(atlas):
+    """
+    Extract unique values from the atlas and returns them as an ordered list.
+
+    @param atlas: ndarray
+    Volume defining different ROIs.
+
+    @return: ndarray
+    An 1D array of roi values from atlas volume.
+
+    Note
+    ----
+    The roi with value 0 will be considered background so will be removed.
+    """
+    rois = np.unique(atlas)
+    rois = rois[np.nonzero(rois)]
+    rois.sort()
+
+    return rois
+
+
 def extract_timeseries(tsvol, roivol):
     """
     Partitions the timeseries in tsvol according to the
@@ -124,8 +146,7 @@ def extract_timeseries(tsvol, roivol):
     assert(tsvol.ndim == 4)
     assert(tsvol.shape[0:2] == roivol.shape)
 
-    rois = np.unique(roivol)
-    rois = rois[np.nonzero(rois)]
+    rois = get_roilist_from_atlas(roivol)
 
     tsmat = tsvol.reshape((np.prod(tsvol.shape[0:2]), tsvol.shape[3]))
 

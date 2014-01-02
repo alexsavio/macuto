@@ -27,7 +27,10 @@ from .image_info import (is_valid_coordinate,
                          are_compatible_imgs,
                          check_have_same_geometry,
                          have_same_geometry,
-                         have_same_shapes)
+                         have_same_spatial_geometry,
+                         have_same_shapes,
+                         check_have_same_spatial_geometry,
+                         get_sampling_interval,)
 
 from .coord_transform import (voxcoord_to_mm,
                               mm_to_voxcoord,
@@ -55,7 +58,10 @@ __ii_all__ = ['is_valid_coordinate',
               'are_compatible_imgs',
               'check_have_same_geometry',
               'have_same_geometry',
-              'have_same_shapes']
+              'have_same_shapes',
+              'have_same_spatial_geometry',
+              'check_have_same_spatial_geometry',
+              'get_sampling_interval']
 
 __ct_all__ = ['voxcoord_to_mm',
               'mm_to_voxcoord',

@@ -379,7 +379,7 @@ def register_aal_to_functional (subj_dir, aal_path):
 #-------------------------------------------------------------------------------
 '''
 import sys
-sys.path.append('/home/alexandre/Dropbox/Documents/phd/work/cobre')
+sys.path.append('/home/alexandre/Dropbox/Documents/work/cobre')
 
 import do_cobre_featsets as cs
 from sklearn.grid_search import ParameterGrid

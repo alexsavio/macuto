@@ -1,7 +1,7 @@
 numpy
 scipy
 scikit-learn
-pyside
 matplotlib
 nibabel
 h5py
+nitime

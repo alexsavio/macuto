@@ -151,9 +151,9 @@ class LAM(object):
         #some lattice operations
         for b in range(y_vars):
             for c in range(x_vars):
-                product      = self._Y[:,b] - self._X[:,c]
-                self.W_[b,c] = product.min()
-                self.M_[b,c] = product.max()
+                product      = self._Y[:, b] - self._X[:, c]
+                self.W_[b, c] = product.min()
+                self.M_[b, c] = product.max()
 
         return self.W_, self.M_
 
@@ -177,7 +177,7 @@ def _standardize(data):
 def _standardize_with_scaler(data):
     try:
         from sklearn.preprocessing import StandardScaler
-    except:
+    except Exception as exc:
         return _standardize(data)
 
     scaler = StandardScaler()
@@ -217,7 +217,7 @@ class ILSIA(object):
         from scipy.spatial.distance import chebyshev
 
         if not self._is_standardized:
-            self._data_z_ = _standardize_data_with_scaler(self._data)
+            self._data_z_ = _standardize_with_scaler(self._data)
             self._is_standardized = True
 
         n_samps, n_feats = self.shape()
@@ -243,7 +243,7 @@ class ILSIA(object):
         signs.append(np.sign(samp))
 
         #saving endmembers
-        em.append(self._data[idx,:])
+        em.append(self._data[idx, :])
 
         #indicates wich pixels is identified as an endmember
         idxs = []
@@ -259,16 +259,16 @@ class ILSIA(object):
                 is_new_lis = False
 
             #sample
-            samp      = self._data_z[i,:]
+            samp      = self._data_z[i, :]
             samp_sign = np.sign(samp)
 
             if np.sum(np.abs(samp)) > 0:
-                if (self._alpha <= 0):
+                if self._alpha <= 0:
                     #check if pixel is lattice dependent
                     y = np.zeros(n_feats)
 
                     #vector version
-                    samps = np.tile(samp, (n_feats,1))
+                    samps = np.tile(samp, (n_feats, 1))
                     y = np.max(wxx + samps, axis=1)
                     #for loop version
                     #for j in range(n_feats):
@@ -279,13 +279,13 @@ class ILSIA(object):
                     selected_em = 0
                     for e in range(p):
                         asigns = np.array(signs)
-                        sum_signs_em = np.sum(signs[e,:] == samp_sign)
+                        sum_signs_em = np.sum(asigns[e, :] == samp_sign)
                         if sum_signs_em > sum_signs:
                             sum_signs   = sum_signs_em
                             selected_em = e
 
                         alis = np.array(lis)
-                        if (norm(alis[selected_em,:]) < norm(samp)):
+                        if norm(alis[selected_em, :]) < norm(samp):
                             #substitute lis
                             new_lis = True
                             cnt  [i] = 1
@@ -293,7 +293,7 @@ class ILSIA(object):
                             idx  [selected_em] = i
                             lis  [selected_em] = samp
                             signs[selected_em] = np.sign(samp)
-                            em   [selected_em] = data[i,:]
+                            em   [selected_em] = self._data[i, :]
 
                         continue
 
@@ -304,7 +304,7 @@ class ILSIA(object):
                     wxx_conj = -wxx
 
                     for j in range(n_feats):
-                        x_sharp[j] = np.min(wxx_conj[:,j] + f)
+                        x_sharp[j] = np.min(wxx_conj[:,j] + self._f)
                         mu = np.max(wxx[:,j] + x_sharp)
                         mu = np.max(mu + samp)/2
 
@@ -312,42 +312,38 @@ class ILSIA(object):
                     for j in range(n_feats):
                         c1[j] = np.max(wxx[:,j] + mu + x_sharp)
 
-                    if (chebyshev(c1, samp) < self._alpha):
+                    if chebyshev(c1, samp) < self._alpha:
 
                         #find the most similar and check the norms
                         sum_signs   = 0
                         selected_em = 0
                         for e in range(p):
                             asigns = np.array(signs)
-                            sum_signs_em = np.sum(signs[e,:] == samp_sign)
+                            sum_signs_em = np.sum(asigns[e, :] == samp_sign)
                             if sum_signs_em > sum_signs:
                                 sum_signs   = sum_signs_em
                                 selected_em = e
 
                         alis = np.array(lis)
                         if norm(alis[selected_em, :] < norm(samp)):
-                            #substitute lis
-                            new_list = True
-
-                        if (norm(alis[selected_em,:]) < norm(f)):
                             # substitute LIS
-                            new_lis = True
+                            is_new_lis = True
                             cnt  [i] = 1
                             cnt  [idx[selected_em]] = 0
                             idx  [selected_em] = i
                             lis  [selected_em] = samp
                             signs[selected_em] = np.sign(samp)
-                            em   [selected_em] = data[i,:]
+                            em   [selected_em] = self._data[i, :]
 
                         continue
 
                 #Max-Min dominance
                 mu1 = 0
                 mu2 = 0
-                for j in range(1,p+2):
+                for j in range(1, p+2):
                     s1 = np.zeros(n_feats)
                     s2 = np.zeros(n_feats)
-                    for k in range(1,p+2):
+                    for k in range(1, p+2):
                         if j != k:
                             if j == p+1: vi = samp
                             else:        vi = lis[j]
@@ -404,6 +400,9 @@ class EIHA(object):
         return self._data.shape
 
     def fit(self):
+
+        from numpy.linalg import norm
+
         if not self._is_standardized:
             self._data_z_ = _standardize_with_scaler(self._data)
             self._is_standardized = True
@@ -417,7 +416,7 @@ class EIHA(object):
         extrems = []
         signs   = []
         idxs    = []
-        samp    = self._data[0,:]
+        samp    = self._data[0, :]
         idx     = np.random.randint(0, n_samps)
 
         idxs.append   (idx)
@@ -583,7 +582,7 @@ class HFC(object):
                 sigma_sqr = (2*lcov[j]/n_samps) + (2*lcorr[j]/n_samps) + (2/n_samps) * lcov[j] * lcorr[j]
                 sigma = sp.sqrt(sigma_sqr)
 
-                print sigma
+                print(sigma)
                 # stats.norm.ppf not valid with sigma
                 # using the module of the complex number : abs(sigma)
                 tau = -stats.norm.ppf(pf, 0, abs(sigma))
@@ -769,8 +768,8 @@ class CCA(object):
                 p1s[i]    = v[    p, selector[i]]
 
             sol = np.linalg.solve(ps, p1s)
-            xs  = np.dot(v, np.append(sol,1))
-            if xs.min() > -t:
+            xs  = np.dot(v, np.append(sol, 1))
+            if xs.min() > -self.t:
                 em[num_em, :] = xs
                 num_em += 1
 
@@ -852,7 +851,7 @@ class ATGP(object):
                     mymax = val
                     idx   = j
             # The next chosen pixel is the most different from the already chosen ones
-            em[:,i+1] = self._data[idx, :]
+            em[:, i+1] = self._data[idx, :]
             cnt[idx]  = 1
             idxs.append(idx)
 

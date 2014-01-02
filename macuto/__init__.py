@@ -30,9 +30,9 @@ __version__ = '0.1-git'
 
 __all__ = ['macuto', 'macuto.classification', 'macuto.nifti',]
 
-from .io import(save_varlist_to_shelve,
-                save_varlist_to_mat,
-                save_varlist_to_hdf5,
+from .io import(save_variables_to_hdf5,
+                save_variables_to_mat,
+                save_variables_to_shelve,
                 ExportData,
                 load_variables_from_hdf5,
                 load_varnames_from_hdf5,)
@@ -61,7 +61,12 @@ from .files import (add_extension_if_needed,
                     create_subjects_file,
                     parse_subjects_list,
                     join_path_to_filelist,
-                    remove_all)
+                    remove_all,
+                    get_temp_file,
+                    count_lines,
+                    file_size,
+                    fileobj_size,
+                    ux_file_len)
 
 from .render import (show_3slices,
                      show_contour,
@@ -86,9 +91,9 @@ from .threshold import (apply_threshold,
                         threshold)
 
 
-__io_all__ = ['save_varlist_to_shelve',
-              'save_varlist_to_mat',
-              'save_varlist_to_hdf5',
+__io_all__ = ['save_variables_to_shelve',
+              'save_variables_to_mat',
+              'save_variables_to_hdf5',
               'ExportData',
               'load_varnames_from_hdf5',
               'load_variables_from_hdf5']
@@ -115,7 +120,12 @@ __files_all__ = ['add_extension_if_needed',
                  'create_subjects_file',
                  'parse_subjects_list',
                  'join_path_to_filelist',
-                 'remove_all']
+                 'remove_all',
+                 'get_temp_file',
+                 'count_lines',
+                 'file_size',
+                 'fileobj_size',
+                 'ux_file_len']
 
 __math_all__ = ['makespread',
                 'takespread']
@@ -141,7 +151,7 @@ __thresh_all__ = ['apply__threshold',
                   'robust_max',
                   'robust_min',
                   'robust_range_threshold',
-                  'threshold',]
+                  'threshold']
 
 
 __all__.extend(__io_all__)

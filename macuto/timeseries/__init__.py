@@ -19,8 +19,7 @@ measure similarities between sets of timeseries.
 __all__ = []
 
 
-from .selection import (TimeseriesSelector,
-                        MeanTimeseries,
+from .selection import (MeanTimeseries,
                         EigenTimeseries,
                         ILSIATimeseries,
                         CCATimeseries,
@@ -30,7 +29,7 @@ from .selection import (TimeseriesSelector,
                         )
 
 
-from .similarity_measure import (SimilarityMeasure,
+from .similarity_measure import (TimeSeriesGroupMeasure,
                                  CorrelationMeasure,
                                  MeanCorrelationMeasure,
                                  CoherenceMeasure,
@@ -39,6 +38,10 @@ from .similarity_measure import (SimilarityMeasure,
                                  )
 
 
+from .connectivity import (create_connectivity_matrix,
+                           select_timeseries,
+                           calculate_similarities)
+
 __sel_all__ = ['TimeseriesSelector',
                'MeanTimeseries',
                'EigenTimeseries',
@@ -46,8 +49,7 @@ __sel_all__ = ['TimeseriesSelector',
                'CCATimeseries',
                'FilteredTimeseries',
                'MeanAndFilteredTimeseries',
-               'EigenAndFilteredTimeseries',
-               ]
+               'EigenAndFilteredTimeseries',]
 
 
 __sm_all__ = ['SimilarityMeasure',
@@ -55,8 +57,13 @@ __sm_all__ = ['SimilarityMeasure',
               'MeanCorrelationMeasure',
               'CoherenceMeasure',
               'MeanCoherenceMeasure',
-              'CrossCorrelationMeasure',
-              ]
+              'CrossCorrelationMeasure',]
 
+__conn_all__ = ['create_connectivity_matrix',
+                'select_timeseries',
+                'calculate_similarities']
+
+__all__.extend(__conn_all__)
 __all__.extend(__sel_all__)
 __all__.extend(__sm_all__)
+
