@@ -34,13 +34,14 @@ class MeanTimeseries(TimeSeriesSelector):
     def fit_transform(ts_set, **kwargs):
         """
         Returns the average timeseries from an array.
-        #---------------------------------------------------------------------------
-        Input:   
-        -----
-        ts_set: ndarray
-            n_samps x time_size. Time series matrix.
 
-        Output:  mean timeseries: 1 x time_size
+        @param ts_set: ndarray
+         n_samps x time_size. Time series matrix.
+
+        @param kwargs:
+
+        @return: ndarray
+        mean timeseries: 1 x time_size
         """
         return ts_set.mean(axis=0)
 
@@ -73,6 +74,7 @@ class EigenTimeseries(TimeSeriesSelector):
         if comps_perc is not None:
             if comps_perc > 1:
                 comps_perc /= 100
+
             n_comps = np.floor(ts_set.shape[0] * comps_perc)
 
         pca = PCA(n_comps)
@@ -161,15 +163,11 @@ class FilteredTimeseries(TimeSeriesSelector):
     def fit_transform(ts_set, **kwargs):
         """
         Returns frequency filtered timeseries from ts_set.
-        #---------------------------------------------------------------------------
-        Input:   
-        -----
-        ts_set: ndarray
-            n_samps x time_size. Time series matrix.
 
-        Kwargs
-        ------
+        @param ts_set: ndarray
+        n_samps x time_size. Time series matrix.
 
+        @param kwargs:
         TR: float
             The sampling interval
 
@@ -216,10 +214,10 @@ class FilteredTimeseries(TimeSeriesSelector):
         See: http://nipy.org/nitime/api/generated/nitime.analysis.spectral.html#nitime.analysis.spectral.FilterAnalyzer
         for more details and named arguments.
 
-        Returns:
-        -------
+        @return:
         filtered timeseries : [n_filters * n_samps] x time_size.
-        Each whole set of filtered tseries will be pushed to the end of the the
+
+        Each whole set of filtered tseries will be pushed to the end of the
         output array.
 
         """
@@ -357,24 +355,25 @@ class TimeseriesSelectionFactory(TimeSeriesSelector):
     @staticmethod
     def create_method(method_name):
         """
-        Returns a Timeseries selection method class given its name.
-        Inputs
-        ------
-        method_name: string
-            Name of the method: 'mean', 'eigen', 'ilsia', 'cca'
-                'filtered', 'mean_and_filtered', 'eigen_and_filtered'
-        Output:
-            Timeseries selection method class, use its fit_transform() method.
-        """
-        if method_name == 'mean' : return  MeanTimeseries()
-        if method_name == 'eigen': return EigenTimeseries()
-        if method_name == 'ilsia': return ILSIATimeseries()
-        if method_name == 'cca'  : return   CCATimeseries()
+        Returns a Timeseries selection method fit function given a method name.
 
-        if method_name == 'filtered'          : return         FilteredTimeseries()
-        if method_name == 'mean_and_filtered' : return  MeanAndFilteredTimeseries()
-        if method_name == 'eigen_and_filtered': return EigenAndFilteredTimeseries()
-        return MeanTimeseries()
+        @param method_name: string
+            Choices for name of the method: 'mean', 'eigen', 'ilsia', 'cca'
+                'filtered', 'mean_and_filtered', 'eigen_and_filtered'
+
+        @return:
+            Timeseries selection method function
+        """
+        selector_class = MeanTimeseries
+        if method_name == 'mean' : selector_class = MeanTimeseries
+        if method_name == 'eigen': selector_class =  EigenTimeseries
+        if method_name == 'ilsia': selector_class =  ILSIATimeseries
+        if method_name == 'cca'  : selector_class =    CCATimeseries
+
+        if method_name == 'filtered'          : selector_class =          FilteredTimeseries
+        if method_name == 'mean_and_filtered' : selector_class =   MeanAndFilteredTimeseries
+        if method_name == 'eigen_and_filtered': selector_class =  EigenAndFilteredTimeseries
+        return selector_class.fit_transform()
 
 #TODO?
 ##-------------------------------------------------------------------------------

@@ -95,6 +95,9 @@ def create_connectivity_matrix(func_img, atlas,
         For each value in range(lb, ub+1) a lagged version of each
         extracted ts will be included in the ts set. Default: {'lb': -3, 'ub': +3}
 
+    @note: See macuto.timeseries.FilteredTimeseries docstrings to get more kwargs related
+    to selected timeseries filtering methods.
+
     @return: ndarray
     Functional connectivity matrix of size N x N, where N is the number of
     ROIs in atlas.
@@ -238,6 +241,9 @@ def select_timeseries(ts_set, selection_method='eigen', TR=2, **kwargs):
             For each value in range(lb, ub+1) a lagged version of each
             extracted ts will be included in the ts set. Default: {'lb': -3, 'ub': +3}
 
+    @note: See macuto.timeseries.FilteredTimeseries docstrings to get more kwargs related
+    to selected timeseries filtering methods.
+
     @return: dict
     Dictionary with the same keys as ts_set, where each item in ts_set is
     a transformed/reduced set of timeseries.
@@ -269,9 +275,7 @@ def calculate_similarities(tseries, similarity_measure, **kwargs):
              'mean_coherence', 'mean_correlation'
     See .macuto.timeseries.similarity_measure for more information.
 
-
     param @kwargs: dict with the following keys, some are optional
-
 
     @return: ndarray
     A NxN ndarray with the connectivity cross-measures between all timeseries

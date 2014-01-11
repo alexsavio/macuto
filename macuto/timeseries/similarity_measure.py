@@ -199,7 +199,7 @@ class CrossCorrelationMeasure(TimeSeriesGroupMeasure):
         pass
 
     @staticmethod
-    def fit(ts_set1, ts_set2, **kwargs):
+    def fit(ts_set1, ts_set2, lb=0, ub=None, **kwargs):
         """
         Returns a matrix with pearson correlation between pairs all time series in both sets.
         #---------------------------------------------------------------------------
@@ -244,16 +244,17 @@ class SimilarityMeasureFactory(object):
         'mean_coherence', 'mean_correlation'
 
         @return:
-        Timeseries selection method class, use its fit() method.
+        Timeseries selection method function
 
         @note: See: http://nipy.org/nitime/examples/seed_analysis.html
         for more information
         """
-        if method_name == 'crosscorrelation' : return CrossCorrelationMeasure()
-        if method_name == 'correlation'      : return      CorrelationMeasure()
-        if method_name == 'coherence'        : return        CoherenceMeasure()
-        if method_name == 'mean_coherence'   : return    MeanCoherenceMeasure()
-        if method_name == 'mean_correlation' : return  MeanCorrelationMeasure()
+        measure_class = CorrelationMeasure
+        if method_name == 'crosscorrelation' : measure_class =  CrossCorrelationMeasure
+        if method_name == 'correlation'      : measure_class =       CorrelationMeasure
+        if method_name == 'coherence'        : measure_class =         CoherenceMeasure
+        if method_name == 'mean_coherence'   : measure_class =     MeanCoherenceMeasure
+        if method_name == 'mean_correlation' : measure_class =   MeanCorrelationMeasure
 
-        return     CorrelationMeasure()
+        return measure_class.fit()
 

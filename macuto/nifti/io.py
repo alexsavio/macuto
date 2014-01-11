@@ -9,6 +9,8 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
+import os
+
 import h5py
 import numpy as np
 import nibabel as nib
@@ -64,20 +66,29 @@ def spatialimg_to_hdf(fname, spatial_img, h5path='/img', append=True):
     >>> 'a' Read/write if exists, create otherwise (default)
 
     """
-    mode = 'w'
-    if append:
-        mode = 'a'
+    if not os.path.exists(fname):
+        mode = 'w'
+    else:
+        if append:
+            mode = 'a'
 
     with h5py.File(fname, mode) as f:
 
-        h5img = f.create_group(h5path)
-        h5img['data']   = spatial_img.get_data()
-        h5img['extra']  = spatial_img.get_extra()
-        h5img['affine'] = spatial_img.get_affine()
+        try:
+            h5img = f.create_group(h5path)
+            h5img['data'] = spatial_img.get_data()
+            h5img['affine'] = spatial_img.get_affine()
 
-        hdr = spatial_img.get_header()
-        for k in list(hdr.keys()):
-            h5img['data'].attrs[k] = hdr[k]
+            if hasattr(h5img, 'get_extra'):
+                h5img['extra'] = spatial_img.get_extra()
+
+            hdr = spatial_img.get_header()
+            for k in list(hdr.keys()):
+                h5img['data'].attrs[k] = hdr[k]
+
+        except ValueError as ve:
+            log.error('Error creating group ' + h5path)
+            print(str(ve))
 
 
 def hdfgroup_to_nifti1image(fname, h5path):

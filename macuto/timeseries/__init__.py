@@ -49,7 +49,7 @@ __sel_all__ = ['TimeseriesSelector',
                'CCATimeseries',
                'FilteredTimeseries',
                'MeanAndFilteredTimeseries',
-               'EigenAndFilteredTimeseries',]
+               'EigenAndFilteredTimeseries', ]
 
 
 __sm_all__ = ['SimilarityMeasure',
@@ -57,7 +57,7 @@ __sm_all__ = ['SimilarityMeasure',
               'MeanCorrelationMeasure',
               'CoherenceMeasure',
               'MeanCoherenceMeasure',
-              'CrossCorrelationMeasure',]
+              'CrossCorrelationMeasure', ]
 
 __conn_all__ = ['create_connectivity_matrix',
                 'select_timeseries',

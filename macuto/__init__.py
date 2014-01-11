@@ -28,7 +28,7 @@ the Python community.
 
 __version__ = '0.1-git'
 
-__all__ = ['macuto', 'macuto.classification', 'macuto.nifti',]
+__all__ = ['macuto', 'macuto.classification', 'macuto.nifti', 'macuto.timeseries']
 
 from .io import(save_variables_to_hdf5,
                 save_variables_to_mat,
