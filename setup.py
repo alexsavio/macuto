@@ -2,7 +2,12 @@
 
 import os
 import ast
-import configparser
+
+try:
+	import configparser
+except:
+	import ConfigParser as configparser
+
 from distutils.core import setup
 
 def ast_dict_items(adict):
@@ -20,7 +25,7 @@ def ast_dict_items(adict):
     return adict
 
 
-def get_config_dictionary(config_file='setup.cfg', sections=['metadata',
+def get_config_dictionary(config_file='./setup.cfg', sections=['metadata',
                                                              'global',
                                                              'files']):
     """
@@ -37,19 +42,19 @@ def get_config_dictionary(config_file='setup.cfg', sections=['metadata',
 
     """
     config = configparser.ConfigParser()
-    with open('setup.cfg') as f:
-        config.read_file(f)
+    with open(config_file) as f:
+        config.readfp(f)
 
     cfgdict = {}
     for s in sections:
         sdict = {}
         try:
-            sdict = dict(config[s])
+            sdict = dict(config.items(s))
 
-        except KeyError as ke:
+        except:
             print('Could not find section: ' + s +
-                  ' in file: ' + os.abspath(config_file))
-            print(str(ke))
+                  ' in file: ' + os.path.abspath(config_file))
+            #print(str(ke))
 
         cfgdict.update(ast_dict_items(sdict))
 

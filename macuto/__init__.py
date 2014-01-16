@@ -90,6 +90,8 @@ from .threshold import (apply_threshold,
                         robust_range_threshold,
                         threshold)
 
+from .commands import (condor_call,
+                       condor_submit)
 
 __io_all__ = ['save_variables_to_shelve',
               'save_variables_to_mat',
@@ -153,10 +155,13 @@ __thresh_all__ = ['apply__threshold',
                   'robust_range_threshold',
                   'threshold']
 
+__cmds_all__ = ['condor_call',
+                'condor_submit']
 
 __all__.extend(__io_all__)
 __all__.extend(__plot_all__)
 __all__.extend(__math_all__)
+__all__.extend(__cmds_all__)
 __all__.extend(__files_all__)
 __all__.extend(__render_all__)
 __all__.extend(__thresh_all__)

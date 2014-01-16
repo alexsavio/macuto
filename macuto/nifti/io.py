@@ -37,7 +37,40 @@ def save_nibabel(ofname, vol, affine, header=None):
     nib.save(ni, ofname)
 
 
-def spatialimg_to_hdf(fname, spatial_img, h5path='/img', append=True):
+def spatialimg_to_hdfgroup(h5group, spatial_img):
+    """
+    Saves a Nifti1Image into an HDF5 group.
+
+    @param h5group: h5py Group
+    Output HDF5 file path
+
+    @param spatial_img: nibabel SpatialImage
+    Image to be saved
+
+    @param h5path: string
+    HDF5 group path where the image data will be saved.
+    Datasets will be created inside the given group path:
+    'data', 'extra', 'affine', the header information will
+    be set as attributes of the 'data' dataset.
+
+    """
+    try:
+        h5group['data'] = spatial_img.get_data()
+        h5group['affine'] = spatial_img.get_affine()
+
+        if hasattr(h5group, 'get_extra'):
+            h5group['extra'] = spatial_img.get_extra()
+
+        hdr = spatial_img.get_header()
+        for k in list(hdr.keys()):
+            h5group['data'].attrs[k] = hdr[k]
+
+    except ValueError as ve:
+        log.error('Error creating group ' + h5group.name)
+        print(str(ve))
+
+
+def spatialimg_to_hdfpath(fname, spatial_img, h5path='/img', append=True):
     """
     Saves a Nifti1Image into an HDF5 file.
 
@@ -66,32 +99,22 @@ def spatialimg_to_hdf(fname, spatial_img, h5path='/img', append=True):
     >>> 'a' Read/write if exists, create otherwise (default)
 
     """
-    if not os.path.exists(fname):
-        mode = 'w'
-    else:
+    mode = 'w'
+    if os.path.exists(fname):
         if append:
             mode = 'a'
 
     with h5py.File(fname, mode) as f:
-
         try:
             h5img = f.create_group(h5path)
-            h5img['data'] = spatial_img.get_data()
-            h5img['affine'] = spatial_img.get_affine()
-
-            if hasattr(h5img, 'get_extra'):
-                h5img['extra'] = spatial_img.get_extra()
-
-            hdr = spatial_img.get_header()
-            for k in list(hdr.keys()):
-                h5img['data'].attrs[k] = hdr[k]
+            spatialimg_to_hdfgroup(h5img, spatial_img)
 
         except ValueError as ve:
             log.error('Error creating group ' + h5path)
             print(str(ve))
 
 
-def hdfgroup_to_nifti1image(fname, h5path):
+def hdfpath_to_nifti1image(fname, h5path):
     """
     Returns a nibabel Nifti1Image from a HDF5 group datasets
 
@@ -104,13 +127,31 @@ def hdfgroup_to_nifti1image(fname, h5path):
     @return: nibabel Nifti1Image
     """
     with h5py.File(fname, 'r') as f: 
+        return hdfgroup_to_nifti1image(f[h5path])
 
-        h5img  = f[h5path]
-        data   = h5img['data'][()]
-        extra  = h5img['extra'][()]
-        affine = h5img['affine'][()]
 
-        header = get_nifti1hdr_from_h5attrs(h5img['data'].attrs)
+def hdfgroup_to_nifti1image(h5group):
+    """
+    Returns a nibabel Nifti1Image from a HDF5 group datasets
+
+    @param fname: h5py.Group
+    HDF5 group
+
+    @return: nibabel Nifti1Image
+    """
+    try:
+        data   = h5group['data'][:]
+        affine = h5group['affine'][:]
+
+        extra = None
+        if 'extra' in h5group:
+            extra = h5group['extra'][:]
+
+        header = get_nifti1hdr_from_h5attrs(h5group['data'].attrs)
+
+    except KeyError as ke:
+        log.error('Could not read Nifti1Image datasets from ' + h5group.name)
+        print(str(ke))
 
     img = nib.Nifti1Image(data, affine, header=header, extra=extra)
 
@@ -133,3 +174,25 @@ def get_nifti1hdr_from_h5attrs(h5attrs):
 
     return hdr
 
+
+def all_childnodes_to_nifti1img(h5group):
+    """
+    Returns in a list all images found under h5group.
+
+    @param h5group: h5py.Group
+    HDF group
+
+    @return: list of nifti1Image
+    """
+    child_nodes = []
+    def append_parent_if_dataset(name, obj):
+        if isinstance(obj, h5py.Dataset):
+            if name.split('/')[-1] == 'data':
+                child_nodes.append(obj.parent)
+
+    vols = []
+    h5group.visititems(append_parent_if_dataset)
+    for c in child_nodes:
+        vols.append(hdfgroup_to_nifti1image(c))
+
+    return vols
