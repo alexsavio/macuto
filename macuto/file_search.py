@@ -11,6 +11,7 @@
 
 import re
 import os
+import glob
 from .strings import list_search, list_filter
 
 
@@ -126,3 +127,18 @@ def iter_recursive_find(folder_path, *regex):
                          outlist.append(os.path.join(root, f))
             if len(outlist) == len(regex):
                 yield outlist
+
+
+def find_match(base_directory, regex=''):
+    """
+    Uses glob to find all files that match the regex
+    in base_directory.
+
+    @param base_directory: string
+
+    @param regex: string
+
+    @return: list
+
+    """
+    return glob.glob(os.path.join(base_directory, regex))
