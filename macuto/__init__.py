@@ -93,6 +93,9 @@ from .threshold import (apply_threshold,
 from .commands import (condor_call,
                        condor_submit)
 
+from .databuffer import (HdfDataBuffer,
+                         NumpyHDFStore)
+
 __io_all__ = ['save_variables_to_shelve',
               'save_variables_to_mat',
               'save_variables_to_hdf5',
@@ -158,7 +161,11 @@ __thresh_all__ = ['apply__threshold',
 __cmds_all__ = ['condor_call',
                 'condor_submit']
 
+__dbf_all__ = ['HdfDataBuffer',
+               'NumpyHDFStore']
+
 __all__.extend(__io_all__)
+__all__.extend(__dbf_all__)
 __all__.extend(__plot_all__)
 __all__.extend(__math_all__)
 __all__.extend(__cmds_all__)
