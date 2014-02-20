@@ -6,13 +6,12 @@ History
 
 This project was started in 2010 as a set of disorganized tools
 of Alexandre Savio's thesis. Once he finished writing it, he started organizing
-specific knowledge of more or less complex tasks using different kinds
-of Python modules.
+specific knowledge of more or less complex tasks using different Python modules.
 
 People
 ------
 
 .. hlist::
 
-  * `Alexandre Savio (alexsavio@gmail.com) <http://www.ehu.es/ccwintco/index.php/Usuario:Alexsavio>`_
+`Alexandre Savio (alexsavio@gmail.com) <http://www.ehu.es/ccwintco/index.php/Usuario:Alexsavio>`_
 
