@@ -40,10 +40,6 @@ from .file_search import (get_file_list,
                           recursive_find,
                           iter_recursive_find,)
 
-from .plot import (save_fig_to_png,
-                   plot_results,
-                   subplot_this)
-
 from .strings import (filter_objlist,
                       append_to_keys,
                       pretty_mapping,
@@ -155,11 +151,7 @@ __render_all__ = ['show_3slices',
                   'slicesdir_connectivity_matrices',
                   'slicesdir_paired_overlays',]
 
-__plot_all__ = ['save_fig_to_png',
-                'plot_results',
-                'subplot_this']
-
-__thresh_all__ = ['apply__threshold',
+__thresh_all__ = ['apply_threshold',
                   'binarise',
                   'find_histogram',
                   'find_thresholds',
@@ -179,7 +171,6 @@ __dbf_all__ = ['HdfDataBuffer',
 
 __all__.extend(__io_all__)
 __all__.extend(__dbf_all__)
-__all__.extend(__plot_all__)
 __all__.extend(__math_all__)
 __all__.extend(__cmds_all__)
 __all__.extend(__files_all__)

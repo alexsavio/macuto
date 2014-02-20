@@ -40,6 +40,8 @@ from .features import (calculate_hist3d,
                        pearson_correlation,
                        welch_ttest)
 
+from .plot import (save_fig_to_png,
+                   plot_results)
 
 __all_skl__ = ['get_clfmethod',
                'get_cv_method',
@@ -70,7 +72,11 @@ __all_feats__ = ['calculate_hist3d',
                  'pearson_correlation',
                  'welch_ttest']
 
+__all_plot__ = ['save_fig_to_png',
+                'plot_results']
+
 __all__.extend(__all_io__)
 __all__.extend(__all_skl__)
 __all__.extend(__all_feats__)
 __all__.extend(__all_rslts__)
+__all__.extend(__all_plot__)
