@@ -13,5 +13,5 @@ People
 
 .. hlist::
 
-`Alexandre Savio (alexsavio@gmail.com) <http://www.ehu.es/ccwintco/index.php/Usuario:Alexsavio>`_
+`Alexandre Savio <http://www.ehu.es/ccwintco/index.php/Usuario:Alexsavio>`_
 
