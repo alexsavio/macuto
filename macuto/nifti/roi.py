@@ -195,7 +195,7 @@ def extract_timeseries_list(tsvol, roivol, maskvol=None,
     @param roivol: ndarray
     3D ROIs volume
 
-    @param maskvol: ndarrat
+    @param maskvol: ndarray
     3D mask volume
 
     @param zeroe: bool
