@@ -1,6 +1,6 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
+
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
@@ -79,7 +79,7 @@ def have_same_spatial_geometry(fname1, fname2):
     """
     img1shape = nib.load(fname1).get_shape()
     img2shape = nib.load(fname2).get_shape()
-    return img1shape[0:2] == img2shape[0:2]
+    return img1shape[:3] == img2shape[:3]
 
 
 def check_have_same_geometry(fname1, fname2):

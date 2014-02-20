@@ -1,6 +1,6 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
+
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU

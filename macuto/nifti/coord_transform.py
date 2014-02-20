@@ -1,6 +1,6 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
+
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
@@ -12,6 +12,7 @@
 import nibabel as nib
 from nipy.io.nifti_ref import nifti2nipy
 from nipy.core.reference.array_coords import ArrayCoordMap
+
 
 def voxcoord_to_mm(cm, i, j, k):
     '''

@@ -1,6 +1,6 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
+
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
@@ -14,7 +14,7 @@ import numpy as np
 import nibabel as nib
 import logging as log
 import scipy.ndimage as scn
-from macuto.nifti.image_info import check_have_same_spatial_geometry
+from collections import OrderedDict
 
 from ..strings import list_search
 
@@ -128,10 +128,12 @@ def get_roilist_from_atlas(atlas):
     return rois
 
 
-def extract_timeseries(tsvol, roivol):
+def extract_timeseries_dict(tsvol, roivol, maskvol=None,
+                            zeroe=False, roi_list=None):
     """
     Partitions the timeseries in tsvol according to the
-    ROIs in roivol.
+    ROIs in roivol. If given, will use a mask to exclude any voxel
+    outside of it.
 
     @param tsvol: ndarray
     4D timeseries volume
@@ -139,19 +141,93 @@ def extract_timeseries(tsvol, roivol):
     @param roivol: ndarray
     3D ROIs volume
 
+    @param maskvol: ndarrat
+    3D mask volume
+
+    @param zeroe: bool
+    If true will remove the null timeseries voxels.
+
+    @param roi_list: list of ROI values (int?)
+    List of the values of the ROIs to indicate the
+    order and which ROIs will be processed.
+
     @return: dict
     A dict with the timeseries as items and
     keys as the ROIs voxel values.
     """
     assert(tsvol.ndim == 4)
-    assert(tsvol.shape[0:2] == roivol.shape)
+    assert(tsvol.shape[:3] == roivol.shape)
 
-    rois = get_roilist_from_atlas(roivol)
+    if roi_list is None:
+        roi_list = get_roilist_from_atlas(roivol)
 
-    tsmat = tsvol.reshape((np.prod(tsvol.shape[0:2]), tsvol.shape[3]))
+    ts_dict = OrderedDict()
 
-    ts_dict = {}
-    for r in rois:
-        ts_dict[r] = tsmat[roivol == r, :]
+    for r in roi_list:
+        if maskvol is not None:
+            #get all masked time series within this roi r
+            ts = tsvol[(roivol == r) * (maskvol > 0), :]
+        else:
+            #get all time series within this roi r
+            ts = tsvol[roivol == r, :]
+
+        #remove zeroed time series
+        ts = ts[ts.sum(axis=1) != 0, :]
+
+        if len(ts) == 0:
+            ts = np.zeros(tsvol.zeros(tsvol.shape[-1]))
+
+        ts_dict[r] = ts
 
     return ts_dict
+
+
+def extract_timeseries_list(tsvol, roivol, maskvol=None,
+                            zeroe=False, roi_list=None):
+    """
+    Partitions the timeseries in tsvol according to the
+    ROIs in roivol. If given, will use a mask to exclude any voxel
+    outside of it.
+
+    @param tsvol: ndarray
+    4D timeseries volume
+
+    @param roivol: ndarray
+    3D ROIs volume
+
+    @param maskvol: ndarrat
+    3D mask volume
+
+    @param zeroe: bool
+    If true will remove the null timeseries voxels.
+
+    @param roi_list: list of ROI values (int?)
+    List of the values of the ROIs to indicate the
+    order and which ROIs will be processed.
+
+    @return: list
+    A list with the timeseries arrays as items
+    """
+    assert(tsvol.ndim == 4)
+    assert(tsvol.shape[:3] == roivol.shape)
+
+    if roi_list is None:
+        roi_list = get_roilist_from_atlas(roivol)
+
+    ts_list = []
+    for r in roi_list:
+        if maskvol is None:
+            #get all masked time series within this roi r
+            ts = tsvol[(roivol == r) * (maskvol > 0), :]
+        else:
+            #get all time series within this roi r
+            ts = tsvol[roivol == r, :]
+
+        #remove zeroed time series
+        ts = ts[ts.sum(axis=1) != 0, :]
+        if len(ts) == 0:
+            ts = np.zeros(tsvol.zeros(tsvol.shape[-1]))
+
+        ts_list.append(ts)
+
+    return ts_list

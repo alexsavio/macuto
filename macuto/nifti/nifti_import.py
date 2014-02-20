@@ -1,6 +1,6 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
+
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
@@ -134,15 +134,16 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, smoothmm=0,
                             outdtype=None):
     """
     From the list of absolute paths to nifti files, creates a Numpy array
-    with the data.
+    with the masked data.
 
     Arguments:
     ----------
-    @param nii_filelist:  list of strings
+    @param nii_filelist: list of strings
     List of absolute file paths to nifti files. All nifti files must have the
     same shape.
 
-    @param mask_file: path to a Nifti mask file.
+    @param mask_file: string
+    Path to a Nifti mask file.
     Should be the same shape as the files in nii_filelist.
 
     @param smoothmm: int
@@ -158,8 +159,9 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, smoothmm=0,
     Returns:
     --------
     @return
-    outmat: Numpy array with shape N x prod(vol.shape)
-            containing the N files as flat vectors.
+    outmat: Numpy array with shape N x mask_voxels
+            containing the N files as flat vectors with the data within
+            the mask file.
 
     mask_indices: Tuple with the 3D spatial indices of the masking voxels, for
     reshaping with vol_shape and remapping.

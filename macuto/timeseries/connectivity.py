@@ -1,135 +1,315 @@
-# coding=utf-8
-#-------------------------------------------------------------------------------
-#License GNU/GPL v3
-#Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
-#Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
-#Universidad del Pais Vasco UPV/EHU
-#
-#2013, Alexandre Manhaes Savio
-#Use this at your own risk!
-#-------------------------------------------------------------------------------
 
+import numpy as np
 from collections import OrderedDict
 from exceptions import ArithmeticError
-import nitime.fmri.io as fio
 
-from ..nifti.roi import get_roilist_from_atlas, extract_timeseries
+import nitime.fmri.io as tsio
 
-from .selection import TimeseriesSelectionFactory
-from .similarity_measure import *
+from ..nifti.roi import extract_timeseries_list, \
+                        extract_timeseries_dict, \
+                        get_roilist_from_atlas
+
+from .selection import TimeseriesSelectorFactory
+from .similarity_measure import SimilarityMeasureFactory
 
 
-def create_connectivity_matrix(func_img, atlas,
-                               selection_method='eigen', similarity_measure='coherence',
-                               TR=2, **kwargs):
+class FunctionalConnectivity(object):
     """
-    Extract from preprocessed fMRI a functional connectivity matrix given an atlas
-    and procedure parameters.
 
-    @param func_img: nibabel SpatialImage
-    Time series MRI volume.
+    """
+    def __init__(self, func_vol, atlas, mask=None, TR=2, roi_list=None,
+                 selection_method='eigen', similarity_measure='correlation'):
+        """
+        :param func_vol: nibabel SpatialImage
+        Time series MRI volume.
 
-    @param atlas: nibabel SpatialImage
-    Volume defining the different ROIs.
-    It will be accessed from lower to higher ROI number, that's the order in the
-    connectivity matrix.
-    It must be in the same space as func_vol.
+        @param atlas: nibabel SpatialImage
+        3D Atlas volume with discrete ROI values
+        It will be accessed from lower to greater ROI value, that
+        will be the order in the connectivity matrix, unless you
+        set roi_list with the order of appearance you want.
+        It must be in the same space as func_vol.
 
-    @param selection_method: string
-    Defines the timeseries selection method to be applied within each ROI.
-    Choices: 'mean', 'eigen', 'ilsia', 'cca'
-             'filtered', 'mean_and_filtered', 'eigen_and_filtered'
-    See .macuto.timeseries.selection more information.
+        @param mask: nibabel SpatialImage
+        Binary 3D mask volume, e.g., GM mask to extract ROI timeseries only from GM.
 
-    @param similarity_measure: string
-    Defines the similarity measure method to be used between selected timeseries.
-    Choices: 'crosscorrelation', 'correlation', 'coherence',
-             'mean_coherence', 'mean_correlation'
-    See .macuto.timeseries.similarity_measure for more information.
+        :param atlas: nibabel SpatialImage
+        3D Atlas volume with discrete ROI values
+        The ROI values will impose the order in the connectivity matrix.
+        Unless you set roi_list with the order of appearance you want.
 
-    @param TR: float, optional
-    Acquisition TR, if different from the one which can be extracted from the
-    functional image file header, or 2 if nothing could be read from the file
-    header.
+        :param TR: int or float
+        Repetition time of the acquisition protocol used for the fMRI from
+        where ts_set has been extracted.
 
-    @param kwargs:  dict with the following keys, some are optional
+        :param roi_list: list of ROI values
+        List of the values of the ROIs to indicate the order of access to
+        the ROI data.
 
-    @var 'normalize': Whether to normalize the activity in each voxel, defaults to
-        None, in which case the original fMRI signal is used. Other options
-        are: 'percent': the activity in each voxel is converted to percent
-        change, relative to this scan. 'zscore': the activity is converted to a
-        zscore relative to the mean and std in this voxel in this scan.
+        :param selection_method: string
+        Defines the timeseries selection method to be applied within each ROI.
+        Choices: 'mean', 'eigen', 'ilsia', 'cca'
+                 'filtered', 'mean_and_filtered', 'eigen_and_filtered'
+        See .macuto.timeseries.selection more information.
 
-    @var 'filter': dict, optional
-        If provided with a dict of the form:
-        @var 'lb': float or 0
-        Filter lower-bound
+        :param similarity_measure: string
+        Defines the similarity measure method to be used between selected timeseries.
+        Choices: 'crosscorrelation', 'correlation', 'coherence',
+                 'mean_coherence', 'mean_correlation', 'nicorrelation'
+        See .macuto.timeseries.similarity_measure for more information.
 
-        @var 'ub': float or None
-        Filter upper-bound
+        :raise: ArithmeticError
+        If func_vol and atlas do not have the same 3D shape.
+        """
+        self.func_vol = func_vol
+        self.atlas = atlas
+        self.mask = mask
+        self.sampling_interval = TR
+        self.selection_method = selection_method
+        self.similarity_measure = similarity_measure
+        self.roi_list = roi_list
 
-        @var 'method': string
-        Filtering method
-        Choices: 'fourier','boxcar', 'fir' or 'iir'
+        self._tseries = None
+        self._selected_ts = None
+        self._func_conn = None
+        self._use_lists = True
+        self._args = {}
 
-        Each voxel's data will be filtered into the frequency range [lb, ub] with
-        nitime.analysis.FilterAnalyzer, using the method chosen here (defaults
-        to 'fir')
+        #_use_lists is False: 1 loops, best of 3: 1.64 s per loop
+        #_use_lists is True: 1 loops, best of 3: 1.61 s per loop
+
+    def extract_timeseries(self, **kwargs):
+        """
+        Extract from the functional volume the timseries and separate them
+        in an ordered dict in self._tseries.
+
+        :param kwargs:  dict with the following keys, some are optional
+
+        :var 'normalize': Whether to normalize the activity in each voxel, defaults to
+            None, in which case the original fMRI signal is used. Other options
+            are: 'percent': the activity in each voxel is converted to percent
+            change, relative to this scan. 'zscore': the activity is converted to a
+            zscore relative to the mean and std in this voxel in this scan.
+
+        :var 'pre_filter': dict, optional
+            If provided with a dict of the form:
+            :var 'lb': float or 0
+            Filter lower-bound
+
+            :var 'ub': float or None
+            Filter upper-bound
+
+            :var 'method': string
+            Filtering method
+            Choices: 'fourier','boxcar', 'fir' or 'iir'
+
+            Each voxel's data will be filtered into the frequency range [lb, ub] with
+            nitime.analysis.FilterAnalyzer, using the method chosen here (defaults
+            to 'fir')
+        """
+        if self.func_vol.shape[:3] != self.atlas.shape:
+            raise ArithmeticError('Functional and atlas volumes do not have the shame spatial shape.')
+
+        mask_vol = None
+        if self.mask is not None:
+            assert(self.mask.shape == self.atlas.shape)
+            mask_vol = self.mask.get_data()
+
+        func_vol = self.func_vol.get_data()
+        atlas_vol = self.atlas.get_data()
+
+        if self.roi_list is None:
+            self.roi_list = get_roilist_from_atlas(atlas_vol)
+
+        pre_filter = kwargs.pop('pre_filter', None)
+        normalize = kwargs.pop('normalize', None)
+
+        if self._use_lists:
+            tseries = extract_timeseries_list(func_vol, atlas_vol, mask_vol,
+                                              zeroe=True, roi_list=self.roi_list)
+
+            #filtering
+            self._tseries = []
+            for ts in tseries:
+                self._tseries.append(tsio._tseries_from_nifti_helper(None, ts, self.sampling_interval,
+                                                                     pre_filter, normalize, None))
+
+        else:
+            self._tseries = OrderedDict()
+
+            tseries = extract_timeseries_dict(func_vol, atlas_vol, mask_vol,
+                                              zeroe=True, roi_list=self.roi_list)
+
+            #filtering
+            for r in self.roi_list:
+                self._tseries.append(tsio._tseries_from_nifti_helper(None, tseries[r], self.sampling_interval,
+                                                                     pre_filter, normalize, None))
+
+    def _select_timeseries(self, **kwargs):
+        """
+        Selects significant timeseries from the dict of sets of timeseries.
+        Each item in ts_set will be transformed to one or fewer timeseries.
+
+        :param kwargs: dict with the following keys, all are optional
+
+            :var 'n_comps'   : int
+            The number of components to be selected from the set. Default 1.
+
+            :var 'comps_perc': float from [0, 100]
+            The percentage of components to be selected from the set, will
+            ignore 'n_comps' if this is set.
+
+            #TODO
+            :var 'shifts': int or dict
+                For lagged ts generation.
+                If provided with an int b, will use the range [-b, b]
+                If provided with a dict of the form:
+                :var 'lb': int
+                :var 'ub': int
+                For each value in range(lb, ub+1) a lagged version of each
+                extracted ts will be included in the ts set. Default: {'lb': -3, 'ub': +3}
+
+        :return: dict
+        Dictionary with the same keys as ts_set, where each item in ts_set is
+        a transformed/reduced set of timeseries. self._selected_ts
+        """
+        if self._tseries is None:
+            self.extract_timeseries(**kwargs)
+            kwargs.pop('normalize')
+            kwargs.pop('average')
+
+        ts_selector = TimeseriesSelectorFactory.create_method(self.selection_method)
+
+        if isinstance(self._tseries, dict):
+            self._selected_ts = OrderedDict()
+
+            for r in self.roi_list:
+                self._selected_ts[r] = ts_selector.fit_transform(self._tseries[r], **kwargs)
+
+        elif isinstance(self._tseries, list):
+            self._selected_ts = []
+            for ts in self._tseries:
+                self._selected_ts.append(ts_selector.fit_transform(ts, **kwargs))
+
+    def _calculate_similarities(self, **kwargs):
+        """
+        Calculate a matrix of correlations/similarities between all timeseries in tseries.
+
+        :param kwargs: dict with the following keys
+
+        :var 'TR': int
+        Data sampling interval.
+        Default: 2
+
+        :var 'lb': int
+        Lower bound frequency limit.
+        Default: 0
+
+        :var 'ub': int
+        Upper bound frequency limit.
+        Default: None
+        """
+        if self._selected_ts is None:
+            self._select_timeseries(**kwargs)
+
+        simil_measure = SimilarityMeasureFactory.create_method(self.similarity_measure)
+
+        n_rois = len(self._selected_ts)
+        cmat = np.zeros((n_rois, n_rois))
+
+        lb = kwargs.pop('lb', 0)
+        ub = kwargs.pop('ub', None)
+
+        #this will benefit from the ordering of the time series and
+        #calculate only half matrix, then sum its transpose
+        if isinstance(self._selected_ts, list):
+
+            for tsi1, ts1 in enumerate(self._selected_ts):
+                for tsi2, ts2 in enumerate(self._selected_ts):
+                    cmat[tsi1, tsi2] = simil_measure.fit_transform(ts1, ts2,
+                                                                   lb=lb, ub=ub,
+                                                                   TR=self.sampling_interval, **kwargs)
+
+
+        #this will calculate the cmat fully without the "symmetrization"
+        elif isinstance(self._selected_ts, dict):
+
+            c1 = 0
+            for tsi1 in self.roi_list:
+                c2 = 0
+                for tsi2 in self.roi_list:
+                    cmat[c1, c2] = simil_measure.fit_transform(self._selected_ts[tsi1],
+                                                               self._selected_ts[tsi2],
+                                                               lb=lb, ub=ub,
+                                                               TR=self.sampling_interval, **kwargs)
+                    c2 += 1
+                c1 += 1
+
+        #cmat = cmat + cmat.T
+        #cmat[np.diag_indices_from(cmat)] /= 2
+
+        self._func_conn = cmat
+
+    def fit_transform(self, **kwargs):
+        """
+        Calculate a matrix of correlations/similarities between all timeseries in
+        the tseries extracted from the functional data.
+
+        :param kwargs: dict with the following keys, some are optional
+
+        * TIMESERIES EXTRACTION AND PRE-PROCESSING
+        :var 'normalize': Whether to normalize the activity in each voxel, defaults to
+            None, in which case the original fMRI signal is used. Other options
+            are: 'percent': the activity in each voxel is converted to percent
+            change, relative to this scan. 'zscore': the activity is converted to a
+            zscore relative to the mean and std in this voxel in this scan.
+
+        :var 'pre_filter': dict, optional
+            If provided with a dict of the form:
+            :var 'lb': float or 0
+            Filter lower-bound
+
+            :var 'ub': float or None
+            Filter upper-bound
+
+            :var 'method': string
+            Filtering method
+            Choices: 'fourier','boxcar', 'fir' or 'iir'
 
         See .macuto.selection FilteredTimeseries doc strings.
 
-    @var 'n_comps'   : int
-    The number of components to be selected from each ROI. Default 1.
+        * ROI TIMESERIES SELECTION
+        :var 'n_comps'   : int
+        The number of components to be selected from the set, if applies.
+        Default 1.
 
-    @var 'comps_perc': float from [0, 100]
-    The percentage of components to be selected from the ROI.
-    If set will be used instead of 'n_comps'
+        :var 'comps_perc': float from [0, 100]
+        The percentage of components to be selected from the set, will
+        ignore 'n_comps' if this is set.
 
-    #TODO
-    @var 'shifts': int or dict
-        For lagged ts generation.
-        If provided with an int b, will use the range [-b, b]
+        * SIMILARITY MEASURES AND POST-PROCESSING
+        :var 'post_filter': dict, optional
         If provided with a dict of the form:
-        @var 'lb': int
-        @var 'ub': int
-        For each value in range(lb, ub+1) a lagged version of each
-        extracted ts will be included in the ts set. Default: {'lb': -3, 'ub': +3}
 
-    @note: See macuto.timeseries.FilteredTimeseries docstrings to get more kwargs related
-    to selected timeseries filtering methods.
+            :var 'lb': float or 0
+            Filter lower-bound
 
-    @return: ndarray
-    Functional connectivity matrix of size N x N, where N is the number of
-    ROIs in atlas.
+            :var 'ub': float or None
+            Filter upper-bound
 
-    @raise: ArithmeticError
-    If func_vol and atlas do not have the same 3D shape.
-    """
-    if func_img.shape[0:2] != atlas.shape[0:2]:
-        raise ArithmeticError('Functional and atlas volumes do not have the shame shape.')
+            :var 'method': string
+            Filtering method
+            Choices: 'fourier','boxcar', 'fir' or 'iir'
 
-    func_vol = func_img.get_data()
-    atlas_vol = atlas.get_data()
+        :return: ndarray
+        A NxN ndarray with the connectivity cross-measures between all timeseries
+        in ts_set
+        """
+        self._args = kwargs
+        self._calculate_similarities(**self._args)
+        return self._func_conn
 
-    rois = get_roilist_from_atlas(atlas_vol)
 
-    selected_ts = OrderedDict()
-    for r in rois:
-        #get all time series within this roi r
-        tseries = func_vol[atlas == r, :]
-
-        #remove zeroed time series
-        tseries = tseries[tseries.sum(axis=1) != 0, :]
-
-        #filtering
-        tseries = fio._tseries_from_nifti_helper(None, tseries, TR,
-                                                 kwargs.get('filter',    None),
-                                                 kwargs.get('normalize', None),
-                                                 None)
-
-        selected_ts[r] = select_timeseries(tseries, selection_method, TR, **kwargs)
-
-    return calculate_similarities(selected_ts, similarity_measure, **kwargs)
 
     #TODO
     # if kwargs.has_key('fekete-wilf'):
@@ -202,110 +382,6 @@ def create_connectivity_matrix(func_img, atlas,
     #     cmat = calculate_ts_connmatrix (repts, **kwargs)
     #
     # return cmat
-
-
-
-def select_timeseries(ts_set, selection_method='eigen', TR=2, **kwargs):
-    """
-    Selects significant timeseries from the dict of sets of timeseries.
-    Each item in ts_set will be transformed to one or fewer timeseries.
-
-    @param ts_set: dict
-
-    @param selection_method: string
-    Defines the timeseries selection method to be applied within each ROI.
-    Choices: 'mean', 'eigen', 'ilsia', 'cca'
-             'filtered', 'mean_and_filtered', 'eigen_and_filtered'
-    See .macuto.timeseries.selection more information.
-
-    @param TR: int or float
-    Repetition time of the acquisition protocol used for the fMRI from
-    where ts_set has been extracted.
-
-    @param kwargs: dict with the following keys, some are optional
-
-        @var 'n_comps'   : int
-        The number of components to be selected from the set. Default 1.
-
-        @var 'comps_perc': float from [0, 100]
-        The percentage of components to be selected from the set, will
-        ignore 'n_comps' if this is set.
-
-        #TODO
-        @var 'shifts': int or dict
-            For lagged ts generation.
-            If provided with an int b, will use the range [-b, b]
-            If provided with a dict of the form:
-            @var 'lb': int
-            @var 'ub': int
-            For each value in range(lb, ub+1) a lagged version of each
-            extracted ts will be included in the ts set. Default: {'lb': -3, 'ub': +3}
-
-    @note: See macuto.timeseries.FilteredTimeseries docstrings to get more kwargs related
-    to selected timeseries filtering methods.
-
-    @return: dict
-    Dictionary with the same keys as ts_set, where each item in ts_set is
-    a transformed/reduced set of timeseries.
-    """
-    select_ts = TimeseriesSelectionFactory.create_method(selection_method)
-
-    #arguments for  get_rep_ts
-    #kwargs['TR'] = TR
-
-    repts = OrderedDict()
-    for r, ts in ts_set.iteritems():
-        ts_set[r] = select_ts(ts, TR=TR, **kwargs)
-
-    return repts
-
-
-def calculate_similarities(tseries, similarity_measure, **kwargs):
-    """
-    Calculate a matrix of correlations/similarities between all timeseries in tseries.
-
-    @param tseries: dict or list of lists of 1D ndarray (timeseries)
-    If it is a list or an OrderedDict, it will do a faster approach calculating
-    only half connectivity matrix, then symmetrize it.
-    If it is a standard dict it will do a full connectivity calculation.
-
-    @param similarity_measure: string
-    Defines the similarity measure method to be used between selected timeseries.
-    Choices: 'crosscorrelation', 'correlation', 'coherence',
-             'mean_coherence', 'mean_correlation'
-    See .macuto.timeseries.similarity_measure for more information.
-
-    param @kwargs: dict with the following keys, some are optional
-
-    @return: ndarray
-    A NxN ndarray with the connectivity cross-measures between all timeseries
-    in ts_set
-
-    """
-    simil_measure = SimilarityMeasureFactory.create_method(similarity_measure)
-
-    n_rois = len(tseries)
-    cmat = np.zeros((n_rois, n_rois))
-
-    #this will benefit from the ordering of the time series and
-    #calculate only half matrix, then sum its transpose
-    if isinstance(tseries, list):
-
-        for tsi1, ts1 in enumerate(tseries):
-            for tsi2, ts2 in enumerate(tseries, start=tsi1):
-                cmat[tsi1, tsi2] = simil_measure(ts1, ts2, **kwargs)
-
-        cmat = cmat + cmat.T
-        cmat[np.diag_indices_from(cmat)] /= 2
-
-    #this will calculate the cmat fully without the "symmetrization"
-    elif isinstance(tseries, dict):
-
-        for tsi1, ts1 in enumerate(tseries):
-            for tsi2, ts2 in enumerate(tseries):
-                cmat[tsi1, tsi2] = simil_measure(ts1, ts2, **kwargs)
-
-    return cmat
 
 #TODO?
 # def save_connectivity_matrices(funcs, aal_rois, outfile, TR=None, **kwargs):

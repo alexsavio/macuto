@@ -1,70 +1,75 @@
 
-import abc
 import numpy as np
 import nitime.fmri.io as fio
 
 
 class TimeSeriesSelector(object):
-    __metaclass__ = abc.ABCMeta
+    """
+    A strategy class to use any of the time series
+    selection methods given as a callable objet.
+    """
 
-    def __init__(self):
-        pass
+    def __init__(self, algorithm):
+        """
+        TimeSeriesSelector, Strategy class constructor.
 
+        :param algorithm: callable object
+        """
+        self.algorithm = algorithm
+        self.selected_ts = None
 
-    @staticmethod
-    @abc.abstractmethod
-    def fit_transform(ts_set):
+    def fit_transform(self, ts_set, **kwargs):
         """
         Returns selected timeseries from ts_set.
 
-        @param ts_set: ndarray
+        :param ts_set: nitime.Timeseries
         n_timeseries x ts_size
 
-        @return: ndarray
+        :return: ndarray
         N x time_size
         """
+        self.ts_selector = self.algorithm(ts_set, **kwargs)
+        return self.ts_selector.selected_ts
 
 
-class MeanTimeseries(TimeSeriesSelector):
+class MeanTimeseries(object):
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def fit_transform(ts_set, **kwargs):
+    def __init__(self, ts_set, **kwargs):
         """
         Returns the average timeseries from an array.
 
-        @param ts_set: ndarray
+        :param ts_set: nitime.Timeseries
          n_samps x time_size. Time series matrix.
 
-        @param kwargs:
+        :param kwargs:
 
-        @return: ndarray
-        mean timeseries: 1 x time_size
+        :return: average timeseries: 1 x time_size
+        Will return the same type as ts_set.
         """
-        return ts_set.mean(axis=0)
+        if hasattr(ts_set, 'data'):
+            ts_set.data = ts_set.data.mean(axis=0)
+        else:
+            ts_set = ts_set.mean(axis=0)
+
+        self.selected_ts = ts_set
 
 
-class EigenTimeseries(TimeSeriesSelector):
+class EigenTimeseries(object):
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def fit_transform(ts_set, **kwargs):
+    def __init__(self, ts_set, **kwargs):
         """
         Returns from an array ts_set of time series the eigen time series.
         #---------------------------------------------------------------------------
         Input:   
         -----
-        ts_set: ndarray
+        ts_set: nitime.Timeseries or ndarray
             n_samps x time_size. Time series matrix.
 
         Kwargs:  'n_comps'   : the number of components to be selected from the set. Default 1.
                  'comps_perc': the percentage of components to be selected from the set
 
         Output:  eigen timeseries : n_comps x time_size
+        Will return the same type as ts_set.
         """
         from sklearn.decomposition import PCA
         #eigen time series (PCA)
@@ -77,24 +82,31 @@ class EigenTimeseries(TimeSeriesSelector):
 
             n_comps = np.floor(ts_set.shape[0] * comps_perc)
 
-        pca = PCA(n_comps)
+        x = ts_set.data if hasattr(ts_set, 'data') else ts_set
 
-        return pca.fit_transform(ts_set.T).T
+        pca = PCA(n_components=n_comps)
+
+        x = pca.fit_transform(x.T).T
+
+        if x.shape[0] > n_comps:
+            x = ts_set.data[0:n_comps, :]
+
+        if hasattr(ts_set, 'data'):
+            ts_set.data = x
+            self.selected_ts = ts_set
+        else:
+            self.selected_ts = x
 
 
-class ILSIATimeseries(TimeSeriesSelector):
+class ILSIATimeseries(object):
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def fit_transform(ts_set, **kwargs):
+    def __init__(self, ts_set, **kwargs):
         """
         Returns from an array ts_set of time series, the ones selected with ILSIA algorithm
         #---------------------------------------------------------------------------
         Input:   
         -----
-        ts_set: ndarray
+        ts_set:  nitime.Timeseries or ndarray
             n_samps x time_size. Time series matrix.
 
         Kwargs:  'n_comps'   : the number of components to be selected from the set. Default 1.
@@ -111,26 +123,28 @@ class ILSIATimeseries(TimeSeriesSelector):
                 comps_perc /= 100
             n_comps = np.floor(ts_set.shape[0] * comps_perc)
 
-        ilsia = ILSIA(ts_set.T, p=n_comps)
-        em, cnt, idx = ilsia.fit()
+        if hasattr(ts_set, 'data'):
+            ilsia = ILSIA(ts_set.data.T, p=n_comps)
+            em, cnt, idx = ilsia.fit()
+            ts_set.data = em.T
+        else:
+            ilsia = ILSIA(ts_set.T, p=n_comps)
+            em, cnt, idx = ilsia.fit()
+            ts_set = em.T
 
-        return em.T
+        self.selected_ts = ts_set
 
 
-class CCATimeseries(TimeSeriesSelector):
+class CCATimeseries(object):
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def fit_transform(ts_set, **kwargs):
+    def __init__(self, ts_set, **kwargs):
         """
         Returns from an array ts_set of time series, the ones selected with CCA algorithm.
         Convex Cone Analysis
         #---------------------------------------------------------------------------
         Input:   
         -----
-        ts_set: ndarray
+        ts_set:  nitime.Timeseries or ndarray
             n_samps x time_size. Time series matrix.
 
         Kwargs:  'n_comps'   : the number of components to be selected from the set. Default 1.
@@ -149,29 +163,30 @@ class CCATimeseries(TimeSeriesSelector):
                 comps_perc /= 100
             n_comps = np.floor(ts_set.shape[0] * comps_perc)
 
-        cca = CCA(ts_set.T, p=n_comps)
+        if hasattr(ts_set, 'data'):
+            cca = CCA(ts_set.data.T, p=n_comps)
+            ts_set.data = cca.fit().T
+        else:
+            cca = CCA(ts_set.T, p=n_comps)
+            ts_set = cca.fit().T
 
-        return cca.fit().T
+        self.selected_ts = ts_set
 
 
-class FilteredTimeseries(TimeSeriesSelector):
+class FilteredTimeseries(object):
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def fit_transform(ts_set, **kwargs):
+    def __init__(self, ts_set, **kwargs):
         """
         Returns frequency filtered timeseries from ts_set.
 
-        @param ts_set: ndarray
+        :param ts_set:  nitime.Timeseries
         n_samps x time_size. Time series matrix.
 
-        @param kwargs:
+        :param kwargs:
         TR: float
             The sampling interval
 
-        sel_filter   : dict or list of dicts
+        pre_filter   : dict or list of dicts
             One dict or a list of dicts where each dict contains the keys:
             'lb' and 'ub' that indicate the filter lower and upper bands.
 
@@ -214,14 +229,14 @@ class FilteredTimeseries(TimeSeriesSelector):
         See: http://nipy.org/nitime/api/generated/nitime.analysis.spectral.html#nitime.analysis.spectral.FilterAnalyzer
         for more details and named arguments.
 
-        @return:
+        :return:
         filtered timeseries : [n_filters * n_samps] x time_size.
 
         Each whole set of filtered tseries will be pushed to the end of the
         output array.
 
         """
-        sel_filter = kwargs.get('sel_filter', None)
+        sel_filter = kwargs.get('pre_filter', None)
         TR         = kwargs.get('TR', 2)
 
         if sel_filter is None:
@@ -240,29 +255,22 @@ class FilteredTimeseries(TimeSeriesSelector):
                 filt['ub']     = f.get('ub', None)
                 filt['method'] = f.get('method', 'fir')
 
-            filts.append(fio._tseries_from_nifti_helper(None, ts_set, TR, filt, 
-                kwargs.get('normalize', None), 
-                kwargs.get('average', None)).data)
+            filts.append(fio._tseries_from_nifti_helper(None, ts_set, TR, filt,
+                                                        kwargs.get('normalize', None),
+                                                        kwargs.get('average', None)))
 
-        filts = np.array(filts) if n_samps == 1 else np.squeeze(np.array(filts))
-
-        return filts
+        self.selected_ts = np.array(filts) if n_samps == 1 else np.squeeze(np.array(filts))
 
 
 class MeanAndFilteredTimeseries(MeanTimeseries, FilteredTimeseries):
 
-    def __init__(self):
-        MeanTimeseries.__init__(self)
-        FilteredTimeseries.__init__(self)
-
-    @staticmethod
-    def fit_transform(ts_set, **kwargs):
+    def __init__(self, ts_set, **kwargs):
         """
         Returns from an array of timeseries the average and filtered versions of it.
         #---------------------------------------------------------------------------
         Input:   
         -----
-        ts_set: ndarray
+        ts_set:  nitime.Timeseries or ndarray
             n_samps x time_size. Time series matrix.
 
         Kwargs
@@ -293,61 +301,18 @@ class MeanAndFilteredTimeseries(MeanTimeseries, FilteredTimeseries):
             ndarray
             mean timeseries and its filtereds: n_filters x time_size
         """
-        fmean_ts = FilteredTimeseries.fit_transform(MeanTimeseries.fit_transform(ts_set, **kwargs), **kwargs)
-
-        return fmean_ts
+        FilteredTimeseries.__init__(self, ts_set, **kwargs)
+        MeanTimeseries.__init__(self, self.selected_ts, **kwargs)
 
 
 class EigenAndFilteredTimeseries(EigenTimeseries, FilteredTimeseries):
 
-    def __init__(self):
-        EigenTimeseries.__init__(self)
-        FilteredTimeseries.__init__(self)
-
-    @staticmethod
-    def fit_transform(ts_set, **kwargs):
-        """
-        Returns from an array of timeseries the eigen ts and filtered versions of it.
-        #---------------------------------------------------------------------------
-        Input:   
-        -----
-        ts_set: ndarray
-            n_samps x time_size. Time series matrix.
-
-        Kwargs
-        ------
-
-        TR: float
-            The sampling interval
-
-        sel_filter   : dict or list of dicts
-            One dict or a list of dicts where each dict contains the keys:
-            'lb' and 'ub' that indicate the filter lower and upper bands.
-
-             Default: 0, Nyquist
-             If you want the default along with others, append a None value in the
-             'sel_filter' list.
-
-           {'lb':float or 0, 'ub':float or None, 'method':'fourier','boxcar' 'fir'
-           or 'iir' }
-
-           each voxel's data will be filtered into the frequency range [lb,ub] with
-           nitime.analysis.FilterAnalyzer, using the method chosen here (defaults
-           to 'fir')
-
-        See Filtered_Timeseries docstring for detailed filtering options
-
-        Returns:
-        -------
-            ndarray
-            eigen timeseries and its filtereds: n_filters x time_size
-        """
-        fmean_ts = FilteredTimeseries.fit_transform(EigenTimeseries.fit_transform(ts_set, **kwargs), **kwargs)
-
-        return fmean_ts
+    def __init__(self, ts_set, **kwargs):
+        FilteredTimeseries.__init__(self, ts_set, **kwargs)
+        EigenTimeseries.__init__(self, self.selected_ts, **kwargs)
 
 
-class TimeseriesSelectionFactory(TimeSeriesSelector):
+class TimeseriesSelectorFactory(object):
 
     def __init__(self):
         pass
@@ -357,23 +322,24 @@ class TimeseriesSelectionFactory(TimeSeriesSelector):
         """
         Returns a Timeseries selection method fit function given a method name.
 
-        @param method_name: string
+        :param method_name: string
             Choices for name of the method: 'mean', 'eigen', 'ilsia', 'cca'
                 'filtered', 'mean_and_filtered', 'eigen_and_filtered'
 
-        @return:
+        :return:
             Timeseries selection method function
         """
-        selector_class = MeanTimeseries
-        if method_name == 'mean' : selector_class = MeanTimeseries
-        if method_name == 'eigen': selector_class =  EigenTimeseries
-        if method_name == 'ilsia': selector_class =  ILSIATimeseries
-        if method_name == 'cca'  : selector_class =    CCATimeseries
+        algorithm = MeanTimeseries
+        if method_name == 'mean' : algorithm =  MeanTimeseries
+        if method_name == 'eigen': algorithm =   EigenTimeseries
+        if method_name == 'ilsia': algorithm =  ILSIATimeseries
+        if method_name == 'cca'  : algorithm =  CCATimeseries
 
-        if method_name == 'filtered'          : selector_class =          FilteredTimeseries
-        if method_name == 'mean_and_filtered' : selector_class =   MeanAndFilteredTimeseries
-        if method_name == 'eigen_and_filtered': selector_class =  EigenAndFilteredTimeseries
-        return selector_class.fit_transform()
+        if method_name == 'filtered'          : algorithm =  FilteredTimeseries
+        if method_name == 'mean_and_filtered' : algorithm =  MeanAndFilteredTimeseries
+        if method_name == 'eigen_and_filtered': algorithm =  EigenAndFilteredTimeseries
+
+        return TimeSeriesSelector(algorithm)
 
 #TODO?
 ##-------------------------------------------------------------------------------

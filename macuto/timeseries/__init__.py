@@ -1,6 +1,6 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
+
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
@@ -19,28 +19,31 @@ measure similarities between sets of timeseries.
 __all__ = []
 
 
-from .selection import (MeanTimeseries,
+from .selection import (TimeSeriesSelector,
+                        MeanTimeseries,
                         EigenTimeseries,
                         ILSIATimeseries,
                         CCATimeseries,
                         FilteredTimeseries,
                         MeanAndFilteredTimeseries,
                         EigenAndFilteredTimeseries,
-                        )
+                        TimeseriesSelectorFactory,)
 
 
 from .similarity_measure import (TimeSeriesGroupMeasure,
                                  CorrelationMeasure,
-                                 MeanCorrelationMeasure,
-                                 CoherenceMeasure,
-                                 MeanCoherenceMeasure,
-                                 CrossCorrelationMeasure,
-                                 )
+                                 NiCorrelationMeasure,
+                                 NiCoherenceMeasure,
+                                 NiGrangerCausalityMeasure,
+                                 SeedCorrelationMeasure,
+                                 MeanSeedCorrelationMeasure,
+                                 SeedCoherenceMeasure,
+                                 MeanSeedCoherenceMeasure,
+                                 CorrelationMeasure,
+                                 SimilarityMeasureFactory)
 
 
-from .connectivity import (create_connectivity_matrix,
-                           select_timeseries,
-                           calculate_similarities)
+from .connectivity import (FunctionalConnectivity)
 
 __sel_all__ = ['TimeseriesSelector',
                'MeanTimeseries',
@@ -59,9 +62,7 @@ __sm_all__ = ['SimilarityMeasure',
               'MeanCoherenceMeasure',
               'CrossCorrelationMeasure', ]
 
-__conn_all__ = ['create_connectivity_matrix',
-                'select_timeseries',
-                'calculate_similarities']
+__conn_all__ = ['FunctionalConnectivity']
 
 __all__.extend(__conn_all__)
 __all__.extend(__sel_all__)

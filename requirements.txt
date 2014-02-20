@@ -1,7 +1,10 @@
 numpy
 scipy
 scikit-learn
+scikit-image
 matplotlib
 nibabel
 h5py
 nitime
+nipy
+Pillow

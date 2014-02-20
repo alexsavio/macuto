@@ -1,6 +1,5 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
@@ -37,15 +36,21 @@ from .coord_transform import (voxcoord_to_mm,
                               get_3D_coordmap,
                               get_coordmap_array)
 
-from .io import (spatialimg_to_hdf,
+from .io import (save_nibabel,
+                 spatialimg_to_hdfgroup,
+                 spatialimg_to_hdfpath,
+                 hdfpath_to_nifti1image,
                  hdfgroup_to_nifti1image,
                  get_nifti1hdr_from_h5attrs,
-                 save_nibabel)
+                 all_childnodes_to_nifti1img,
+                 insert_volumes_in_one_dataset,)
 
 from .roi import (drain_rois,
                   create_rois_mask,
-                  extract_timeseries,
-                  create_mask_from)
+                  extract_timeseries_dict,
+                  extract_timeseries_list,
+                  create_mask_from,
+                  get_roilist_from_atlas,)
 
 __ndi_all__ = ['get_nii_data',
                'get_masked_nii_data',
@@ -73,10 +78,21 @@ __io_all__ = ['spatialimg_to_hdf',
               'get_nifti1hdr_from_h5attrs',
               'save_nibabel']
 
+__io_all__ = ['save_nibabel',
+              'spatialimg_to_hdfgroup',
+              'spatialimg_to_hdfpath',
+              'hdfpath_to_nifti1image',
+              'hdfgroup_to_nifti1image',
+              'get_nifti1hdr_from_h5attrs',
+              'all_childnodes_to_nifti1img',
+              'insert_volumes_in_one_dataset',]
+
 __roi_all__ = ['drain_rois',
                'create_rois_mask',
-               'extract_timeseries',
-               'create_mask_from']
+               'extract_timeseries_dict',
+               'extract_timeseries_list',
+               'create_mask_from',
+               'get_roilist_from_atlas']
 
 __all__.extend(__ndi_all__)
 __all__.extend(__roi_all__)

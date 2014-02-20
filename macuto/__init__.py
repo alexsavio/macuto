@@ -1,6 +1,6 @@
 # coding=utf-8
 #-------------------------------------------------------------------------------
-#License GNU/GPL v3
+
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
 #Universidad del Pais Vasco UPV/EHU
@@ -26,9 +26,8 @@ the Python community.
 """
 
 
-__version__ = '0.1-git'
-
-__all__ = ['macuto', 'macuto.classification', 'macuto.nifti', 'macuto.timeseries']
+__all__ = ['macuto', 'macuto.classification', 'macuto.nifti',
+           'macuto.timeseries', 'macuto.atlas']
 
 from .io import(save_variables_to_hdf5,
                 save_variables_to_mat,
@@ -73,7 +72,14 @@ from .render import (show_3slices,
                      show_cutplanes,
                      show_dynplane,
                      show_many_slices,
-                     show_render)
+                     show_render,
+                     autocrop_img,
+                     borders,
+                     create_imglist_html,
+                     imshow,
+                     show_connectivity_matrix,
+                     slicesdir_connectivity_matrices,
+                     slicesdir_paired_overlays)
 
 from .math import (makespread,
                    takespread)
@@ -140,7 +146,14 @@ __render_all__ = ['show_3slices',
                   'show_cutplanes',
                   'show_dynplane',
                   'show_many_slices',
-                  'show_render']
+                  'show_render',
+                  'autocrop_img',
+                  'borders',
+                  'create_imglist_html',
+                  'imshow',
+                  'show_connectivity_matrix',
+                  'slicesdir_connectivity_matrices',
+                  'slicesdir_paired_overlays',]
 
 __plot_all__ = ['save_fig_to_png',
                 'plot_results',
