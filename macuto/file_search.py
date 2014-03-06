@@ -11,7 +11,7 @@
 
 import re
 import os
-import glob
+from glob import glob
 from .strings import list_search, list_filter
 
 
@@ -87,6 +87,54 @@ def recursive_find(folder_path, regex=''):
     A list of strings.
 
     """
+    return recursive_find_search(folder_path, regex)
+
+
+def recursive_find_match(folder_path, regex=''):
+    """
+    Returns absolute paths of files that match the regex within file_dir and
+    all its children folders.
+
+    Note: The regex matching is done using the match function
+    of the re module.
+
+    Parameters
+    ----------
+    folder_path: string
+
+    regex: string
+
+    Returns
+    -------
+    A list of strings.
+
+    """
+    outlist = []
+    for root, dirs, files in os.walk(folder_path):
+        outlist.extend([os.path.join(root, f) for f in files if re.match(regex, f)])
+
+    return outlist
+
+
+def recursive_find_search(folder_path, regex=''):
+    """
+    Returns absolute paths of files that match the regex within file_dir and
+    all its children folders.
+
+    Note: The regex matching is done using the search function
+    of the re module.
+
+    Parameters
+    ----------
+    folder_path: string
+
+    regex: string
+
+    Returns
+    -------
+    A list of strings.
+
+    """
     outlist = []
     for root, dirs, files in os.walk(folder_path):
         outlist.extend([os.path.join(root, f) for f in files if re.search(regex, f)])
@@ -141,4 +189,4 @@ def find_match(base_directory, regex=''):
     @return: list
 
     """
-    return glob.glob(os.path.join(base_directory, regex))
+    return glob(os.path.join(base_directory, regex))

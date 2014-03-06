@@ -9,7 +9,6 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
-
 import re
 
 
@@ -24,16 +23,6 @@ def filter_objlist(olist, fieldname, fieldval):
     @return: list of objets
     """
     return [x for x in olist if getattr(x, fieldname) == fieldval]
-
-
-def append_to_keys(adict, prefix):
-    """
-    Adds the prefix to each key in adict.
-    @param adict: dict
-    @param prefix: string
-    @return:
-    """
-    return {prefix + str(key): (transform(value) if isinstance(value, dict) else value) for key, value in list(adict.items())}
 
 
 def pretty_mapping(mapping, getterfunc=None):
@@ -53,16 +42,16 @@ def pretty_mapping(mapping, getterfunc=None):
 
     Parameters
     ----------
-    @param mapping : mapping
+    :param mapping : mapping
        implementing iterator returning keys and .items()
-    @param getterfunc : None or callable
+    :param getterfunc : None or callable
        callable taking two arguments, ``obj`` and ``key`` where ``obj``
        is the passed mapping.  If None, just use ``lambda obj, key:
        obj[key]``
 
     Returns
     -------
-    @return str : string
+    :return str : string
 
     Examples
     --------
@@ -103,13 +92,20 @@ def pretty_mapping(mapping, getterfunc=None):
     return '\n'.join(out)
 
 
-def list_filter(lst, filter):
+def list_filter(lst, filt):
     """
-    @param lst: list
-    @param filter: function
-    @return:
+    :param lst: list
+    :param filter: function
+    Unary string filter function
+    :return: list
+    List of strings that passed the filter
+
+    :example
+    l = ['12123123', 'N123213']
+    filt = re.compile('\d*').match
+    nu_l = list_filter(l, filt)
     """
-    return [(l) for l in lst if list(filter(l))]
+    return [item for item in lst if filt(item).groups()]
 
 
 def list_match(regex, lst):
@@ -138,10 +134,11 @@ def append_to_keys(adict, preffix):
     @param preffix:
     @return:
     """
-    return {preffix + str(key) : (value if isinstance(value, dict) else value) for key, value in list(mydict.items())}
+    return {preffix + str(key): (value if isinstance(value, dict) else value)
+            for key, value in list(adict.items())}
 
 
-def append_to_list (lst, preffix):
+def append_to_list(lst, preffix):
     """
     @param lst:
     @param preffix:
