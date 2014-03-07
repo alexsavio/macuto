@@ -105,18 +105,27 @@ def filter_list(lst, filt):
     filt = re.compile('\d*').match
     nu_l = list_filter(l, filt)
     """
-    return [m.groups() for s in lst for m in (filt(s),) if m]
+    return [m for s in lst for m in (filt(s),) if m]
 
 
-def match_list(lst, pattern):
+def match_list(lst, pattern, group_names=[]):
     """
     @param lst: list of strings
-    @param pattern: string
+
+    @param regex: string
+
+    @param group_names: list of strings
+    See re.MatchObject group docstring
+
     @return: list of strings
-    Filtered list of strings with strings that match the pattern.
+    Filtered list, with the strings that match the pattern
     """
-    filt = re.compile(pattern).match
-    return filter_list(lst, filt)
+    filtfn = re.compile(pattern).match
+    filtlst = filter_list(lst, filtfn)
+    if group_names:
+        return [m.group(group_names) for m in filtlst]
+    else:
+        return [m.string for m in filtlst]
 
 
 def search_list(lst, pattern):
