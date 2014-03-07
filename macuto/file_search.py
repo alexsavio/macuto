@@ -111,7 +111,8 @@ def recursive_find_match(folder_path, regex=''):
     """
     outlist = []
     for root, dirs, files in os.walk(folder_path):
-        outlist.extend([os.path.join(root, f) for f in files if re.match(regex, f)])
+        outlist.extend([os.path.join(root, f) for f in files
+                        if re.match(regex, f)])
 
     return outlist
 
@@ -137,7 +138,8 @@ def recursive_find_search(folder_path, regex=''):
     """
     outlist = []
     for root, dirs, files in os.walk(folder_path):
-        outlist.extend([os.path.join(root, f) for f in files if re.search(regex, f)])
+        outlist.extend([os.path.join(root, f) for f in files
+                        if re.search(regex, f)])
 
     return outlist
 
