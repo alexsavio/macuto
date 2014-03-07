@@ -105,7 +105,7 @@ def filter_list(lst, filt):
     filt = re.compile('\d*').match
     nu_l = list_filter(l, filt)
     """
-    return [m.groups() for s in lst for m in (filt(s),) if m is not None]
+    return [m.groups() for s in lst for m in (filt(s),) if m]
 
 
 def match_list(lst, pattern):
