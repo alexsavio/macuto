@@ -92,7 +92,7 @@ def pretty_mapping(mapping, getterfunc=None):
     return '\n'.join(out)
 
 
-def list_filter(lst, filt):
+def filter_list(lst, filt):
     """
     :param lst: list
     :param filter: function
@@ -108,24 +108,27 @@ def list_filter(lst, filt):
     return [m.groups() for s in lst for m in (filt(s),) if m is not None]
 
 
-def list_match(regex, lst):
+def match_list(lst, pattern):
     """
-    @param regex: string
-    @param lst: list
-    @return:
+    @param lst: list of strings
+    @param pattern: string
+    @return: list of strings
+    Filtered list of strings with strings that match the pattern.
     """
-    filt = re.compile(regex).match
-    return list_filter(lst, filt)
+    filt = re.compile(pattern).match
+    return filter_list(lst, filt)
 
 
-def list_search(regex, lst):
+def search_list(lst, pattern):
     """
-    @param regex: string
-    @param lst: list
-    @return:
+    @param pattern: string
+    @param lst: list of strings
+    @return: list of strings
+    Filtered lists with the strings in which the pattern is found.
+
     """
-    filt = re.compile(regex).search
-    return list_filter(lst, filt)
+    filt = re.compile(pattern).search
+    return filter_list(lst, filt)
 
 
 def append_to_keys(adict, preffix):
