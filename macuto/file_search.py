@@ -12,7 +12,7 @@
 import re
 import os
 from glob import glob
-from .strings import list_search, list_filter
+from .strings import search_list, filter_list
 
 
 def dir_search (regex, wd='.'):
@@ -25,7 +25,7 @@ def dir_search (regex, wd='.'):
     ls = os.listdir(wd)
 
     filt = re.compile(regex).search
-    return list_filter(ls, filt)
+    return filter_list(ls, filt)
 
 
 def dir_match (regex, wd='.'):
@@ -39,7 +39,7 @@ def dir_match (regex, wd='.'):
     ls = os.listdir(wd)
 
     filt = re.compile(regex).match
-    return list_filter(ls, filt)
+    return filter_list(ls, filt)
 
 
 def get_file_list(file_dir, search_regex=''):
@@ -61,7 +61,7 @@ def get_file_list(file_dir, search_regex=''):
     file_list.sort()
 
     if search_regex:
-        file_list = list_search(file_list, search_regex)
+        file_list = search_list(file_list, search_regex)
 
     file_list = [os.path.join(file_dir, fname) for fname in file_list]
 
