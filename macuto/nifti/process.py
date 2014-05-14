@@ -6,6 +6,7 @@ from nipype.interfaces.fsl import IsotropicSmooth
 
 from .read import get_nii_data
 
+
 def is_valid_coordinate(img, i, j, k):
     """
     @param img:

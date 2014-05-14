@@ -17,7 +17,7 @@ log = logging.getLogger('sliceit')
                shortopts={'regex1': '1',
                           'regex2': '2',
                           'max_jumps': 'm'})
-def vols(inputdir, outdir, regex1='', regex2='', max_jumps=3, dpi=150):
+def vols(inputdir, outdir, regex1, regex2='', max_jumps=3, dpi=150):
     """
     Creates a folder named outdir with a html file and png images of slices
     of each of nifti file that matches regex1.
