@@ -10,14 +10,14 @@
 #-------------------------------------------------------------------------------
 
 import os
-import numpy as np
-import nibabel as nib
 import logging as log
 
+import numpy as np
+import nibabel as nib
 from sklearn.preprocessing import LabelEncoder
 
-from ..files import parse_subjects_list
-from ..files import grep_one
+from ..files.names import parse_subjects_list
+from ..files.names import grep_one
 
 
 def load_data(subjsf, datadir, maskf, labelsf=None):

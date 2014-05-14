@@ -12,17 +12,17 @@
 import os
 import sys
 import shelve
-import numpy as np
-import nibabel as nib
 import logging as log
 
+import numpy as np
+import nibabel as nib
 from sklearn.grid_search import ParameterGrid
 from sklearn.preprocessing import StandardScaler
 
 from .io import load_data
-from ..files import get_extension
-from ..io import save_varlist_to_shelve
-from ..threshold import robust_range_threshold, percentile_threshold, rank_threshold
+from ..files.names import get_extension
+from ..storage import save_varlist_to_shelve
+
 
 def perform_classification (subjsf, labelsf, outfile, datadir, maskf, clfmethod, fsmethod1,
                             fsmethod2, prefsmethod, prefsthr, cvmethod, thrmethod, stratified, stddize, n_cpus):
@@ -722,7 +722,6 @@ def do_tanimoto_comparison (save_fig=True, overwrite=False):
     from sklearn.grid_search import ParameterGrid
 
     sys.path.append('/home/alexandre/Dropbox/Documents/work/visualize_volume')
-    import visualize_volume as vis
 
     temporal_filtering     = [True, False]
     global_nuis_correction = [True, False]
@@ -1260,7 +1259,6 @@ def do_npy_to_mat_with_prefeats():
 #===============================================================================
 # Creating localization images for Darya
 def do_darya_localizations ():
-    import nibabel as nib
     import scipy.io as sio
 
     sys.path.append('/home/alexandre/Dropbox/Documents/work/visualize_volume')
@@ -1342,9 +1340,6 @@ for j in list(ParameterGrid(preprocess_grid)):
     cs.do_matlab_svm_bdopt(**j)
 '''
 def do_matlab_svm_bdopt (temporal_filtering=True, global_nuis_correction=True):
-    import nibabel as nib
-    import scipy.io as sio
-
     wd, xd, dd, labelsf, phenof, dataf, masks, dilmasks, templates, pipe = get_filepaths(temporal_filtering, global_nuis_correction)
 
     au.setup_logger(2, logfname=None)

@@ -3,10 +3,13 @@
 macuto
 ======
 
+.. image:: https://secure.travis-ci.org/alexsavio/macuto.png?branch=master
+    :target: https://travis-ci.org/alexsavio/macuto
+.. image:: https://coveralls.io/repos/alexsavio/macuto/badge.png
+    :target: https://coveralls.io/r/alexsavio/macuto
+
 Series of tools to manage MRI data, extract features from them and easily perform supervised classification with cross-validation.
 It uses nibabel, nitime, scikit-learn and h5py.
-
-It is distributed under the 3-Clause BSD license.
 
 Dependencies
 ============

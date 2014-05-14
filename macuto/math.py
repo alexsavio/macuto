@@ -14,9 +14,15 @@ import numpy as np
 
 def takespread(sequence, num):
     """
-    @param sequence:
-    @param num:
-    @return:
+    Generator for sequence. Will return num equally spaced
+    items from the sequence.
+
+    @param sequence: container
+
+    @param num: int
+    Number of items to be retrieved from sequence.
+
+    @return: container item
     """
     length = float(len(sequence))
     for i in range(num):
@@ -25,9 +31,16 @@ def takespread(sequence, num):
 
 def makespread(sequence, num):
     """
-    @param sequence:
-    @param num:
-    @return:
+    Return a sequence with num equally spaced items
+    from the sequence.
+
+    @param sequence: container
+
+    @param num: int
+    Number of items to be retrieved from sequence
+
+    @return: container
+    Subset of the given sequence
     """
     length = float(len(sequence))
     seq = np.array(sequence)

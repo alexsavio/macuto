@@ -9,12 +9,13 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 import os
-import numpy as np
 
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from .math import makespread
+
 
 
 #-------------------------------------------------------------------------------------
@@ -48,8 +49,8 @@ def show_many_slices(vol, vol2=None, volaxis=1, n_slices=[8, 8], slices_idx=None
 
     import numpy as np
     import matplotlib.pyplot as plt
-    from matplotlib import cm, colors
-    from mpl_toolkits.axes_grid1 import ImageGrid, make_axes_locatable
+    from matplotlib import colors
+    from mpl_toolkits.axes_grid1 import ImageGrid
 
     class ImageObserver:
         'update image in response to changes in clim or cmap on another image'
@@ -233,8 +234,74 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
     assert(len(file_list1) == len(file_list2))
 
     import os
+    from .nifti. import get_nii_data
+    from .files.names import remove_ext, get_temp_file
+    #import markdown
+
+    import matplotlib.pyplot as plt
+    import skimage.io as skio
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    img_files = []
+
+    #CREATE separate images of each file_list2 file
+    # on the corresponding file_list1 file
+    for idx in list(range(len(file_list1))):
+        f1_vol = get_nii_data(file_list1[idx])
+        f2_vol = get_nii_data(file_list2[idx])
+
+        if len(f1_vol.shape) > 3:
+            f1_vol = f1_vol[..., int(np.floor(f1_vol.shape[3]/2))]
+
+        fig = show_many_slices(f1_vol, f2_vol, **kwargs)
+
+        tmpf = get_temp_file(suffix='.png').name
+
+        fig.savefig(tmpf, transparent=True, dpi=dpi)
+
+        img = autocrop_img(skio.imread(tmpf))
+
+        png_fname = remove_ext(file_list1[idx])
+        png_fname = os.path.relpath(png_fname).replace('.', '').replace('/', '_').replace('__', '') + '.png'
+
+        png_path = os.path.join(output_dir, png_fname)
+        skio.imsave(png_path, img)
+
+        plt.close(fig)
+
+        img_files.append(os.path.basename(png_path))
+
+    #Create the index.html file with all images
+    create_imglist_html(output_dir, img_files)
+
+    return img_files
+
+
+def slicesdir_one(output_dir, file_list1, dpi=150, **kwargs):
+    """
+    Creates a folder with a html file and png images of slices
+    of each of nifti file in file_list1.
+
+    @param output_dir: string
+    Path to the output folder
+
+    @param file_list1: list of strings
+    Paths to the background image, can be either 3D or 4D images.
+    If they are 4D images, will pick one of the center.
+
+    @param file_list2: list of strings
+    Paths to the overlay images, must be 3D images.
+
+    @param kwargs: arguments to show_many_slices
+    See macuto.render.show_many_slices docstring.
+
+    @return:
+    """
+    import os
     from .nifti import get_nii_data
-    from .files import remove_ext, get_temp_file
+    from .files.names import remove_ext, get_temp_file
     #import markdown
 
     import matplotlib.pyplot as plt
@@ -301,7 +368,7 @@ def show_3slices(vol, vol2=None, x=None, y=None, z=None, fig=None,
     import numpy as np
     import matplotlib.pyplot as plt
 
-    from matplotlib.widgets import Slider, Button
+    from matplotlib.widgets import Slider
 
     if not x:
         x = np.floor(vol.shape[0]/2)
