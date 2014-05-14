@@ -234,7 +234,7 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
     assert(len(file_list1) == len(file_list2))
 
     import os
-    from .nifti. import get_nii_data
+    from .nifti.read import get_nii_data
     from .files.names import remove_ext, get_temp_file
     #import markdown
 
@@ -300,7 +300,7 @@ def slicesdir_one(output_dir, file_list1, dpi=150, **kwargs):
     @return:
     """
     import os
-    from .nifti import get_nii_data
+    from .nifti.read import get_nii_data
     from .files.names import remove_ext, get_temp_file
     #import markdown
 
@@ -316,12 +316,11 @@ def slicesdir_one(output_dir, file_list1, dpi=150, **kwargs):
     # on the corresponding file_list1 file
     for idx in list(range(len(file_list1))):
         f1_vol = get_nii_data(file_list1[idx])
-        f2_vol = get_nii_data(file_list2[idx])
 
         if len(f1_vol.shape) > 3:
             f1_vol = f1_vol[..., int(np.floor(f1_vol.shape[3]/2))]
 
-        fig = show_many_slices(f1_vol, f2_vol, **kwargs)
+        fig = show_many_slices(f1_vol, **kwargs)
 
         tmpf = get_temp_file(suffix='.png').name
 
