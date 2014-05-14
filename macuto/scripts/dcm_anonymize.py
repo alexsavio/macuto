@@ -28,9 +28,9 @@ output_dicom_extension = '.dcm'
 
 
 @baker.command(default=True,
-               shortopts={'subjfolder': 'i',
-                          'idregex': 'r',
-                          'not_rename_folder': 'f'})
+               shortopts={'i': 'subjfolder',
+                          'r': 'idregex',
+                          'f': 'not_rename_folder'})
 def subject(subjfolder, idregex='', not_rename_folder=False):
     """Anonymizes the entire subject folder.
     First renames the main folder to the acquisition ID, then 

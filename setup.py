@@ -45,7 +45,8 @@ setup_dict = dict(
 
     scripts = ['macuto/scripts/dcm_anonymize.py',
                'macuto/scripts/sav_convert.py',
-               'macuto/scripts/filetree.py'],
+               'macuto/scripts/filetree.py',
+               'macuto/scripts/sliceit.py'],
 
     platforms='any',
 

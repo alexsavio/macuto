@@ -16,8 +16,6 @@ import matplotlib.cm as cm
 
 from .math import makespread
 
-
-
 #-------------------------------------------------------------------------------------
 # Matplotlib-based options
 #-------------------------------------------------------------------------------
@@ -142,9 +140,9 @@ def show_many_slices(vol, vol2=None, volaxis=1, n_slices=[8, 8], slices_idx=None
 
 def create_imglist_html(output_dir, img_files, filename='index.html'):
     """
-    @param img_files: list of strings
+    :param img_files: list of strings
 
-    @return:
+    :return:
     """
     #import markdown
     #md_indexf = os.path.join(output_dir, 'index.markdown')
@@ -205,7 +203,7 @@ def borders(im, color):
     @param color:
     @return:
     """
-    left, right, top, bottom = -1,-1,-1,-1
+    #left, right, top, bottom = -1,-1,-1,-1
 
     non_color_pix = np.where(im != color)
     top = non_color_pix[0].min()
@@ -279,7 +277,7 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
     return img_files
 
 
-def slicesdir_one(output_dir, file_list1, dpi=150, **kwargs):
+def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
     """
     Creates a folder with a html file and png images of slices
     of each of nifti file in file_list1.

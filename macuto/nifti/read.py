@@ -13,6 +13,7 @@ import sys
 import numpy as np
 import nibabel as nib
 
+from .process import smooth_volume
 
 def get_nii_info(nii_file):
     """
