@@ -16,6 +16,7 @@ import matplotlib.cm as cm
 
 from .math import makespread
 
+
 #-------------------------------------------------------------------------------------
 # Matplotlib-based options
 #-------------------------------------------------------------------------------
@@ -229,6 +230,7 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
 
     @return:
     """
+    assert(len(file_list1) > 0)
     assert(len(file_list1) == len(file_list2))
 
     import os
@@ -297,6 +299,8 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
 
     @return:
     """
+    assert(len(file_list1) > 0)
+
     import os
     from .nifti.read import get_nii_data
     from .files.names import remove_ext, get_temp_file
@@ -310,6 +314,8 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
 
     img_files = []
 
+    show_colorbar = kwargs.pop('show_colorbar', False)
+
     #CREATE separate images of each file_list2 file
     # on the corresponding file_list1 file
     for idx in list(range(len(file_list1))):
@@ -318,7 +324,7 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
         if len(f1_vol.shape) > 3:
             f1_vol = f1_vol[..., int(np.floor(f1_vol.shape[3]/2))]
 
-        fig = show_many_slices(f1_vol, **kwargs)
+        fig = show_many_slices(f1_vol, show_colorbar=show_colorbar, **kwargs)
 
         tmpf = get_temp_file(suffix='.png').name
 

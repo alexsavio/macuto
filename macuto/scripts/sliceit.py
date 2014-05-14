@@ -59,18 +59,23 @@ def vols(inputdir, outdir, regex1, regex2='', max_jumps=3, dpi=150):
                                slicesdir_paired_overlays)
     from macuto.files.search import (recursive_find_match)
 
+    #look for regex1 matches
     base_files = recursive_find_match(inputdir, regex1)
 
     if len(base_files) == 0:
-        log.error('Could not find files that matched {0} in {1}'.format(regex1, inputdir))
+        log.error('Could not find files that matched {0} within folder {1}'.format(regex1, inputdir))
+        return -1
 
+    #check if output folder exists
     outdir = path(outdir)
     if not os.path.exists(outdir):
         outdir.makedirs_p()
 
     if len(regex2) == 0:
+        #create slices for regex1 matches only
         slicesdir_oneset(outdir, base_files, dpi=dpi)
     else:
+        #look for matches to regex2 and create slices for both
         overlay_files = [find_nearest_match(bf, regex2, max_jumps) for bf in base_files]
         slicesdir_paired_overlays(outdir, base_files, overlay_files, dpi=dpi)
 
