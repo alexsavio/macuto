@@ -17,7 +17,7 @@ log = logging.getLogger('sliceit')
                shortopts={'regex1': '1',
                           'regex2': '2',
                           'max_jumps': 'm'})
-def vols(inputdir, outdir, regex1, regex2='', max_jumps=3, dpi=150):
+def vols(inputdir='', outdir='', regex1='', regex2='', max_jumps=3, dpi=150):
     """
     Creates a folder named outdir with a html file and png images of slices
     of each of nifti file that matches regex1.
@@ -55,6 +55,8 @@ def vols(inputdir, outdir, regex1, regex2='', max_jumps=3, dpi=150):
                                     whoami(),
                                     locals()))
 
+    assert(os.path.isdir(inputdir))
+
     from macuto.render import (slicesdir_oneset,
                                slicesdir_paired_overlays)
     from macuto.files.search import (recursive_find_match)
@@ -69,6 +71,7 @@ def vols(inputdir, outdir, regex1, regex2='', max_jumps=3, dpi=150):
     #check if output folder exists
     outdir = path(outdir)
     if not os.path.exists(outdir):
+        log.info('Creating folder {0}'.format(outdir))
         outdir.makedirs_p()
 
     if len(regex2) == 0:
