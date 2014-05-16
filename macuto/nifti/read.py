@@ -72,7 +72,7 @@ def get_masked_nii_data(nii_file, mask_file):
     return vol[mask_indices], mask_indices, mask.shape
 
 
-def niftilist_to_array(nii_filelist, smoothmm=0, outdtype=None):
+def niftilist_to_array(nii_filelist, outdtype=None):
     '''
     From the list of absolute paths to nifti files, creates a Numpy array
     with the data.
@@ -108,30 +108,19 @@ def niftilist_to_array(nii_filelist, smoothmm=0, outdtype=None):
 
     outmat = np.zeros((len(nii_filelist), np.prod(vol.shape)), dtype=outdtype)
 
-    if smoothmm <= 0:
-        try:
-            for i, vf in enumerate(nii_filelist):
-                vol = get_nii_data(vf)
-                outmat[i, :] = vol.flatten()
-        except:
-            print('niftilist_to_array: Error on reading file ' + vf)
-            print("Unexpected error:", sys.exc_info()[0])
-            raise
-    else:
-        try:
-            for i, vf in enumerate(nii_filelist):
-                vol = smooth_volume(vf, smoothmm)
-                outmat[i, :] = vol.flatten()
-        except:
-            print('niftilist_to_array: Error on reading file ' + vf)
-            print("Unexpected error:", sys.exc_info()[0])
-            raise
+    try:
+        for i, vf in enumerate(nii_filelist):
+            vol = get_nii_data(vf)
+            outmat[i, :] = vol.flatten()
+    except:
+        print('niftilist_to_array: Error on reading file ' + vf)
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
 
     return outmat, vol.shape
 
 
-def niftilist_mask_to_array(nii_filelist, mask_file=None, smoothmm=0,
-                            outdtype=None):
+def niftilist_mask_to_array(nii_filelist, mask_file=None, outdtype=None):
     """
     From the list of absolute paths to nifti files, creates a Numpy array
     with the masked data.
@@ -179,49 +168,17 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, smoothmm=0,
     outmat = np.zeros((len(nii_filelist), np.count_nonzero(mask)),
                       dtype=outdtype)
 
-    if smoothmm <= 0:
-        try:
-            for i, vf in enumerate(nii_filelist):
-                vol = get_nii_data(vf)
-                outmat[i, :] = vol[mask_indices]
-        except:
-            print('niftilist_to_array: Error on reading file ' + vf)
-            print("Unexpected error:", sys.exc_info()[0])
-            raise
-    else:
-        try:
-            for i, vf in enumerate(nii_filelist):
-                vol = smooth_volume(vf, smoothmm)
-                outmat[i, :] = vol[mask_indices]
-        except:
-            print('niftilist_to_array: Error on reading file ' + vf)
-            print("Unexpected error:", sys.exc_info()[0])
-            raise
+    try:
+       for i, vf in enumerate(nii_filelist):
+           vol = get_nii_data(vf)
+           outmat[i, :] = vol[mask_indices]
+    except:
+        print('niftilist_to_array: Error on reading file ' + vf)
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
 
     return outmat, mask_indices, mask.shape
 
 
-def smooth_volume(nifti_file, smoothmm):
-    """
 
-    @param nifti_file: string
-    @param smoothmm: int
-    @return:
-    """
-    if smoothmm > 0:
-        omf = nifti_file + '_smooth' + str(smoothmm) + 'mm.nii.gz'
-
-        isosmooth = IsotropicSmooth()
-        isosmooth.inputs.in_file  = nifti_file
-        isosmooth.inputs.fwhm     = smoothmm
-        isosmooth.inputs.out_file = omf
-        isosmooth.run()
-
-        data = get_nii_data(omf)
-        os.remove(omf)
-
-    else:
-        data = get_nii_data(nifti_file)
-
-    return data
 

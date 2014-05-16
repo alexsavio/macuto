@@ -16,7 +16,7 @@ import scipy.stats as stats
 import logging as log
 
 from ..threshold import apply_threshold
-from ..io import ExportData
+from ..storage import ExportData
 
 def calculate_stats(data):
     """

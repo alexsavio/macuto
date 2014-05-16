@@ -1,15 +1,10 @@
-# coding=utf-8
-#-------------------------------------------------------------------------------
+__author__ = 'alexandre'
 
-#Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
-#Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
-#Universidad del Pais Vasco UPV/EHU
-#
-#2013, Alexandre Manhaes Savio
-#Use this at your own risk!
-#-------------------------------------------------------------------------------
-
+import os
 import nibabel as nib
+from nipype.interfaces.fsl import IsotropicSmooth
+
+from .read import get_nii_data
 
 
 def is_valid_coordinate(img, i, j, k):
@@ -114,3 +109,27 @@ def get_sampling_interval(func_img):
     The TR value from the image header
     """
     return func_img.get_header().get_zooms()[-1]
+
+def smooth_volume(nifti_file, smoothmm):
+    """
+
+    @param nifti_file: string
+    @param smoothmm: int
+    @return:
+    """
+    if smoothmm > 0:
+        omf = nifti_file + '_smooth' + str(smoothmm) + 'mm.nii.gz'
+
+        isosmooth = IsotropicSmooth()
+        isosmooth.inputs.in_file  = nifti_file
+        isosmooth.inputs.fwhm     = smoothmm
+        isosmooth.inputs.out_file = omf
+        isosmooth.run()
+
+        data = get_nii_data(omf)
+        os.remove(omf)
+
+    else:
+        data = get_nii_data(nifti_file)
+
+    return data

@@ -11,7 +11,6 @@
 
 import re
 
-
 def filter_objlist(olist, fieldname, fieldval):
     """
     Returns a list with of the objetcts in olist that have a fieldname valued as fieldval
@@ -157,3 +156,19 @@ def append_to_list(lst, preffix):
     @return:
     """
     return [preffix + str(item) for item in lst]
+
+
+def is_valid_regex(string):
+    """
+    Checks whether the re module can compile the given regular expression.
+
+    :param string: str
+
+    :return: boolean
+    """
+    try:
+        re.compile(string)
+        is_valid = True
+    except re.error:
+        is_valid = False
+    return is_valid

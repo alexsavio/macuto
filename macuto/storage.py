@@ -11,11 +11,41 @@
 
 import sys
 import shelve
-import h5py
-import scipy.io as sio
 import logging as log
 
-from .files import get_extension, add_extension_if_needed
+import h5py
+import scipy.io as sio
+import pandas as pd
+
+from .files.names import get_extension, add_extension_if_needed
+
+
+def sav_to_pandas_rpy2(inputfile):
+    """
+    :param inputfile: string
+
+    :return:
+    """
+    import pandas.rpy.common as com
+
+    w = com.robj.r('foreign::read.spss("%s", to.data.frame=TRUE)' % inputfile)
+    return com.convert_robj(w)
+
+def sav_to_pandas_savreader(inputfile):
+    """
+
+    :param inputfile: string
+
+    :return:
+    """
+    from savReaderWriter import SavReader
+    lines = []
+    with SavReader(inputfile, returnHeader=True) as reader:
+        header = next(reader)
+        for line in reader:
+            lines.append(line)
+
+    return pd.DataFrame(data=lines, columns=header)
 
 
 def save_variables_to_shelve(fname, variables):

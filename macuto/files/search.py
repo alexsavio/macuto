@@ -12,7 +12,7 @@
 import re
 import os
 from glob import glob
-from .strings import search_list, filter_list
+from ..strings import search_list, filter_list
 
 
 def dir_search (regex, wd='.'):
