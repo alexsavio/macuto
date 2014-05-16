@@ -36,8 +36,27 @@ Development
 Code
 ----
 
-GIT
-~~~
+Gitlab
+~~~~~~
+
+You can check the latest sources with the command::
+
+    git clone https://158.227.114.158/alexandre/macuto.git
+
+or if you have write privileges::
+
+    git clone git@158.227.114.158:alexandre/macuto.git
+
+If you are going to create patches for this project, create a branch for it 
+from the develop branch.
+
+The master branch is exclusive for stable releases.
+
+
+Github
+~~~~~~
+
+An older version of the project is also available in Github.
 
 You can check the latest sources with the command::
 
