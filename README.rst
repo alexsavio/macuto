@@ -23,9 +23,8 @@ Before installing it, you need all the requirements installed.
 These are listed in the requirements.txt files.
 The best way to install them is running the following command:
 
-    <pre><code>
-    for r in `cat macuto/requirements.txt`; do pip install $r; done
-    </code></pre>
+    
+    for r in \`cat macuto/requirements.txt\`; do pip install $r; done
 
 This package uses distutils, which is the default way of installing
 python modules. To install in your home directory, use::
