@@ -8,10 +8,6 @@ macuto
 .. image:: https://coveralls.io/repos/alexsavio/macuto/badge.png
     :target: https://coveralls.io/r/alexsavio/macuto
 
-Gitlab CI
-.. image:: https://158.227.114.158/gitlabci/alexandre/macuto.png
-    :target: https://158.227.114.158/gitlabci/alexandre/macuto.png
-
 Series of tools to manage MRI data, extract features from them and easily perform supervised classification with cross-validation.
 It uses nibabel, nitime, scikit-learn and h5py.
 
