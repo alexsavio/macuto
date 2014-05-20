@@ -16,8 +16,10 @@ log = logging.getLogger('sliceit')
 @baker.command(default=True,
                shortopts={'regex1': '1',
                           'regex2': '2',
-                          'max_jumps': 'm'})
-def vols(inputdir='', outdir='', regex1='', regex2='', max_jumps=3, dpi=150):
+                          'max_jumps': 'm',
+                          'red_outline': 'r'})
+def vols(inputdir='', outdir='', regex1='', regex2='',
+         red_outline=False, max_jumps=3, dpi=150):
     """
     Creates a folder named outdir with a html file and png images of slices
     of each of nifti file that matches regex1.
@@ -43,7 +45,10 @@ def vols(inputdir='', outdir='', regex1='', regex2='', max_jumps=3, dpi=150):
     Regular expression to for the overlay volumes.
     Can also be the path to one file.
 
-    :param max_jumps: int
+    :param red_outline: boolean, optional
+    Set this flag to plot only an outline of the files in regex2.
+
+    :param max_jumps: int, optional
     Number of folder jumps upwards to recursively look for
     regex2 file matches.
 
@@ -80,7 +85,8 @@ def vols(inputdir='', outdir='', regex1='', regex2='', max_jumps=3, dpi=150):
     else:
         #look for matches to regex2 and create slices for both
         overlay_files = [find_nearest_match(bf, regex2, max_jumps) for bf in base_files]
-        slicesdir_paired_overlays(outdir, base_files, overlay_files, dpi=dpi)
+        slicesdir_paired_overlays(outdir, base_files, overlay_files,
+                                  is_red_outline=red_outline, dpi=dpi)
 
     return 0
 

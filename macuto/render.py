@@ -11,11 +11,15 @@
 import os
 
 import numpy as np
+import skimage.io as skio
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-from .math import makespread
+from nipy.labs.viz_tools.edge_detect import _edge_detect
 
+from .math import makespread
+from .files.names import get_temp_file
 
 #-------------------------------------------------------------------------------------
 # Matplotlib-based options
@@ -23,7 +27,8 @@ from .math import makespread
 def show_many_slices(vol, vol2=None, volaxis=1, n_slices=[8, 8], slices_idx=None,
                      vol1_colormap=None, vol1_transp_val=None,
                      vol2_colormap=None, vol2_transp_val=0,
-                     interpolation='nearest', figtitle=None, facecolor='', show_colorbar=True):
+                     interpolation='nearest', figtitle=None, facecolor='',
+                     is_red_outline=False, show_colorbar=True):
     """
     @param vol: numpy 3D array
     @param vol2: numpy 3D array
@@ -38,16 +43,15 @@ def show_many_slices(vol, vol2=None, volaxis=1, n_slices=[8, 8], slices_idx=None
     @param vol2_transp_val: vol2.dtype scalar
     Volume2 transparent value
 
-    @param interpolation: string
-    @param figtitle: string
-    @param facecolor: string
-    @param show_colorbar: bool
+    @param interpolation: string, optional
+    @param figtitle: string, optional
+    @param facecolor: string, optional
+    @param is_red_outline: boolean, optional
+    @param show_colorbar: boolean, optional
 
     @return: matplotlib figure
     """
 
-    import numpy as np
-    import matplotlib.pyplot as plt
     from matplotlib import colors
     from mpl_toolkits.axes_grid1 import ImageGrid
 
@@ -107,12 +111,21 @@ def show_many_slices(vol, vol2=None, volaxis=1, n_slices=[8, 8], slices_idx=None
         img = vol.take([i], volaxis).squeeze()
         if vol1_transp_val is not None:
             img = np.ma.masked_where(img == vol1_transp_val, img)
-        g.imshow(np.rot90(img), cmap=vol1_colormap, interpolation=interpolation)
+        g.imshow(np.rot90(img), cmap=vol1_colormap,
+                 interpolation=interpolation)
 
         if isinstance(vol2, np.ndarray):
             img2 = vol2.take([i], volaxis).squeeze()
-            img2 = np.ma.masked_where(img2 == vol2_transp_val, img2)
-            images.append(g.imshow(np.rot90(img2), cmap=vol2_colormap, interpolation=interpolation))
+            img2 = np.rot90(img2)
+
+            if is_red_outline:
+                _, img2 = _edge_detect(img2)
+                img2 = np.ma.masked_where(img2 == 0, img2)
+            else:
+                img2 = np.ma.masked_where(img2 == vol2_transp_val, img2)
+
+            images.append(g.imshow(img2, cmap=vol2_colormap,
+                                   interpolation=interpolation))
             dd = np.ravel(img2)
             vmin = min(vmin, np.amin(dd))
             vmax = max(vmax, np.amax(dd))
@@ -153,7 +166,8 @@ def create_imglist_html(output_dir, img_files, filename='index.html'):
         for imgf in img_files:
                 #line = '[![' + imgf + '](' + imgf + ')' + imgf + '](' + imgf + ')'
                 #line = '[<img src="' + imgf + '" width=1000/>' + imgf + '](' + imgf + ')'
-                line = '<p><a href="' + imgf + '"><img src="' + imgf + '"/>' + imgf + '</a></p>'
+                line = '<p><a href="' + imgf + '"><img src="' + imgf + '"/>' +\
+                       imgf + '</a></p>'
                 f.write(line + '\n')
 
     #markdown.markdownFromFile(md_indexf, html_indexf, encoding="utf-8")
@@ -164,7 +178,6 @@ def show_connectivity_matrix(image, cmap=None):
     @param image: 2D ndarray
     @param cmap: colormap
     """
-    import skimage.io as skio
     if cmap is None:
         cmap = cm.jet
 
@@ -182,6 +195,8 @@ def autocrop_img(image, color=0):
     """
     if len(image.shape) == 3:
         img = image[..., 3] if image.shape[2] == 4 else image[..., 0]
+    else:
+        img = image
 
     mask = (img != color).astype(int)
 
@@ -191,7 +206,6 @@ def autocrop_img(image, color=0):
 
 
 def imshow(image, **kwargs):
-    import matplotlib.pylab as plt
     fig = plt.figure(figsize=(5, 4))
     plt.imshow(image, **kwargs)
     plt.axis('off')
@@ -215,7 +229,8 @@ def borders(im, color):
     return left, right, top, bottom
 
 
-def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwargs):
+def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150,
+                              is_red_outline=False, **kwargs):
     """
     @param output_dir:
     @param file_list1: list of strings
@@ -225,6 +240,9 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
     @param file_list2: list of strings
     Paths to the overlay images, must be 3D images.
 
+    @param is_red_outline: boolean, optional
+    If True will show from the files in list2 a red outline border.
+
     @param kwargs: arguments to show_many_slices
     See macuto.render.show_many_slices docstring.
 
@@ -233,13 +251,9 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
     assert(len(file_list1) > 0)
     assert(len(file_list1) == len(file_list2))
 
-    import os
     from .nifti.read import get_nii_data
     from .files.names import remove_ext, get_temp_file
     #import markdown
-
-    import matplotlib.pyplot as plt
-    import skimage.io as skio
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -255,19 +269,14 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
         if len(f1_vol.shape) > 3:
             f1_vol = f1_vol[..., int(np.floor(f1_vol.shape[3]/2))]
 
-        fig = show_many_slices(f1_vol, f2_vol, **kwargs)
+        fig = show_many_slices(f1_vol, f2_vol, is_red_outline=is_red_outline,
+                               **kwargs)
 
-        tmpf = get_temp_file(suffix='.png').name
-
-        fig.savefig(tmpf, transparent=True, dpi=dpi)
-
-        img = autocrop_img(skio.imread(tmpf))
-
-        png_fname = remove_ext(file_list1[idx])
-        png_fname = os.path.relpath(png_fname).replace('.', '').replace('/', '_').replace('__', '') + '.png'
-
+        png_fname = os.path.relpath(remove_ext(file_list1[idx]))
+        png_fname = png_fname.replace('.', '').replace('/', '_').replace('__', '') + '.png'
         png_path = os.path.join(output_dir, png_fname)
-        skio.imsave(png_path, img)
+
+        export_figure(fig, png_path, dpi=dpi)
 
         plt.close(fig)
 
@@ -277,6 +286,15 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150, **kwa
     create_imglist_html(output_dir, img_files)
 
     return img_files
+
+
+def export_figure(fig, filepath, dpi=150):
+
+    tmpf = get_temp_file(suffix='.png').name
+    fig.savefig(tmpf, transparent=True, dpi=dpi)
+    img = autocrop_img(skio.imread(tmpf))
+    skio.imsave(filepath, img)
+    return filepath
 
 
 def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
@@ -326,17 +344,11 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
 
         fig = show_many_slices(f1_vol, show_colorbar=show_colorbar, **kwargs)
 
-        tmpf = get_temp_file(suffix='.png').name
-
-        fig.savefig(tmpf, transparent=True, dpi=dpi)
-
-        img = autocrop_img(skio.imread(tmpf))
-
-        png_fname = remove_ext(file_list1[idx])
-        png_fname = os.path.relpath(png_fname).replace('.', '').replace('/', '_').replace('__', '') + '.png'
-
+        png_fname = os.path.relpath(remove_ext(file_list1[idx]))
+        png_fname = png_fname.replace('.', '').replace('/', '_').replace('__', '') + '.png'
         png_path = os.path.join(output_dir, png_fname)
-        skio.imsave(png_path, img)
+
+        export_figure(fig, png_path, dpi=dpi)
 
         plt.close(fig)
 
@@ -488,9 +500,6 @@ def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150, lower_triang
     for idx in list(range(len(cmat_list))):
         cmat = cmat_list[idx]
 
-        png_fname = 'connectivity_matrix' + str(idx) + '.png'
-        png_path = os.path.join(output_dir, png_fname)
-
         if lower_triangle:
             fig = drawmatrix_channels(cmat, channel_names, size=size,
                                       color_anchor=color_anchor, **kwargs)
@@ -498,11 +507,10 @@ def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150, lower_triang
             fig = draw_square_matrix_channels(cmat, channel_names, size=size,
                                               color_anchor=color_anchor, **kwargs)
 
-        #fig  = plt.matshow(cmat, cmap=cmap)
-        fig.savefig(png_path, transparent=True, dpi=dpi)
+        png_fname = 'connectivity_matrix' + str(idx) + '.png'
+        png_path = os.path.join(output_dir, png_fname)
 
-        img = autocrop_img(skio.imread(png_path))
-        skio.imsave(png_path, img)
+        export_figure(fig, png_path, dpi=dpi)
 
         img_files.append(os.path.basename(png_path))
 
