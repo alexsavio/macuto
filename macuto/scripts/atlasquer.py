@@ -1,10 +1,19 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
+import os
 import sys
 import argparse
+import logging
 
 import nibabel as nib
-from atlas_group import AtlasGroup
+
+from macuto.atlas.atlas_group import AtlasGroup
+from macuto.scriptutils import whoami
+
+#logging config
+logging.basicConfig(level=logging.DEBUG, filename='atlasquerpy.log',
+                    format="%(asctime)-15s %(message)s")
+log = logging.getLogger('atlasquer.py')
 
 '''
 cd ~/Dropbox/Documents/work/atlasquerpy
@@ -54,9 +63,13 @@ def main(argv=None):
     try:
        args = parser.parse_args ()
     except argparse.ArgumentError, exc:
-       print(exc.message + '\n' + exc.argument)
+       log.error(exc.message)
        parser.error(str(exc.message))
        return -1
+
+    log.info('atlasquer.py {0} {1} {2}'.format(os.path.basename(__file__),
+                                               whoami(),
+                                               locals()))
 
     dumpatlases = args.dumpatlases
     precision = args.precision
@@ -74,22 +87,23 @@ def main(argv=None):
         return 0
 
     if verbose:
-        print('Using atlas: ' + atlas_name)
+        log.info('Using atlas: ' + atlas_name)
 
     atlas = atlas_group.get_atlas_by_name(atlas_name)
     if atlas is None:
-        print('Invalid atlas name. Try one of:')
+        log.error('Invalid atlas name. Try one of:')
         print(atlas_group.atlases.keys())
+        return 1
 
     if mask_file != '':
         try:
             mask_img = nib.load(mask_file)
         except:
-            print('Problem reading mask file ' + mask_file)
+            log.error('Problem reading mask file ' + mask_file)
             return 1
 
         if verbose:
-            print('Working with mask ' + mask_file)
+            log.info('Working with mask ' + mask_file)
 
         if binarise:
             mask_vol = mask_img.get_data()
@@ -106,26 +120,28 @@ def main(argv=None):
             struct_name = atlas.get_structure_name(li)
 
             if verbose:
-                print(str(li))
+                log.debug(str(li))
 
             if value > 0:
                 val_text = "%.*f" % (precision, round(value, precision))
-                print(struct_name + ':' + val_text)
+                log.info(struct_name + ':' + val_text)
 
     elif coords != '':
         try:
             k = coords.split(',')
             x, y, z = float(k[0]), float(k[1]), float(k[2])
         except:
-            print('Problem parsing given coordinates, try <x>,<y>,<z>')
+            log.error('Problem parsing given coordinates, try <x>,<y>,<z>')
+            return 1
 
         if verbose:
-            print('Working with coords: ' + str(x) + ',' + str(y) + ',' + str(z))
+            log.debug('Working with coords: ' + str(x) + ',' + str(y) + ',' + str(z))
 
         try:
             print(atlas.get_description(x, y, z))
-        except:
-            print('Unknown exception.')
+        except Exception as exc:
+            log.error(exc.message)
+            log.error(sys.exc_info())
             return 1
 
     return 0
