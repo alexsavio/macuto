@@ -79,8 +79,7 @@ def subject(subjfolder, idregex='', not_rename_folder=False):
 
 @baker.command(shortopts={'acqfolder': 'i'})
 def dicom_folder(acqfolder):
-    """
-    Anonymizes all DICOM files one step within acqfolder.
+    """Anonymizes all DICOM files one step within acqfolder.
     First it removes the personal header content of the DICOM files,
     then if converts the DICOMs to NifTI and finally it renames the
     DICOM file names.
@@ -104,8 +103,7 @@ def dicom_folder(acqfolder):
 @baker.command(shortopts={'subjfolder': 'i', 'newfolder': 'o',
                           'idregex': 'r'})
 def folder_name(subjfolder, newfolder=None, idregex=None):
-    """
-    Moves the subjfolder either to newfolder, or
+    """Moves the subjfolder either to newfolder, or
     to a folder named as the PatientID in the DICOM
     files within it, in the same base path.
 
@@ -162,8 +160,7 @@ def folder_name(subjfolder, newfolder=None, idregex=None):
 
 @baker.command(shortopts={'acqfolder': 'i'})
 def file_names(acqfolder):
-    """
-    Renames the .IMA and .DICOM files within a subjfolder's acquisition
+    """Renames the .IMA and .DICOM files within a subjfolder's acquisition
     to 0001.IMA, 0002.IMA...
 
     :param acqfolder: Path to the folder where a set of
@@ -185,8 +182,7 @@ def file_names(acqfolder):
 
 @baker.command(shortopts={'acqpath': 'i'})
 def dicom_headers(acqpath):
-    """
-    Anonymizes all the DICOM files within acqpath in case it is a folder,
+    """Anonymizes all the DICOM files within acqpath in case it is a folder,
     else if it is a file path, will anonymize the file.
 
     Anonymizing means: putting nonsense information into tags:
@@ -217,8 +213,7 @@ def dicom_headers(acqpath):
 @baker.command(params={"acqpath": "Path to the subject's acquisition folder with DICOM files"},
                shortopts={'acqpath': 'i'})
 def dicom_to_nii(acqpath):
-    """
-    Uses dcm2nii to convert all DICOM files within acqpath to NifTI.
+    """Uses dcm2nii to convert all DICOM files within acqpath to NifTI.
     """
     log.info('anonymizer.py dicom_to_nii {0}'.format(acqpath))
 
@@ -289,8 +284,7 @@ def get_patient_mri_id(subjfolder):
 
 
 def anonymize_dicom_file(dcm_file, remove_private_tags=False, remove_curves=False):
-    """
-    Anonymizes the given dcm_file.
+    """Anonymizes the given dcm_file.
 
     Anonymizing means: putting nonsense information into tags:
     PatientName, PatientAddress and PatientBirthDate.
@@ -344,8 +338,7 @@ def anonymize_dicom_file(dcm_file, remove_private_tags=False, remove_curves=Fals
 
 
 def anonymize_dicom_file_dcmtk(dcm_file):
-    """
-    Anonymizes the given dcm_file.
+    """Anonymizes the given dcm_file.
 
     Anonymizing means: putting nonsense information into tags:
     PatientName, PatientAddress and PatientBirthDate.
@@ -366,8 +359,7 @@ def anonymize_dicom_file_dcmtk(dcm_file):
 
 
 def rename_file_group_to_serial_nums(file_lst):
-    """
-    Will rename all files in file_lst to a padded serial
+    """Will rename all files in file_lst to a padded serial
     number plus its extension
 
     :param file_lst: list of path.py paths
@@ -383,8 +375,7 @@ def rename_file_group_to_serial_nums(file_lst):
 
 
 def get_abspath(folderpath):
-    """
-    Returns the absolute path of folderpath.
+    """Returns the absolute path of folderpath.
     If the path does not exist, will raise IOError.
     """
     try:
