@@ -121,6 +121,11 @@ def show_many_slices(vol, vol2=None, volaxis=1, n_slices=[8, 8], slices_idx=None
             if is_red_outline:
                 _, img2 = _edge_detect(img2)
                 img2 = np.ma.masked_where(img2 == 0, img2)
+
+                #change vol2 colormap
+                vol2_colormap = plt.cm.autumn_r
+                show_colorbar = False
+
             else:
                 img2 = np.ma.masked_where(img2 == vol2_transp_val, img2)
 
