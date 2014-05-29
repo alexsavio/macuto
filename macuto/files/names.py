@@ -16,7 +16,7 @@ import numpy as np
 import logging as log
 import subprocess
 
-ALLOWED_EXTS = {'.gz': {'.nii'}}
+from ..config import ALLOWED_EXTS
 
 
 def get_extension(fpath, check_if_exists=False):
@@ -62,7 +62,7 @@ def add_extension_if_needed(fpath, ext, check_if_exists=False):
     @return:
     File name or path with extension added, if needed.
     """
-    if fpath.find(ext) < 0:
+    if not fpath.endswith(ext):
         fpath += ext
 
     if check_if_exists:
