@@ -1,5 +1,5 @@
 # coding=utf-8
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 #Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
@@ -7,7 +7,7 @@
 #
 #2013, Alexandre Manhaes Savio
 #Use this at your own risk!
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -15,6 +15,8 @@ import tempfile
 import numpy as np
 import logging as log
 import subprocess
+
+ALLOWED_EXTS = {'.gz': {'.nii'}}
 
 
 def get_extension(fpath, check_if_exists=False):
@@ -28,13 +30,20 @@ def get_extension(fpath, check_if_exists=False):
     The extension of the file name or path
     """
     if check_if_exists:
-        if not os.path.exists (fpath):
+        if not os.path.exists(fpath):
             err = 'File not found: ' + fpath
             raise IOError(err)
 
     try:
-        s = os.path.splitext(fpath)
-        return s[-1]
+        rest, ext = os.path.splitext(fpath)
+        if ext in ALLOWED_EXTS:
+            alloweds = ALLOWED_EXTS[ext]
+            _, ext2 = os.path.splitext(rest)
+            if ext2 in alloweds:
+                ext = ext2 + ext
+
+        return ext
+
     except:
         log.error( "Unexpected error: ", sys.exc_info()[0] )
         raise
@@ -72,10 +81,7 @@ def remove_ext(fname):
     @return: string
     File path or name without extension
     """
-    if '.nii.gz' in fname:
-        return os.path.splitext(os.path.splitext(fname)[0])[0]
-
-    return os.path.splitext(fname)[0]
+    return fname[:fname.rindex(get_extension(fname))]
 
 
 def write_lines(fname, lines):
@@ -240,7 +246,8 @@ def ux_file_len(fname):
     @param fname: string
     @return:
     """
-    p = subprocess.Popen(['wc', '-l', fname], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(['wc', '-l', fname], stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
     result, err = p.communicate()
 
     if p.returncode != 0:
