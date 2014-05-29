@@ -7,6 +7,8 @@ from path import path
 from macuto.storage import (sav_to_pandas_rpy2,
                             sav_to_pandas_savreader)
 
+from macuto.files.names import add_extension_if_needed
+
 @baker.command(name='sav',
                params={"inputfile": "Path to the .sav file to be transformed",
                        "outputfile": "Path to the output file",
@@ -43,9 +45,7 @@ def convert_sav(inputfile, outputfile=None, method='rpy2', otype='csv'):
     if outputfile is None:
         outputfile = inputfile.replace(path(inputfile).ext, '')
 
-    oext = otype_exts[otype]
-    if not outputfile.endswith(oext):
-        outputfile += oext
+    outputfile = add_extension_if_needed(outputfile, otype_exts[otype])
 
     if otype == 'csv':
         df.to_csv(outputfile)
