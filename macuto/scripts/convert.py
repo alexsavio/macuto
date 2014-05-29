@@ -7,7 +7,8 @@ from path import path
 from macuto.storage import (sav_to_pandas_rpy2,
                             sav_to_pandas_savreader)
 
-@baker.command(params={"inputfile": "Path to the .sav file to be transformed",
+@baker.command(name='sav',
+               params={"inputfile": "Path to the .sav file to be transformed",
                        "outputfile": "Path to the output file",
                        "otype": """Output file type. Choices: 'csv', 'hdf',
                                                            'stata', 'json',
@@ -18,8 +19,8 @@ from macuto.storage import (sav_to_pandas_rpy2,
                                           or 'savread' to use savReaderWriter"""},
                shortopts={'inputfile': 'i', 'outputfile': 'o', 
                           'method': 'm', 'otype': 't'})
-def transform(inputfile, outputfile=None, method='rpy2', otype='csv'):
-    """ Transforms the input .sav file into other format.
+def convert_sav(inputfile, outputfile=None, method='rpy2', otype='csv'):
+    """ Transforms the input .sav SPSS file into other format.
     If you don't specify an outputfile, it will use the
     inputfile and change its extension to .csv
     """

@@ -44,7 +44,7 @@ setup_dict = dict(
     extra_files = ['CHANGES.rst', 'LICENSE', 'README.rst'],
 
     scripts = ['macuto/scripts/dcm_anonymize.py',
-               'macuto/scripts/sav_convert.py',
+               'macuto/scripts/convert.py',
                'macuto/scripts/filetree.py',
                'macuto/scripts/sliceit.py',
                'macuto/scripts/atlasquer.py'],
