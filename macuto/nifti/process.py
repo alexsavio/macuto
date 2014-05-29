@@ -1,11 +1,12 @@
 __author__ = 'alexandre'
 
-import os
 import nibabel as nib
-from nipype.interfaces.fsl import IsotropicSmooth
+from nipy.algorithms.kernel_smooth import LinearFilter
+from nipy import load_image
 
-from .read import get_nii_data
+import logging
 
+log = logging.getLogger('process')
 
 def is_valid_coordinate(img, i, j, k):
     """
@@ -110,6 +111,7 @@ def get_sampling_interval(func_img):
     """
     return func_img.get_header().get_zooms()[-1]
 
+
 def smooth_volume(nifti_file, smoothmm):
     """
 
@@ -117,19 +119,14 @@ def smooth_volume(nifti_file, smoothmm):
     @param smoothmm: int
     @return:
     """
+    try:
+        img = load_image(nifti_file)
+    except Exception as exc:
+        log.error(str(exc))
+        return None
+
     if smoothmm > 0:
-        omf = nifti_file + '_smooth' + str(smoothmm) + 'mm.nii.gz'
-
-        isosmooth = IsotropicSmooth()
-        isosmooth.inputs.in_file  = nifti_file
-        isosmooth.inputs.fwhm     = smoothmm
-        isosmooth.inputs.out_file = omf
-        isosmooth.run()
-
-        data = get_nii_data(omf)
-        os.remove(omf)
-
+        filter = LinearFilter(img.coordmap, img.shape)
+        return filter.smooth(img)
     else:
-        data = get_nii_data(nifti_file)
-
-    return data
+        return load_image(nifti_file)
