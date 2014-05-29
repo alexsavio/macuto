@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 
 import os
 import baker
@@ -30,33 +31,37 @@ def transform(inputfile, outputfile=None, method='rpy2', otype='csv'):
     elif method == 'savread':
         df = sav_to_pandas_savreader(inputfile)
 
+    otype_exts = {'csv': '.csv', 
+                  'hdf': '.h5', 
+                  'stata': '.dta',
+                  'json': '.json',
+                  'pickle': '.pickle',
+                  'excel': '.xls',
+                  'html': '.html'}
+
     if outputfile is None:
         outputfile = inputfile.replace(path(inputfile).ext, '')
 
+    oext = otype_exts[otype]
+    if not outputfile.endswith(oext):
+        outputfile += oext
+
     if otype == 'csv':
-        oext = '.csv'
-        df.to_csv(outputfile + oext)
+        df.to_csv(outputfile)
     elif otype == 'hdf':
-        oext = '.h5'
-        df.to_hdf(outputfile + oext, os.path.basename(outputfile))
+        df.to_hdf(outputfile, os.path.basename(outputfile))
     elif otype == 'stata':
-        oext = '.dta'
-        df.to_stata(outputfile + oext)
+        df.to_stata(outputfile)
     elif otype == 'json':
-        oext = '.json'
-        df.to_json(outputfile + oext)
+        df.to_json(outputfile)
     elif otype == 'pickle':
-        oext = '.pickle'
-        df.to_pickle(outputfile + oext)
+        df.to_pickle(outputfile)
     elif otype == 'excel':
-        oext = '.xls'
-        df.to_excel(outputfile + oext)
+        df.to_excel(outputfile)
     elif otype == 'html':
-        oext = '.html'
-        df.to_html(outputfile + oext)
+        df.to_html(outputfile)
     else:
-        oext = '.csv'
-        df.to_csv(outputfile + oext)
+        df.to_csv(outputfile)
 
 if __name__ == '__main__':
     baker.run()
