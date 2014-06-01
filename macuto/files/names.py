@@ -13,10 +13,12 @@ import os
 import sys
 import tempfile
 import numpy as np
-import logging as log
+import logging
 import subprocess
 
 from ..config import ALLOWED_EXTS
+
+log = logging.getLogger(__name__)
 
 
 def get_extension(fpath, check_if_exists=False):
@@ -32,6 +34,7 @@ def get_extension(fpath, check_if_exists=False):
     if check_if_exists:
         if not os.path.exists(fpath):
             err = 'File not found: ' + fpath
+            log.error(err)
             raise IOError(err)
 
     try:
@@ -45,7 +48,7 @@ def get_extension(fpath, check_if_exists=False):
         return ext
 
     except:
-        log.error( "Unexpected error: ", sys.exc_info()[0] )
+        log.error("Unexpected error: ", sys.exc_info()[0])
         raise
 
 
@@ -66,8 +69,9 @@ def add_extension_if_needed(fpath, ext, check_if_exists=False):
         fpath += ext
 
     if check_if_exists:
-        if not os.path.exists (fpath):
+        if not os.path.exists(fpath):
             err = 'File not found: ' + fpath
+            log.error(err)
             raise IOError(err)
 
     return fpath
@@ -95,9 +99,11 @@ def write_lines(fname, lines):
         f.writelines(lines)
         f.close()
     except IOError as err:
-        log.error ('Unexpected error: ', err)
+        log.error('Unexpected error: ', err)
+        raise
     except:
-        log.error ('Unexpected error: ', str(sys.exc_info()))
+        log.error('Unexpected error: ', str(sys.exc_info()))
+        raise
 
 
 def grep_one(srch_str, filepath):
@@ -157,7 +163,7 @@ def parse_subjects_list(fname, datadir='', split=':', labelsf=None):
 
     except:
         log.error("Unexpected error: ", sys.exc_info()[0])
-        sys.exit(-1)
+        raise
 
     if labelsf is not None:
         labels = np.loadtxt(labelsf)
@@ -204,12 +210,14 @@ def remove_all(filelist, folder=''):
             for f in filelist:
                 os.remove(f)
         except OSError as err:
+            log.error(err)
             pass
     else:
         try:
             for f in filelist:
                 os.remove(os.path.join(folder, f))
         except OSError as err:
+            log.error(err)
             pass
 
 
@@ -251,6 +259,7 @@ def ux_file_len(fname):
     result, err = p.communicate()
 
     if p.returncode != 0:
+        log.error(err)
         raise IOError(err)
 
     l = result.strip()

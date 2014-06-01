@@ -1,33 +1,41 @@
 
 import os
+import logging
 import nibabel as nib
-from .atlas import Atlas, StatsAtlas, LabelAtlas
+from .atlas import StatsAtlas, LabelAtlas
+from ..strings import search_list
+
+log = logging.getLogger(__name__)
 
 
 class AtlasFiles:
+    """
 
+    """
     def __init__(self):
-        '''
-        '''
+        """
+        """
         self.fsl_dir = ''
         self.mni = ''
         self.atlas_path = ''
 
     def get_FSL_dir(self):
-        '''
-        '''
+        """
+        """
         if not self.fsl_dir:
             self.fsl_dir = '/usr/share/fsl'
-            if os.environ.has_key('FSLDIR') and os.environ['FSLDIR'] != '':
+            if 'FSLDIR' in os.environ and os.environ['FSLDIR'] != '':
                 self.fsl_dir = os.environ['FSLDIR']
             else:
-                print('Could not obtain $FSLDIR environment variable value.')
+                log.error('''Could not obtain $FSLDIR environment
+                             variable value, using a default value:
+                             /usr/share/fsl''')
 
         return self.fsl_dir
 
     def get_mni152(self):
-        '''
-        '''
+        """
+        """
         if not self.mni:
             self.mni = os.path.join(self.get_FSL_dir(),
                                     'data',
@@ -37,10 +45,10 @@ class AtlasFiles:
         return self.mni
 
     def get_atlas_path(self):
-        '''
-        '''
+        """
+        """
         if not self.atlas_path:
-            if os.environ.has_key('FSLATLASPATH'):
+            if 'FSLATLASPATH' in os.environ:
                 self.atlas_path = os.environ['FSLATLASPATH']
             else:
                 self.atlas_path = os.path.join(self.get_FSL_dir(), 
@@ -50,38 +58,14 @@ class AtlasFiles:
         return self.atlas_path
 
     def get_atlas_path_elements(self):
-        '''
-        '''
+        """
+        """
         dir_path = self.get_atlas_path()
 
         return dir_path.split(':')
 
-    def find(self, lst, regex):
-        '''
-        Looks for string matches of regex in lst.
-
-        Parameters
-        ----------
-        lst: list of strings
-
-        regex: string
-        Pythonic regular expression to be matched
-
-        Returns
-        -------
-        List of strings 
-
-        '''
-        import re
-
-        o = []
-        for i in lst:
-            if re.search(regex, i):
-                o.append(i)
-        return o
-
     def read_image(self, atlas_dir, images_node, tag):
-        '''
+        """
         Looks for an Element node between images_node children with name tag.
         This element will hold a relative path to an atlas volume file, which
         will be opened and returned as nib.Nifti1Image.
@@ -97,32 +81,41 @@ class AtlasFiles:
         Returns
         -------
         nib.Nifti1Image
-        '''
+        """
+        img = None
+
         for node in images_node.childNodes:
             if node.nodeType == node.ELEMENT_NODE and node.nodeName == tag:
                 node_text = str(node.firstChild.data)
                 if node_text:
-                    full_atlas_dir = os.path.join(atlas_dir, os.path.dirname(node_text)[1:])
+                    full_atlas_dir = os.path.join(atlas_dir,
+                                                  os.path.dirname(node_text)[1:])
 
                     file_base_name = os.path.basename(node_text)
 
-                    full_file = self.find(os.listdir(full_atlas_dir), file_base_name)[0]
+                    full_file = search_list(os.listdir(full_atlas_dir),
+                                            file_base_name)[0]
 
                     img = nib.load(os.path.join(full_atlas_dir, full_file))
 
         return img
 
     @staticmethod
-    def _get_dom_attribute_value(self,node, att_name, alt=''):
-        '''
-        '''
+    def _get_dom_attribute_value(node, att_name, alt=None):
+        """
+
+        :param node:
+        :param att_name:
+        :param alt:
+        :return:
+        """
         if node.attributes.has_key(att_name):
             return node.attributes[att_name].value
         else:
             return alt
 
     def read_xml_atlas(self, atlas_dir, file_name):
-        '''
+        """
         Process the data inside an Atlas definition XML file and returns the 
         corresponding Atlas.
 
@@ -136,7 +129,7 @@ class AtlasFiles:
         -------
         Atlas
 
-        '''
+        """
         from xml.dom import minidom
 
         full_path = os.path.join(atlas_dir, file_name)
@@ -144,7 +137,7 @@ class AtlasFiles:
         try:
             dom = minidom.parse(full_path)
         except IOError:
-            print ("Error: can\'t find file or read " + full_path)
+            print("Error: can\'t find file or read " + full_path)
             
             raise
 
@@ -255,5 +248,3 @@ class AtlasFiles:
                             #atlas.add_reference(n, ref)
 
         return atlas
-
-

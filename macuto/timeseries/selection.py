@@ -154,10 +154,8 @@ class CCATimeseries(object):
         """
         from ..endmember_induction import CCA
 
-        n_comps = 1
-        if kwargs.has_key('n_comps'):
-            n_comps = kwargs['n_comps']
-        elif kwargs.has_key('comps_perc'):
+        n_comps = kwargs.get('n_comps', 1)
+        if not 'n_comps' in kwargs and 'comps_perc' in kwargs:
             comps_perc = kwargs['comps_perc']
             if comps_perc > 1:
                 comps_perc /= 100
@@ -256,10 +254,15 @@ class FilteredTimeseries(object):
                 filt['method'] = f.get('method', 'fir')
 
             filts.append(fio._tseries_from_nifti_helper(None, ts_set, TR, filt,
-                                                        kwargs.get('normalize', None),
-                                                        kwargs.get('average', None)))
+                                                        kwargs.get('normalize',
+                                                                   None),
+                                                        kwargs.get('average',
+                                                                   None)))
 
-        self.selected_ts = np.array(filts) if n_samps == 1 else np.squeeze(np.array(filts))
+        if n_samps == 1:
+            self.selected_ts = np.array(filts)
+        else:
+            np.squeeze(np.array(filts))
 
 
 class MeanAndFilteredTimeseries(MeanTimeseries, FilteredTimeseries):
@@ -335,9 +338,9 @@ class TimeseriesSelectorFactory(object):
         if method_name == 'ilsia': algorithm =  ILSIATimeseries
         if method_name == 'cca'  : algorithm =  CCATimeseries
 
-        if method_name == 'filtered'          : algorithm =  FilteredTimeseries
-        if method_name == 'mean_and_filtered' : algorithm =  MeanAndFilteredTimeseries
-        if method_name == 'eigen_and_filtered': algorithm =  EigenAndFilteredTimeseries
+        if method_name == 'filtered'          : algorithm = FilteredTimeseries
+        if method_name == 'mean_and_filtered' : algorithm = MeanAndFilteredTimeseries
+        if method_name == 'eigen_and_filtered': algorithm = EigenAndFilteredTimeseries
 
         return TimeSeriesSelector(algorithm)
 

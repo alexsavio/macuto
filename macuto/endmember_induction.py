@@ -99,7 +99,10 @@
 
 #from IPython.core.debugger import Tracer; debug_here = Tracer()
 
+import logging
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 
 class LAM(object):
@@ -121,7 +124,14 @@ class LAM(object):
     Information Sciences, vol. 181, n. 10, pags. 1910-1928, May. 2011.
     """
 
-    def __init__(self, X=[], Y=[]):
+    def __init__(self, X=None, Y=None):
+
+        if X is None:
+            X = []
+
+        if Y is None:
+            Y = []
+
         if len(X) > 0 and len(Y) == 0:
             Y = X
 
@@ -129,11 +139,13 @@ class LAM(object):
         self._Y = np.array(Y)
 
         #Checking data size
-        x_samps, x_vars = self.X.shape
-        y_samps, y_vars = self.Y.shape
+        x_samps, x_vars = self._X.shape
+        y_samps, y_vars = self._Y.shape
         if x_samps != y_samps:
-            print('Input and output dimensions mismatch')
+            err = 'Input and output dimensions mismatch'
+            log.error(err)
             self.clear()
+            raise ValueError(err)
 
     def clear(self):
         self.__init__()
@@ -204,7 +216,8 @@ class ILSIA(object):
     Information Sciences, vol. 181, n. 10, pags. 1910-1928, May. 2011.
     """
 
-    def __init__(self, data=[], alpha=0):
+    def __init__(self, data, alpha=0):
+
         self._data  = np.array(data)
         self._alpha = alpha
         self._is_standardized = False
@@ -233,7 +246,7 @@ class ILSIA(object):
         # Algorithm Initialization
         # Initialize endmembers set and index vector
         cnt[idx] = 1
-        samp = self._data_z_[idx,:]
+        samp = self._data_z_[idx, :]
         lis.append(samp)
 
         is_new_lis = True
@@ -259,13 +272,13 @@ class ILSIA(object):
                 is_new_lis = False
 
             #sample
-            samp      = self._data_z[i, :]
+            samp      = self._data[i, :]
             samp_sign = np.sign(samp)
 
             if np.sum(np.abs(samp)) > 0:
                 if self._alpha <= 0:
                     #check if pixel is lattice dependent
-                    y = np.zeros(n_feats)
+                    #y = np.zeros(n_feats)
 
                     #vector version
                     samps = np.tile(samp, (n_feats, 1))
@@ -304,13 +317,13 @@ class ILSIA(object):
                     wxx_conj = -wxx
 
                     for j in range(n_feats):
-                        x_sharp[j] = np.min(wxx_conj[:,j] + self._f)
-                        mu = np.max(wxx[:,j] + x_sharp)
+                        x_sharp[j] = np.min(wxx_conj[:, j] + samp)
+                        mu = np.max(wxx[:, j] + x_sharp)
                         mu = np.max(mu + samp)/2
 
                     c1 = np.zeros(n_feats)
                     for j in range(n_feats):
-                        c1[j] = np.max(wxx[:,j] + mu + x_sharp)
+                        c1[j] = np.max(wxx[:, j] + mu + x_sharp)
 
                     if chebyshev(c1, samp) < self._alpha:
 
@@ -367,7 +380,7 @@ class ILSIA(object):
                     idxs.append(1)
                     lis.append(samp)
                     signs.append(samp_sign)
-                    em.append(self.data[i,:])
+                    em.append(self._data[i, :])
 
         self.em_  = np.array(em)
         self.cnt_ = cnt
@@ -391,7 +404,8 @@ class EIHA(object):
     Neurocomputing, vol. 72, n. 10-12, pags. 2111-2120, 2009.
     """
 
-    def __init__(self, data=[], alpha=2):
+    def __init__(self, data, alpha=2):
+
         self._data  = np.array(data)
         self._alpha = alpha
         self._is_standardized = False
@@ -425,7 +439,7 @@ class EIHA(object):
 
         #Algorithm
         for i in range(n_samps):
-            samp = self._data[i,:]
+            samp = self._data[i, :]
             if np.sum(np.abs(samp)) > 0:
                 #perturbations
                 samp_plus  = samp + self._alpha * std_data
@@ -448,8 +462,8 @@ class EIHA(object):
                             idxs   [e] = i
                         break
 
-                #If samp is in the same quadrant than any of the already selected
-                #endmember (new_extreme == 1) then check perturbations
+                #If samp is in the same quadrant than any of the already
+                # selected endmember (new_extreme == 1) then check perturbations
                 for k in range(p):
                     if np.power(samp - extrems[k], 2) < self._alpha * std_data:
                         new_extreme = 0
@@ -474,7 +488,7 @@ class EIHA(object):
         self.em_  = np.zeros(p, n_feats)
         self.cnt_ = np.zeros(n_samps)
         for i in range(p):
-            self.em_[i,:] = self._data[idxs[i],:]
+            self.em_[i, :] = self._data[idxs[i],:]
             self.cnt_[idxs[i]] = 1
 
         return self.em_, self.cnt_
@@ -494,7 +508,7 @@ class WM(object):
     Information Sciences, vol. In Press, Corrected Proof, Oct. 2010.
     """
 
-    def __init__(self, data=[]):
+    def __init__(self, data):
         self._data = np.array(data)
 
     def shape(self):
@@ -552,12 +566,12 @@ class HFC(object):
         Geoscience and Remote Sensing, IEEE Transactions on,  vol. 44, 2006, pp. 1586-1600.
     """
 
-    def __init__(self, data=[], far=[10**-3, 10**-4, 10**-5]):
-        self._data  = np.array(data)
+    def __init__(self, data, far=[10**-3, 10**-4, 10**-5]):
+        self._data = np.array(data)
         if isinstance(far, list):
-            self._far   = far
+            self._far = far
         else:
-            self._far   = [far]
+            self._far = [far]
 
     def shape(self):
         return self._data.shape
@@ -627,10 +641,10 @@ class NFINDR(object):
     presented at the Imaging Spectrometry V, Denver, CO, USA, 1999, vol. 3753, pags. 266-275.
     """
 
-    def __init__(self, data=[], p=-1, maxit=-1):
+    def __init__(self, data, p=-1, maxit=-1):
         if p <= 0:
-            hfc = HFC(data, 10**-5)
-            p   = hfc.fit()[0]
+            hfc = HFC(data, [10**-5])
+            p = hfc.fit()[0]
 
         if maxit <= 0:
             maxit = 3*p
@@ -712,10 +726,10 @@ class CCA(object):
     Geoscience and Remote Sensing, IEEE Transactions on, vol. 37, n. 2, pags. 756-770, 1999.
     """
 
-    def __init__(self, data=[], p=-1, t=10**-6):
+    def __init__(self, data, p=-1, t=10**-6):
         if p <= 0:
-            hfc = HFC(data, 10**-5)
-            p   = hfc.fit()
+            hfc = HFC(data, [10**-5])
+            p = hfc.fit()
 
         self._data  = np.array(data)
         self._p     = p
@@ -737,8 +751,8 @@ class CCA(object):
 
         #Correlation matrix and eigen decomposition
         # calculate eigenvalues of covariance and correlation between bands
-        v,d = eig(np.corrcoef(self._data_z_))[0]
-        v   = v[n_feats-p:n_feats, :]
+        v, d = eig(np.corrcoef(self._data_z_))[0]
+        v = v[n_feats-p:n_feats, :]
 
         #Algorithm
         #num of selected endmembers
@@ -769,7 +783,7 @@ class CCA(object):
 
             sol = np.linalg.solve(ps, p1s)
             xs  = np.dot(v, np.append(sol, 1))
-            if xs.min() > -self.t:
+            if xs.min() > -self._t:
                 em[num_em, :] = xs
                 num_em += 1
 
@@ -797,13 +811,13 @@ class ATGP(object):
     Geoscience and Remote Sensing, IEEE Transactions on, vol. 44, n. 11, p. 3397-3407, 2006.
     """
 
-    def __init__(self, data=[], p=-1):
+    def __init__(self, data, p=-1):
         if p <= 0:
-            hfc = HFC(data, 10**-5)
-            p   = hfc.fit()
+            hfc = HFC(data, [10**-5])
+            p = hfc.fit()
 
-        self._data  = np.array(data)
-        self._p     = p
+        self._data = np.array(data)
+        self._p    = p
 
     def shape(self):
         return self._data.shape
@@ -826,7 +840,7 @@ class ATGP(object):
 
         #Initialization of the set of endmembers and the endmembers index vector
         em       = np.zeros((p, n_feats))
-        em[0,:]  = self._data[idx, :]
+        em[0, :] = self._data[idx, :]
         cnt      = np.zeros(n_feats)
         cnt[idx] = 1
 
@@ -836,13 +850,16 @@ class ATGP(object):
 
         for i in range(p-1):
             uc = em[0:i+1, :]
-            # Calculate the orthogonal projection with respect to the pixels at present chosen.
+            # Calculate the orthogonal projection with respect to the pixels
+            # at present chosen.
             # This part can be replaced with any other distance
-            pu = eye - np.dot(uc.T, np.dot(np.linalg.pinv(np.dot(uc, uc.T)), uc))
+            pu = eye - np.dot(uc.T, np.dot(np.linalg.pinv(np.dot(uc, uc.T)),
+                                           uc))
             mymax = -1
             idx   = 0
-            # Calculate the most different pixel from the already selected ones according to
-            # the orthogonal projection (or any other distance selected)
+            # Calculate the most different pixel from the already selected
+            # ones according to the orthogonal projection (or any other
+            # distance selected)
             for j in range(n_samps):
                 r = self._data[j, :]
                 result = np.dot(pu.T, r)
@@ -850,12 +867,13 @@ class ATGP(object):
                 if val > mymax:
                     mymax = val
                     idx   = j
-            # The next chosen pixel is the most different from the already chosen ones
+            # The next chosen pixel is the most different from the
+            #  already chosen ones
             em[:, i+1] = self._data[idx, :]
-            cnt[idx]  = 1
+            cnt[idx] = 1
             idxs.append(idx)
 
-        self.em_ = em
+        self.em_= em
         self.cnt_ = cnt
         self.idxs_ = idxs
 

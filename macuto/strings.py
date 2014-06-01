@@ -11,6 +11,7 @@
 
 import re
 
+
 def filter_objlist(olist, fieldname, fieldval):
     """
     Returns a list with of the objetcts in olist that have a fieldname valued as fieldval
@@ -121,10 +122,10 @@ def match_list(lst, pattern, group_names=[]):
     """
     filtfn = re.compile(pattern).match
     filtlst = filter_list(lst, filtfn)
-    if group_names:
-        return [m.group(group_names) for m in filtlst]
-    else:
+    if group_names is None:
         return [m.string for m in filtlst]
+    else:
+        return [m.group(group_names) for m in filtlst]
 
 
 def search_list(lst, pattern):

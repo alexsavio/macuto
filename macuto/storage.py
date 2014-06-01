@@ -9,15 +9,18 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
+import os
 import sys
 import shelve
-import logging as log
-
+import logging
 import h5py
 import scipy.io as sio
 import pandas as pd
 
-from .files.names import get_extension, add_extension_if_needed
+from .files.names import (get_extension,
+                          add_extension_if_needed)
+
+log = logging.getLogger(__name__)
 
 
 def sav_to_pandas_rpy2(inputfile):
@@ -30,6 +33,7 @@ def sav_to_pandas_rpy2(inputfile):
 
     w = com.robj.r('foreign::read.spss("%s", to.data.frame=TRUE)' % inputfile)
     return com.convert_robj(w)
+
 
 def sav_to_pandas_savreader(inputfile):
     """
@@ -76,8 +80,9 @@ def save_variables_to_shelve(fname, variables):
         try:
             mashelf[vn] = variables[vn]
         except:
-            log.error('ERROR shelving: {0}'.format(vn))
+            log.error('Error shelving variable {0}'.format(vn))
             log.error(sys.exc_info())
+            raise
 
     mashelf.close()
 
@@ -92,8 +97,9 @@ def save_variables_to_mat(fname, variables):
     try:
         sio.savemat(fname, variables, format='4')
     except:
-        log.error('ERROR saving to' + fname)
+        log.error('Error saving to' + fname)
         log.error(sys.exc_info())
+        raise
 
 
 def save_variables_to_hdf5(fname, variables, mode='w', h5path='/'):
@@ -121,8 +127,9 @@ def save_variables_to_hdf5(fname, variables, mode='w', h5path='/'):
             h5group[vn] = variables[vn]
 
     except:
-        log.error('ERROR saving to .hdf5: {0}'.format(vn))
+        log.error('Error saving to .hdf5: {0}'.format(vn))
         log.error(sys.exc_info())
+        raise
 
     h5file.close()
 
@@ -142,19 +149,25 @@ class ExportData(object):
         @param variables: dict
         Dictionary varname -> variable
         """
-        ext = get_extension(filename)
-        if ext != '.pyshelf' and ext != '.mat' and ext != '.hdf5':
+        ext = get_extension(filename).lower()
+        out_exts = {'.pyshelf', '.mat', '.hdf5', '.h5'}
+
+        output_file = filename
+        if not ext in out_exts:
             output_file = add_extension_if_needed(filename, '.pyshelf')
             ext = get_extension(filename)
 
         if ext == '.pyshelf':
-            save_varlist_to_shelve(output_file, variables)
+            save_variables_to_shelve(output_file, variables)
 
         elif ext == '.mat':
-            save_varlist_to_mat(output_file, variables)
+            save_variables_to_mat(output_file, variables)
 
         elif ext == '.hdf5' or ext == '.h5':
-            save_varlist_to_hdf5(output_file, variables)
+            save_variables_to_hdf5(output_file, variables)
+
+        else:
+            log.error('Filename extension {0} not accepted.'.format(ext))
 
     @staticmethod
     def save_varlist(filename, varnames, varlist):
@@ -208,6 +221,7 @@ def load_varnames_from_hdf5(fname, h5path='/'):
     except:
         log.error('ERROR reading .hdf5: {0}'.fpath)
         log.error(sys.exc_info())
+        raise
 
     h5file.close()
 
@@ -247,6 +261,7 @@ def load_variables_from_hdf5(fname, h5path='/'):
     except:
         log.error('ERROR reading .hdf5: {0}'.fpath)
         log.error(sys.exc_info())
+        raise
 
     h5file.close()
 

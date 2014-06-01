@@ -12,11 +12,14 @@
 
 import numpy as np
 import nibabel as nib
-import logging as log
+import logging
 import scipy.ndimage as scn
+from scipy.ndimage.measurements import center_of_mass
 from collections import OrderedDict
 
-from ..strings import list_search
+from ..strings import search_list
+
+log = logging.getLogger(__name__)
 
 
 def drain_rois(img_data):
@@ -73,10 +76,10 @@ def create_rois_mask(roislist, filelist):
 
     for roi in roislist:
         try:
-            roifiles.apend(list_search(roi, filelist)[0])
+            roifiles.append(search_list(roi, filelist)[0])
         except Exception as exc:
-            log.error(exc.message + '\n' + exc.argument)
-            return 0
+            log.error(exc)
+            raise
 
     return create_mask_from(roifiles)
 
@@ -101,8 +104,8 @@ def create_mask_from(filelist):
             roivol = nib.load(volf).get_data()
             mask += roivol
         except Exception as exc:
-            log.error(exc.message + '\n' + exc.argument)
-            return 0
+            log.error(exc)
+            raise
 
     return (mask > 0).astype(int)
 
@@ -128,8 +131,26 @@ def get_roilist_from_atlas(atlas):
     return rois
 
 
-def extract_timeseries_dict(tsvol, roivol, maskvol=None,
-                            zeroe=False, roi_list=None):
+def get_rois_centers_of_mass(vol):
+    """
+    :param vol: numpy ndarray
+
+    :return: OrderedDict
+
+    """
+    from scipy.ndimage.measurements import center_of_mass
+
+    roisvals = np.unique(vol)
+    roisvals = roisvals[roisvals != 0]
+
+    rois_centers = OrderedDict()
+    for r in roisvals:
+        rois_centers[r] = center_of_mass(vol, vol, r)
+
+    return rois_centers
+
+
+def extract_timeseries_dict(tsvol, roivol, maskvol=None, roi_list=None):
     """
     Partitions the timeseries in tsvol according to the
     ROIs in roivol. If given, will use a mask to exclude any voxel
@@ -182,8 +203,7 @@ def extract_timeseries_dict(tsvol, roivol, maskvol=None,
     return ts_dict
 
 
-def extract_timeseries_list(tsvol, roivol, maskvol=None,
-                            zeroe=False, roi_list=None):
+def extract_timeseries_list(tsvol, roivol, maskvol=None, roi_list=None):
     """
     Partitions the timeseries in tsvol according to the
     ROIs in roivol. If given, will use a mask to exclude any voxel

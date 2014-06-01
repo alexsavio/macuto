@@ -2,23 +2,24 @@ import os
 import re
 import fnmatch
 import logging
+from functools import reduce
 from collections import OrderedDict
 from path import path
+
 #except:
 #    import shutil
 #    from pathlib import Path as path
 #    path.copyfile = shutil.copyfile
 
-from functools import reduce
-
 from ..strings import (match_list,
                        is_valid_regex)
 
+from .names import get_extension
 
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger('FileTreeMap')
+log = logging.getLogger(__name__)
 
-def import_pyfile(filepath, mod_name=''):
+
+def import_pyfile(filepath, mod_name=None):
     """
     Imports the contents of filepath as a Python module.
 
@@ -141,17 +142,6 @@ def commonprefix(*args):
     return os.path.commonprefix(*args).rpartition(os.sep)[0]
 
 
-def get_file_ext(filename):
-    fnom = path(filename).basename()
-
-    cmplx_exts = ['.nii.gz']
-    for ext in cmplx_exts:
-        if fnom.endswith(ext):
-            return ext
-
-    return fnom.ext
-
-
 def get_dict_leaves(data):
     """
     Given a nested dictionary, this returns all its leave elements in a list.
@@ -229,10 +219,14 @@ def process_tuple_node(basepath, treemap, ignore_hidden=True):
     :return:
     """
     if not isinstance(treemap, tuple):
-        raise TypeError('process_tuple_node: treemap node must be a 2-tuple.')
+        err = 'treemap node must be a 2-tuple.'
+        log.error(err)
+        raise TypeError(err)
 
     if len(treemap) != 2:
-        raise ValueError('process_tuple_node: treemap node must be a 2-tuple.')
+        err = 'treemap node must be a 2-tuple.'
+        log.error(err)
+        raise ValueError(err)
 
     file_nodes = OrderedDict()
 
@@ -292,7 +286,9 @@ def populate_subtree(basepath, treemap, verbose=False):
 
             elif isinstance(child_map, str):
                 if child_map[0] == os.sep:
-                    print('Error on node {0}. Relative paths should no start with "{1}"'.format(str(child_map), os.sep))
+                    log.error('Error on node {0}. '
+                              'Relative paths should no start '
+                              'with "{1}"'.format(str(child_map), os.sep))
 
                 subpaths = get_possible_paths(basepath, child_map)
                 if subpaths:
@@ -350,7 +346,7 @@ class FileTreeMap(object):
                                               verbose)
 
         except Exception as e:
-            print(e)
+            log.error(e)
             raise
 
     def _check_basic_config(self):
@@ -359,7 +355,9 @@ class FileTreeMap(object):
         root_path = self._basepath
         if root_path:
             if not os.path.isabs(root_path) or not os.path.exists(root_path):
-                raise ValueError('The root path does not exist. Got ' + root_path)
+                err = 'The root path does not exist. Got ' + root_path
+                log.error(err)
+                raise ValueError(err)
 
     @staticmethod
     def create_folder(dirpath, overwrite=False):
@@ -379,7 +377,8 @@ class FileTreeMap(object):
         :return: root_path and filetree
         """
         if not os.path.isfile(filepath):
-            raise IOError('Data config file not found. Got: {0}'.format(filepath))
+            raise IOError('Data config file not found. '
+                          'Got: {0}'.format(filepath))
 
         cfg = import_pyfile(filepath)
 
@@ -397,8 +396,8 @@ class FileTreeMap(object):
         """
         return self._filetree.keys()
 
-    def get_node(self, nodepath=''):
-        if nodepath == '':
+    def get_node(self, nodepath=None):
+        if nodepath is None:
             return self.get_root_nodes()
         return get_subdict(self._filetree, nodepath)
 
@@ -491,13 +490,15 @@ class FileTreeMap(object):
                     if one_file_folders:
                         destdir = path(dirpath).joinpath(k)
                         if enabled:
-                            destdir = FileTreeMap.create_folder(destdir, overwrite)
+                            destdir = FileTreeMap.create_folder(destdir,
+                                                                overwrite)
+
                         log.info('Created one folder {0}'.format(destdir))
                     else:
                         destdir = path(dirpath)
 
                     if rename_files:
-                        destf = k + get_file_ext(src)
+                        destf = k + get_extension(src)
                     else:
                         destf = src.basename()
 
@@ -515,7 +516,7 @@ class FileTreeMap(object):
                     for src in knode:
                         src = path(src)
                         if rename_files:
-                            destf = str(no).zfill(5) + get_file_ext(src)
+                            destf = str(no).zfill(5) + get_extension(src)
                         else:
                             destf = src.basename()
 
@@ -545,120 +546,3 @@ class FileTreeMap(object):
 
     def next(self):
         return self._filetree.next()
-
-#if __name__ == '__main__':
-
-#    execpath = path('/home/alexandre/Dropbox/Documents/work/santiago/src')
-
-#    ftm = FileTreeMap(execpath.joinpath('data_config.py'))
-
-
-    # sids = [
-    # '1092939',
-    # '1113611',
-    # '1124286',
-    # '1313224',
-    # '1325097',
-    # '.DS_Store',
-    # '1328924',
-    # '1542604',
-    # '1549266',
-    # '1554723',
-    # '1560237',
-    # '1740968',
-    # '1756647',
-    # '1942888',
-    # '1952854',
-    # '1954086',
-    # '1956804',
-    # '1969022',
-    # '19797',
-    # '1983029',
-    # '2136656',
-    # '2233682',
-    # '238394',
-    # '241599',
-    # '24525',
-    # '261676',
-    # '26513',
-    # '320712',
-    # '381249',
-    # '400742',
-    # '45706',
-    # '46689',
-    # '472315',
-    # '482470',
-    # '55826',
-    # '661449',
-    # '66334',
-    # '683479',
-    # '685906',
-    # '687685',
-    # '697987',
-    # '707383',
-    # '734615',
-    # '886153',
-    # '886783',
-    # '890405',
-    # '925987',
-    # '936976',
-    # '99072462',
-    # '99105995',
-    # '99106025',
-    # '99106027',
-    # '99106030',
-    # '99109167',
-    # '99109169',
-    # '99109170',
-    # '99117222',
-    # '99117223',
-    # '99117812',
-    # '99117888',
-    # '99119960',
-    # '99130019',
-    # '99130021',
-    # '99135286',
-    # '99135289',
-    # '99143948',
-    # '99145133',
-    # 'N031000',
-    # 'N084248',
-    # 'N092449',
-    # 'N093000',
-    # 'N100712',
-    # 'N102326',
-    # 'N103159',
-    # 'N104950',
-    # 'N110626',
-    # 'N111637',
-    # 'N115611',
-    # 'N122054',
-    # 'N133209',
-    # 'N140000',
-    # 'N156000',
-    # 'N173253',
-    # 'N1740968',
-    # 'N187000',
-    # 'N1954086',
-    # 'N265000',
-    # 'N281000',
-    # 'N312000',
-    # 'N328000',
-    # 'N375000',
-    # 'N406000',
-    # 'N437000',
-    # 'N640000',
-    # 'N640001',
-    # 'N718000',
-    # 'N718001',
-    # 'N750000',
-    # 'N781000',
-    # 'N828000',
-    # 'N843000',
-    # 'N859000',
-    # 'N859001',
-    # 'N875000',
-    # 'N886153',
-    # 'N890000',
-    # 'N968000',
-    # 'NP99117222']

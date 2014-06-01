@@ -11,12 +11,14 @@
 
 import os
 import numpy as np
-import logging as log
 import scipy.stats as stats
-import logging as log
+import logging
 
 from ..threshold import apply_threshold
 from ..storage import ExportData
+
+log = logging.getLogger(__name__)
+
 
 def calculate_stats(data):
     """
@@ -39,6 +41,7 @@ def calculate_stats(data):
     feats[:, 6] = stats.skew     (data, axis=1)
 
     return feats
+
 
 def calculate_hist3d(data, bins):
     """
@@ -149,8 +152,8 @@ def distance_computation(x, y, dist_function):
     p = np.zeros(n_feats)
 
     #calculating dist_function across all subjects
-    for i in range(X.shape[1]):
-        p[i] = dist_function(X[:, i], y)[0]
+    for i in list(range(x.shape[1])):
+        p[i] = dist_function(x[:, i], y)[0]
 
     p[np.isnan(p)] = 0
 
@@ -176,7 +179,7 @@ def bhattacharyya_dist(x, y):
 
     b = np.zeros(n_feats)
     for i in np.arange(n_class):
-        for j in np.arange(i+1, n_class):
+        for j in np.arange(i + 1, n_class):
             if j > i:
                 xi = x[y == i, :]
                 xj = x[y == j, :]
@@ -190,14 +193,13 @@ def bhattacharyya_dist(x, y):
                 si = np.std  (xi, axis=0)
                 sj = np.std  (xj, axis=0)
 
-                d  = 0.25 * (np.square(mi - mj) / (vi + vj)) + 0.5  * (np.log((vi + vj) / (2*si*sj)))
+                d = 0.25 * (np.square(mi - mj) / (vi + vj)) + 0.5 * (np.log((vi + vj) / (2*si*sj)))
                 d[np.isnan(d)] = 0
                 d[np.isinf(d)] = 0
 
                 b = np.maximum(b, d)
 
     return b
-
 
 
 def welch_ttest(x, y):
@@ -243,7 +245,8 @@ def welch_ttest(x, y):
     return b
 
 
-def feature_selection(x, y, method, thr=95, dist_function=None, thr_method='robust'):
+def feature_selection(x, y, method, thr=95, dist_function=None,
+                      thr_method='robust'):
     """
     Parameters
     ----------
@@ -283,7 +286,8 @@ def feature_selection(x, y, method, thr=95, dist_function=None, thr_method='robu
 
     #if all distance values are 0
     if not m.any():
-        log.info("No differences between groups have been found. Are you sure you want to continue?")
+        log.info("No differences between groups have been found. "
+                 "Are you sure you want to continue?")
         return m
 
     #threshold data

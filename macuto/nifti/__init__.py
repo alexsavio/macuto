@@ -36,7 +36,7 @@ handling/processing
 #                              get_3D_coordmap,
 #                              get_coordmap_array)
 
-#from .io import (save_nibabel,
+#from .io import (save_niigz,
 #                 spatialimg_to_hdfgroup,
 #                 spatialimg_to_hdfpath,
 #                 hdfpath_to_nifti1image,
@@ -73,7 +73,7 @@ handling/processing
 #              'get_3D_coordmap',
 #              'get_coordmap_array']
 
-#__io_all__ = ['save_nibabel',
+#__io_all__ = ['save_niigz',
 #              'spatialimg_to_hdfgroup',
 #              'spatialimg_to_hdfpath',
 #              'hdfpath_to_nifti1image',

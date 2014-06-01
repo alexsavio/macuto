@@ -11,7 +11,7 @@
 
 import sys
 import numpy as np
-import logging as log
+import logging
 
 #classification
 from sklearn import tree
@@ -55,6 +55,8 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 
 from ..strings import append_to_keys
 
+log = logging.getLogger(__name__)
+
 
 def get_clfmethod (clfmethod, n_feats):
     """
@@ -69,16 +71,28 @@ def get_clfmethod (clfmethod, n_feats):
     """
 
     #classifiers
-    classifiers = { 'cart'   : tree.DecisionTreeClassifier(random_state = 0),
-                    'rf'     : RandomForestClassifier(max_depth=None, min_samples_split=1,
+    classifiers = { 'cart'   : tree.DecisionTreeClassifier(),
+
+                    'rf'     : RandomForestClassifier(max_depth=None,
+                                                      min_samples_split=1,
                                                       random_state=None),
-                    'gmm'    : GMM(init_params='wc', n_iter=20, random_state=0),
-                    'rbfsvm' : SVC (probability=True, max_iter=50000, class_weight='auto'),
-                    'polysvm': SVC (probability=True, max_iter=50000, class_weight='auto'),
+
+                    'gmm'    : GMM(init_params='wc', n_iter=20),
+
+                    'rbfsvm' : SVC (probability=True, max_iter=50000,
+                                    class_weight='auto'),
+
+                    'polysvm': SVC (probability=True, max_iter=50000,
+                                    class_weight='auto'),
+
                     'linsvm' : LinearSVC (class_weight='auto'),
-                    'sgd'    : SGDClassifier (fit_intercept=True, class_weight='auto',
-                                              shuffle=True, n_iter = np.ceil(10**6 / 416),
-                                              loss='modified_huber'),
+
+                    'sgd'    : SGDClassifier(fit_intercept=True,
+                                             class_weight='auto',
+                                             shuffle=True,
+                                             n_iter=np.ceil(10**6 / 416),
+                                             loss='modified_huber'),
+
                     'percep' : Perceptron (class_weight='auto'),
     }
 
@@ -89,20 +103,34 @@ def get_clfmethod (clfmethod, n_feats):
         max_feats = list(range(1, 30, 4))
     max_feats.extend([None, 'auto', 'sqrt', 'log2'])
 
-    clgrid =      { 'cart'   : dict(criterion = ['gini', 'entropy'], max_depth = [None, 10, 20, 30]),
-                    'rf'     : dict(n_estimators = [3, 5, 10, 30, 50, 100], max_features = max_feats),
-                    'gmm'    : dict(n_components = [2,3,4,5], covariance_type=['spherical', 'tied', 'diag'],
-                                    thresh = [True, False] ),
+    clgrid =      { 'cart'   : dict(criterion=['gini', 'entropy'],
+                                    max_depth=[None, 10, 20, 30]),
+
+                    'rf'     : dict(n_estimators=[3, 5, 10, 30, 50, 100],
+                                    max_features=max_feats),
+
+                    'gmm'    : dict(n_components=[2, 3, 4, 5],
+                                    covariance_type=['spherical', 'tied',
+                                                     'diag'],
+                                    thresh=[True, False]),
+
                     #'svm'  : dict(kernel = ['rbf', 'linear', 'poly'], C = np.logspace(-3, 3, num=7, base=10), gamma = np.logspace(-3, 3, num=7, base=10), coef0 = np.logspace(-3, 3, num=7, base=10)),
                     #'svm'    : dict(kernel = ['rbf', 'poly'], C = np.logspace(-3, 3, num=7, base=10), gamma = np.logspace(-3, 3, num=7, base=10), coef0=np.logspace(-3, 3, num=7, base=10)),
-                    'rbfsvm' : dict(kernel = ['rbf'],  C = np.logspace(-3, 3, num=7, base=10),
-                                    gamma  = np.logspace(-3, 3, num=7, base=10)),
-                    'polysvm': dict(kernel = ['poly'], C = np.logspace(-3, 3, num=7, base=10),
-                                    degree = np.logspace(-3, 3, num=7, base=10)),
-                    'linsvm' : dict(C = np.logspace(-3, 3, num=7, base=10)),
+
+                    'rbfsvm' : dict(kernel=['rbf'],
+                                    C=np.logspace(-3, 3, num=7, base=10),
+                                    gamma=np.logspace(-3, 3, num=7, base=10)),
+
+                    'polysvm': dict(kernel=['poly'],
+                                    C=np.logspace(-3, 3, num=7, base=10),
+                                    degree=np.logspace(-3, 3, num=7, base=10)),
+
+                    'linsvm' : dict(C=np.logspace(-3, 3, num=7, base=10)),
+
                     'sgd'    : dict(loss=['hinge', 'modified_huber', 'log'],
                                     penalty=["l1","l2","elasticnet"],
                                     alpha=np.logspace(-6, -1, num=6, base=10)),
+
                     'percep' : dict(penalty=[None, 'l2', 'l1', 'elasticnet'],
                                     alpha=np.logspace(-3, 3, num=7, base=10)),
     }
@@ -128,17 +156,27 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
 
     #Feature selection procedures
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
-    fsmethods = { 'rfe'       : RFE(estimator=SVC(kernel="linear"), step=0.05, n_features_to_select=2),
+    fsmethods = { 'rfe'       : RFE(estimator=SVC(kernel="linear"), step=0.05,
+                                    n_features_to_select=2),
+
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
-                  'rfecv'     : RFECV(estimator=SVC(kernel="linear"), step=0.05, loss_func=roc_auc_score), #cv=3, default; cv=StratifiedKFold(n_subjs, 3)
+                  'rfecv'     : RFECV(estimator=SVC(kernel="linear"), step=0.05,
+                                      loss_func=roc_auc_score), #cv=3, default; cv=StratifiedKFold(n_subjs, 3)
+
                                 #Univariate Feature selection: http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectPercentile.html
                   'univariate': SelectPercentile(f_classif, percentile=5),
+
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFpr.html
                   'fpr'       : SelectFpr (f_classif, alpha=0.05),
+
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFdr.html
                   'fdr'       : SelectFdr (f_classif, alpha=0.05),
+
                                 #http://scikit-learn.org/stable/modules/feature_selection.html
-                  'extratrees': ExtraTreesClassifier(n_estimators=50, max_features='auto', n_jobs=n_jobs, random_state=0), #compute_importances=True (default)
+                  'extratrees': ExtraTreesClassifier(n_estimators=50,
+                                                     max_features='auto',
+                                                     n_jobs=n_jobs,
+                                                     random_state=0), #compute_importances=True (default)
 
                   'pca'       : PCA(n_components='mle'),
                   'rpca'      : RandomizedPCA(random_state=0),

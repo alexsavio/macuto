@@ -9,10 +9,6 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
-"""
-The :mod:`macuto.io` module includes input/output and file handling functions
-"""
-
 #__all__ = []
 
 #from .classification import (perform_classification)

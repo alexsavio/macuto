@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import sys
+import logging
 import collections
 import numpy as np
 
@@ -21,14 +22,17 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 
+log = logging.getLogger(__name__)
 
-class Result (collections.namedtuple('Result', ['metrics', 'cl', 'prefs_thr',
-                                                'subjsf', 'presels', 'prefs',
-                                                'fs1', 'fs2', 'y_true', 'y_pred'])):
+
+class Result(collections.namedtuple('Result', ['metrics', 'cl', 'prefs_thr',
+                                               'subjsf', 'presels', 'prefs',
+                                               'fs1', 'fs2',
+                                               'y_true', 'y_pred'])):
     pass
 
 
-def classification_metrics (targets, preds, probs=None, labels=None):
+def classification_metrics(targets, preds, probs=None, labels=None):
     """
     @param targets:
     @param preds:
@@ -67,8 +71,8 @@ def classification_metrics (targets, preds, probs=None, labels=None):
     spec = 0.0
     #True Negative Rate or Specificity (tn / (tn+fp))
     if len(cm) == 2:
-        if (cm[0,0] + cm[0,1]) != 0:
-            spec = float(cm[0,0])/(cm[0,0] + cm[0,1])
+        if (cm[0, 0] + cm[0, 1]) != 0:
+            spec = float(cm[0, 0])/(cm[0, 0] + cm[0, 1])
 
     return acc, sens, spec, prec, f1, auc
 
@@ -96,7 +100,10 @@ def enlist_cv_results(cv_targets, cv_preds, cv_probs=None):
                     if len(cv_probs) > 0:
                         probs.append(cv_probs  [i])
             except:
-                print("Unexpected error: ", sys.exc_info()[0])
+                log.error("Error joining CV results.")
+                log.error(sys.exc_info())
+                raise
+
             c += 1
 
     else:
@@ -126,7 +133,9 @@ def get_cv_classification_metrics (cv_targets, cv_preds, cv_probs=None):
     @return:
     """
 
-    targets, preds, probs, labels = enlist_cv_results(cv_targets, cv_preds, cv_probs)
+    targets, preds, probs, labels = enlist_cv_results(cv_targets,
+                                                      cv_preds,
+                                                      cv_probs)
 
     metrics = np.zeros((len(targets), 6))
 
@@ -138,7 +147,8 @@ def get_cv_classification_metrics (cv_targets, cv_preds, cv_probs=None):
         if probs != None:
             y_prob = probs[i]
 
-        acc, sens, spec, prec, f1, roc_auc = classification_metrics (y_true, y_pred, y_prob, labels)
+        acc, sens, spec, prec, \
+        f1, roc_auc = classification_metrics (y_true, y_pred, y_prob, labels)
         metrics[i, :] = np.array([acc, sens, spec, prec, f1, roc_auc])
 
     return metrics
@@ -180,7 +190,6 @@ def get_cv_significance(cv_targets, cv_preds):
         signfs.append(get_confusion_matrix_fisher_significance(conf_mat)[1])
 
     return np.mean(signfs)
-
 
 
 def get_confusion_matrix_fisher_significance (table, alternative='two-sided'):

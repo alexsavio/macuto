@@ -6,7 +6,8 @@ from nipy import load_image
 
 import logging
 
-log = logging.getLogger('process')
+log = logging.getLogger(__name__)
+
 
 def is_valid_coordinate(img, i, j, k):
     """
@@ -86,6 +87,7 @@ def check_have_same_geometry(fname1, fname2):
     """
     if not have_same_geometry(fname1, fname2):
         err = 'Different shapes:' + fname1 + ' vs. ' + fname2
+        log.error(err)
         raise ArithmeticError(err)
 
 
@@ -97,6 +99,7 @@ def check_have_same_spatial_geometry(fname1, fname2):
     """
     if not have_same_spatial_geometry(fname1, fname2):
         err = 'Different shapes:' + fname1 + ' vs. ' + fname2
+        log.error(err)
         raise ArithmeticError(err)
 
 

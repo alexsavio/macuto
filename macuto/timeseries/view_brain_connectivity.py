@@ -5,28 +5,9 @@ import numpy as np
 import nibabel as nib
 from collections import OrderedDict
 
-from scipy.ndimage.measurements import center_of_mass
-
 from mayavi import mlab
 
-def get_rois_centers_of_mass(vol):
-    """
-    :param vol: numpy ndarray
-
-    :return: OrderedDict
-
-    """
-    from scipy.ndimage.measurements import center_of_mass
-
-    roisvals = np.unique(vol)
-    roisvals = roisvals[roisvals != 0]
-
-    rois_centers = OrderedDict()
-    for r in roisvals:
-        rois_centers[r] = center_of_mass(atlas_vol, atlas_vol, r)
-
-    return rois_centers
-
+from ..nifti.roi import get_rois_centers_of_mass
 
 def test_quiver3d():
     x, y, z = np.mgrid[-2:3, -2:3, -2:3]
@@ -122,7 +103,8 @@ def show_brain_connectivity(vol, rois_centers, colors={}, colormap=None,
         c = rois_centers[rval]
 
         params = {}
-        params['color'] = colors.get(rval, (0.5, 0.5, 0)) #[rval] if colors is not None else (0.5, 0.5, 0)
+        params['color'] = colors.get(rval, (0.5, 0.5, 0))
+         #[rval] if colors is not None else (0.5, 0.5, 0)
         params['scale_factor'] = sizes.get(rval, 1)
 
         points = mlab.points3d(c[0], c[1], c[2],
@@ -171,7 +153,8 @@ def show_brain_connectivity(vol, rois_centers, colors={}, colormap=None,
                 w = weights[pidx]
                 #mlab.flow
 
-                mlab.plot3d(x, y, z, tube_radius=0.5, tube_sides=6, color=tube_color)
+                mlab.plot3d(x, y, z, tube_radius=0.5, tube_sides=6,
+                            color=tube_color)
 
     mlab.pipeline.image_plane_widget(src,
                             plane_orientation='z_axes',
@@ -206,7 +189,9 @@ if __name__ == '__main__':
         idx += 1
 
     #connections = np.random.randint(0, 2, (n_rois, n_rois))
-    connections = np.random.choice([0, 1], size=(n_rois, n_rois), p=[99.7/100, 0.3/100])
+    connections = np.random.choice([0, 1], size=(n_rois, n_rois),
+                                   p=[99.7/100, 0.3/100])
 
-    show_brain_connectivity_on_atlas(anat_vol, atlas_vol, colors, connections=connections)
+    show_brain_connectivity_on_atlas(anat_vol, atlas_vol, colors,
+                                     connections=connections)
 

@@ -12,8 +12,9 @@
 #-------------------------------------------------------------------------------
 
 import subprocess
-import logging as log
-log.basicConfig(level=log.INFO)
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def condor_call(cmd, shell=True):
@@ -42,7 +43,6 @@ def condor_submit(cmd):
     @return: int
     returncode value from calling the submission command.
     """
-    is_running = False
     try:
         is_running = subprocess.call('condor_status', shell=True) == 0
     except:

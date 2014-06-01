@@ -126,24 +126,33 @@ class FunctionalConnectivity(object):
 
         if self._use_lists:
             tseries = extract_timeseries_list(func_vol, atlas_vol, mask_vol,
-                                              zeroe=True, roi_list=self.roi_list)
+                                              zeroe=True,
+                                              roi_list=self.roi_list)
 
             #filtering
             self._tseries = []
             for ts in tseries:
-                self._tseries.append(tsio._tseries_from_nifti_helper(None, ts, self.sampling_interval,
-                                                                     pre_filter, normalize, None))
+                tsset = tsio._tseries_from_nifti_helper(None, ts,
+                                                        self.sampling_interval,
+                                                        pre_filter, normalize,
+                                                        None)
+                self._tseries.append(tsset)
 
         else:
             self._tseries = OrderedDict()
 
             tseries = extract_timeseries_dict(func_vol, atlas_vol, mask_vol,
-                                              zeroe=True, roi_list=self.roi_list)
+                                              zeroe=True,
+                                              roi_list=self.roi_list)
 
             #filtering
             for r in self.roi_list:
-                self._tseries.append(tsio._tseries_from_nifti_helper(None, tseries[r], self.sampling_interval,
-                                                                     pre_filter, normalize, None))
+                tsset = tsio._tseries_from_nifti_helper(None, tseries[r],
+                                                        self.sampling_interval,
+                                                        pre_filter, normalize,
+                                                        None)
+                self._tseries[r] = tsset
+
 
     def _select_timeseries(self, **kwargs):
         """
@@ -184,16 +193,19 @@ class FunctionalConnectivity(object):
             self._selected_ts = OrderedDict()
 
             for r in self.roi_list:
-                self._selected_ts[r] = ts_selector.fit_transform(self._tseries[r], **kwargs)
+                self._selected_ts[r] = ts_selector.fit_transform(self._tseries[r],
+                                                                 **kwargs)
 
         elif isinstance(self._tseries, list):
             self._selected_ts = []
             for ts in self._tseries:
-                self._selected_ts.append(ts_selector.fit_transform(ts, **kwargs))
+                self._selected_ts.append(ts_selector.fit_transform(ts,
+                                                                   **kwargs))
 
     def _calculate_similarities(self, **kwargs):
         """
-        Calculate a matrix of correlations/similarities between all timeseries in tseries.
+        Calculate a matrix of correlations/similarities between all
+        timeseries in tseries.
 
         :param kwargs: dict with the following keys
 

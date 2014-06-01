@@ -325,12 +325,9 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
     assert(len(file_list1) > 0)
 
     import os
-    from .nifti.read import get_nii_data
-    from .files.names import remove_ext, get_temp_file
-    #import markdown
-
     import matplotlib.pyplot as plt
-    import skimage.io as skio
+    from .nifti.read import get_nii_data
+    from .files.names import remove_ext
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -469,7 +466,8 @@ def show_3slices(vol, vol2=None, x=None, y=None, z=None, fig=None,
     return fig
 
 
-def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150, lower_triangle=True, **kwargs):
+def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150,
+                                    lower_triangle=True, **kwargs):
     """
     @param output_dir:
     @param file_list1: list of ndarrays
@@ -486,7 +484,6 @@ def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150, lower_triang
     See draw_square_matrix_channels named arguments.
     """
     import os
-    import skimage.io as skio
     import matplotlib.pyplot as plt
     from nitime.viz import drawmatrix_channels
 
@@ -510,7 +507,8 @@ def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150, lower_triang
                                       color_anchor=color_anchor, **kwargs)
         else:
             fig = draw_square_matrix_channels(cmat, channel_names, size=size,
-                                              color_anchor=color_anchor, **kwargs)
+                                              color_anchor=color_anchor,
+                                              **kwargs)
 
         png_fname = 'connectivity_matrix' + str(idx) + '.png'
         png_path = os.path.join(output_dir, png_fname)
@@ -527,9 +525,9 @@ def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150, lower_triang
     return img_files
 
 
-def draw_square_matrix_channels(in_m, channel_names=None, fig=None, x_tick_rot=None,
-                                size=None, cmap=plt.cm.RdBu_r, colorbar=True,
-                                color_anchor=None, title=None):
+def draw_square_matrix_channels(in_m, channel_names=None, fig=None,
+                                x_tick_rot=None, size=None, cmap=plt.cm.RdBu_r,
+                                colorbar=True, color_anchor=None, title=None):
     """
     Copied from nitime.viz import drawmatrix_channels
 
@@ -567,7 +565,7 @@ def draw_square_matrix_channels(in_m, channel_names=None, fig=None, x_tick_rot=N
     N = in_m.shape[0]
     ind = np.arange(N)  # the evenly spaced plot indices
 
-    def channel_formatter(x, pos=None):
+    def channel_formatter(x):
         thisind = np.clip(int(x), 0, N - 1)
         return channel_names[thisind]
 
@@ -624,7 +622,7 @@ def draw_square_matrix_channels(in_m, channel_names=None, fig=None, x_tick_rot=N
             else:
                 x_tick_rot = 45
 
-        for i in xrange(0, m.shape[0]):
+        for i in list(range(m.shape[0])):
             # if i < (m.shape[0] - 1):
             #     ax.text(i, -1, channel_names[i],
             #             rotation=x_tick_rot,
@@ -686,9 +684,9 @@ def draw_square_matrix_channels(in_m, channel_names=None, fig=None, x_tick_rot=N
     return fig
 
 
-#-------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Mayavi2 options
-#-------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def show_cutplanes (vol, first_idx=10, second_idx=10,
                     first_plane='x_axes', second_plane='y_axes'):
     """
@@ -719,7 +717,8 @@ def show_dynplane(vol):
     """
     from mayavi import mlab
     src = mlab.pipeline.scalar_field(vol)
-    mlab.pipeline.iso_surface(src, contours=[vol.min()+0.1*vol.ptp(), ], opacity=0.1)
+    mlab.pipeline.iso_surface(src, contours=[vol.min()+0.1*vol.ptp(), ],
+                              opacity=0.1)
     #mlab.pipeline.iso_surface(src, contours=[vol.max()-0.1*vol.ptp(), ],)
     mlab.pipeline.image_plane_widget(src,
                             plane_orientation='z_axes',
@@ -742,4 +741,5 @@ def show_render(vol, vmin=0, vmax=0.8):
     @param vmax: float
     """
     from mayavi import mlab
-    mlab.pipeline.volume(mlab.pipeline.scalar_field(vol), vmin=vmin, vmax=vmax, colormap='gray')
+    mlab.pipeline.volume(mlab.pipeline.scalar_field(vol), vmin=vmin, vmax=vmax,
+                         colormap='gray')

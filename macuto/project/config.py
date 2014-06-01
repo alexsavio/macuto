@@ -5,7 +5,7 @@ class Configuration(object):
     """
 
     def __init__(self):
-
+        pass
 
     #load the config from a file
     #https://docs.python.org/2/library/configparser.html

@@ -15,20 +15,23 @@ from glob import glob
 from ..strings import search_list, filter_list
 
 
-def dir_search (regex, wd='.'):
+def dir_search(regex, wd=None):
     """
     @param regex: string
     @param wd: string
      working directory
     @return:
     """
+    if wd is None:
+        wd = '.'
+
     ls = os.listdir(wd)
 
     filt = re.compile(regex).search
     return filter_list(ls, filt)
 
 
-def dir_match (regex, wd='.'):
+def dir_match(regex, wd=None):
     """
     Filter
     @param regex: string
@@ -36,13 +39,16 @@ def dir_match (regex, wd='.'):
     working directory
     @return:
     """
+    if wd is None:
+        wd = ''
+
     ls = os.listdir(wd)
 
     filt = re.compile(regex).match
     return filter_list(ls, filt)
 
 
-def get_file_list(file_dir, search_regex=''):
+def get_file_list(file_dir, regex=None):
     """
     Creates a list of files that match the search_regex within file_dir.
     The list of files will have file_dir as path prefix.
@@ -60,15 +66,15 @@ def get_file_list(file_dir, search_regex=''):
     file_list = os.listdir(file_dir)
     file_list.sort()
 
-    if search_regex:
-        file_list = search_list(file_list, search_regex)
+    if regex is not None:
+        file_list = search_list(file_list, regex)
 
     file_list = [os.path.join(file_dir, fname) for fname in file_list]
 
     return file_list
 
 
-def recursive_find(folder_path, regex=''):
+def recursive_find(folder_path, regex=None):
     """
     Returns absolute paths of files that match the regex within file_dir and
     all its children folders.
@@ -87,10 +93,13 @@ def recursive_find(folder_path, regex=''):
     A list of strings.
 
     """
+    if regex is None:
+        regex = ''
+
     return recursive_find_search(folder_path, regex)
 
 
-def recursive_find_match(folder_path, regex=''):
+def recursive_find_match(folder_path, regex=None):
     """
     Returns absolute paths of files that match the regex within file_dir and
     all its children folders.
@@ -109,6 +118,9 @@ def recursive_find_match(folder_path, regex=''):
     A list of strings.
 
     """
+    if regex is None:
+        regex = ''
+
     outlist = []
     for root, dirs, files in os.walk(folder_path):
         outlist.extend([os.path.join(root, f) for f in files
@@ -117,7 +129,7 @@ def recursive_find_match(folder_path, regex=''):
     return outlist
 
 
-def recursive_find_search(folder_path, regex=''):
+def recursive_find_search(folder_path, regex=None):
     """
     Returns absolute paths of files that match the regex within file_dir and
     all its children folders.
@@ -136,6 +148,9 @@ def recursive_find_search(folder_path, regex=''):
     A list of strings.
 
     """
+    if regex is None:
+        regex = ''
+
     outlist = []
     for root, dirs, files in os.walk(folder_path):
         outlist.extend([os.path.join(root, f) for f in files
@@ -179,7 +194,7 @@ def iter_recursive_find(folder_path, *regex):
                 yield outlist
 
 
-def find_match(base_directory, regex=''):
+def find_match(base_directory, regex=None):
     """
     Uses glob to find all files that match the regex
     in base_directory.
@@ -191,4 +206,7 @@ def find_match(base_directory, regex=''):
     @return: list
 
     """
+    if regex is None:
+        regex = ''
+
     return glob(os.path.join(base_directory, regex))

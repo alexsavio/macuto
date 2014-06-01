@@ -13,7 +13,7 @@ from macuto.scriptutils import whoami
 #logging config
 logging.basicConfig(level=logging.DEBUG, filename='atlasquerpy.log',
                     format="%(asctime)-15s %(message)s")
-log = logging.getLogger('atlasquer.py')
+log = logging.getLogger(__name__)
 
 '''
 cd ~/Dropbox/Documents/work/atlasquerpy
@@ -61,8 +61,8 @@ def main(argv=None):
     parser  = set_parser()
 
     try:
-       args = parser.parse_args ()
-    except argparse.ArgumentError, exc:
+       args = parser.parse_args()
+    except argparse.ArgumentError as exc:
        log.error(exc.message)
        parser.error(str(exc.message))
        return -1
@@ -140,7 +140,7 @@ def main(argv=None):
         try:
             print(atlas.get_description(x, y, z))
         except Exception as exc:
-            log.error(exc.message)
+            log.error(exc)
             log.error(sys.exc_info())
             return 1
 

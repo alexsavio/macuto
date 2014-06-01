@@ -1,20 +1,24 @@
 #!/usr/bin/python
 
+import logging
 import numpy as np
 from nipy.io.nifti_ref import nifti2nipy
+from ..nifti.coord_transform import (voxcoord_to_mm,
+                                     mm_to_voxcoord,
+                                     get_3D_coordmap)
+from ..nifti.process import (is_valid_coordinate,
+                             are_compatible_imgs)
 
-from ..nifti import voxcoord_to_mm, mm_to_voxcoord, \
-                    coord_transform, get_3D_coordmap, \
-                    is_valid_coordinate, are_compatible_imgs
+log = logging.getLogger(__name__)
 
 
 class Atlas:
-    '''
+    """
     Stores atlases data
-    '''
+    """
 
     def __init__(self, imgs, summs, name): 
-        '''
+        """
         Parameters
         ----------
         imgs: list of nib.Nifti1Image
@@ -25,7 +29,7 @@ class Atlas:
 
         name: string
         Atlas name
-        '''
+        """
         self.name = name
         self.images = imgs
         self.summaries = summs
@@ -41,7 +45,7 @@ class Atlas:
         self.type = ''
 
     def get_volume(self, pos):
-        '''
+        """
         Parameters
         ----------
         pos: int
@@ -50,11 +54,11 @@ class Atlas:
         Returns
         -------
         nib.Nifti1Image
-        '''
-        return self.images[pos] if self.images.has_key(pos) else None
+        """
+        return self.images[pos] if pos in self.images else None
 
     def find_label(self, pos):
-        '''
+        """
         Returns the label string corresponding to pos
         Parameters
         ----------
@@ -64,11 +68,11 @@ class Atlas:
         Returns
         -------
         string
-        '''
-        return self.labels[pos] if self.labels.has_key(pos) else None
+        """
+        return self.labels[pos] if pos in self.labels else None
 
     def add_label(self, n, name):
-        '''
+        """
         Parameters
         ----------
         pos: int
@@ -77,28 +81,28 @@ class Atlas:
         Returns
         -------
         a tuple: (label_value, string)
-        '''
+        """
         self.labels[n] = name
 
     def get_labels_ids(self):
-        '''
-        '''
+        """
+        """
         return self.labels.keys()
 
     def get_num_labels(self):
-        '''
+        """
         Returns number of labels in the atlas
-        '''
+        """
         return len(self.labels)
 
     def select_compatible_images(self, ref_img):
-        '''
+        """
         Sets self.image and self.summary to images compatible with ref_image
 
         Parameters
         ----------
         ref_img: nib.Nifti1Image or Nipy Image
-        '''
+        """
         for atlas_img in self.images:
             if are_compatible_imgs(atlas_img, ref_img):
                 self.image = atlas_img
@@ -108,28 +112,28 @@ class Atlas:
                 self.summary = atlas_summ
 
     def get_structure_name(self, index):
-        '''
-        '''
-        return self.labels[index] if self.labels.has_key(index) else 'Unknown'
+        """
+        """
+        return self.labels[index] if index in self.labels else 'Unknown'
 
     def add_centre(self, n, x, y, z, v):
-        '''
-        '''
+        """
+        """
         self.cursors[n] = (x, y, z, v)
 
 
 class StatsAtlas (Atlas):
-    '''
+    """
     Stores statistical atlases data
-    '''
+    """
     def __init__(self, imgs, summs, name, lower, upper, precision, 
                  stats_name, units): 
-        '''
+        """
         imgs: list of nib.Nifti1Image
         summs: list of nib.Nifti1Image
         name: string
         Atlas name
-        '''
+        """
         Atlas.__init__(self, imgs, summs, name)
 
         self.lower = lower
@@ -141,7 +145,7 @@ class StatsAtlas (Atlas):
         self.type = 'stat'
 
     def get_probability(self, struct_idx, x, y, z):
-        '''
+        """
         Returns the probability value of coordinate x,y,z in mm given the
         structure.
         If the structure does not exist or the coordinate is not valid, will
@@ -159,7 +163,7 @@ class StatsAtlas (Atlas):
         -------
         a float value of the probability
 
-        '''
+        """
         i, j, k = mm_to_voxcoord(self.image, x, y, z)
 
         if self.image.shape[3] <= struct_idx:
@@ -171,7 +175,7 @@ class StatsAtlas (Atlas):
             return 0
 
     def _get_roi_mask_intersect(self, mask_img, struct_idx):
-        '''
+        """
         Parameters
         ----------
         mask_img: nib.Nifti1Image or nipy Image
@@ -182,7 +186,7 @@ class StatsAtlas (Atlas):
         -------
         The total sum of 
 
-        '''
+        """
         mask_vol = np.array(mask_img.get_data())
 
         if self.image.shape[3] <= struct_idx:
@@ -203,7 +207,7 @@ class StatsAtlas (Atlas):
         return masked_probs
 
     def get_avg_probability(self, mask_img, struct_idx):
-        '''
+        """
         Calculates the average probability of the atlas voxels that belong to
         mask_img.
 
@@ -217,19 +221,18 @@ class StatsAtlas (Atlas):
         Returns
         -------
         float number of the resulting average probability
-        '''
+        """
         mask_img = nifti2nipy(mask_img)
         mask_vol = mask_img.get_data()
 
         if self.image.shape[3] <= struct_idx:
             return 0
 
-        print('Using ' + self.image.get_filename())
+        log.info('Using ' + self.image.get_filename())
 
-        prob_img = nifti2nipy(self.image)
-        prob_vol = prob_img[:, :, :, struct_idx]
-
-        total = 0.
+        #prob_img = nifti2nipy(self.image)
+        #prob_vol = prob_img[:, :, :, struct_idx]
+        #total = 0.
         mask_sum = np.sum(mask_vol)
 
         masked_probs = self._get_roi_mask_intersect(mask_img, struct_idx)
@@ -237,7 +240,7 @@ class StatsAtlas (Atlas):
         return masked_probs/mask_sum if mask_sum > 0 else 0
 
     def get_roi_overlap(self, mask_img, struct_idx):
-        '''
+        """
         Calculates the percentage overlap of mask_img and the ROI given by
         struct_idx
 
@@ -254,14 +257,14 @@ class StatsAtlas (Atlas):
         Returns
         -------
         float number of the resulting ROI overlap percentage
-        '''
+        """
         mask_img = nifti2nipy(mask_img)
-        mask_vol = mask_img.get_data()
+        #mask_vol = mask_img.get_data()
 
         if self.image.shape[3] <= struct_idx:
             return 0
 
-        print('Using ' + self.image.get_filename())
+        log.info('Using ' + self.image.get_filename())
 
         prob_vol = self.image.get_data()[:, :, :, struct_idx]
 
@@ -272,7 +275,7 @@ class StatsAtlas (Atlas):
         return masked_probs/prob_sum if prob_sum > 0 else 0
 
     def get_description(self, x, y, z):
-        '''
+        """
         Returns the label corresponding to the given coordinates
         Parameters
         ----------
@@ -291,18 +294,18 @@ class StatsAtlas (Atlas):
             index = 0
 
         text = self.name
-        if self.labels.has_key(index):
+        if index in self.labels:
             text += ': ' + self.labels[index]
 
         return text
-        '''
+        """
         i, j, k = mm_to_voxcoord(self.image, x, y, z)
 
         precision = 10**self.precision
         n_vols = self.image.shape[3]
 
-        labels = {}
-        for v in xrange(n_vols):
+        labels = []
+        for v in list(range(n_vols)):
             vol = self.image.get_data()[:, :, :, v]
 
             try:
@@ -343,22 +346,22 @@ class StatsAtlas (Atlas):
 
 
 class LabelAtlas (Atlas):
-    '''
+    """
     Stores statistical atlases data
-    '''
+    """
     def __init__(self, imgs, summs, name): 
-        '''
+        """
         imgs: list of nib.Nifti1Image
         summs: list of nib.Nifti1Image
         name: string
         Atlas name
-        '''
+        """
         Atlas.__init__(self, imgs, summs, name)
 
         self.type = 'label'
 
     def get_probability(self, structure, x, y, z):
-        '''
+        """
         Parameters
         ----------
         structure: int
@@ -370,7 +373,7 @@ class LabelAtlas (Atlas):
         Returns
         -------
         int: 100 if the coordinate corresponds to the given structure, 0 if not
-        '''
+        """
         i, j, k = mm_to_voxcoord(self.img, x, y, z)
 
         vol = self.get_volume(0).get_data()
@@ -378,7 +381,7 @@ class LabelAtlas (Atlas):
         return 100 if vol[i, j, k] == structure else 0
 
     def _get_roi_mask_intersect(self, mask_img, struct_idx):
-        '''
+        """
         Parameters
         ----------
         mask_img: nib.Nifti1Image or nipy Image
@@ -389,7 +392,7 @@ class LabelAtlas (Atlas):
         -------
         The total sum of 
 
-        '''
+        """
         mask_vol = np.array(mask_img.get_data())
 
         if self.image.shape[3] <= struct_idx:
@@ -410,7 +413,7 @@ class LabelAtlas (Atlas):
         return masked_probs
 
     def get_avg_probability(self, mask_img, struct_idx):
-        '''
+        """
         Calculates the average probability of the atlas voxels that belong to
         mask_img.
 
@@ -424,16 +427,16 @@ class LabelAtlas (Atlas):
         Returns
         -------
         float number of the resulting average probability
-        '''
+        """
         mask_img = nifti2nipy(mask_img)
         mask_vol = mask_img.get_data()
 
         if self.image.shape[3] <= struct_idx:
             return 0
 
-        print('Using ' + self.image.get_filename())
+        log.info('Using ' + self.image.get_filename())
 
-        lab_vol = self.image.get_data()
+        #lab_vol = self.image.get_data()
 
         mask_sum = np.sum(mask_vol)
         masked_probs = self._get_roi_mask_intersect(mask_img, struct_idx)
@@ -441,7 +444,7 @@ class LabelAtlas (Atlas):
         return masked_probs/mask_sum if mask_sum > 0 else 0
 
     def get_roi_overlap(self, mask_img, struct_idx):
-        '''
+        """
         Calculates the percentage overlap of mask_img and the ROI given by
         struct_idx
 
@@ -455,13 +458,13 @@ class LabelAtlas (Atlas):
         Returns
         -------
         float number of the resulting ROI overlap percentage
-        '''
-        mask_vol = mask_img.get_data()
+        """
+        #mask_vol = mask_img.get_data()
 
         if self.image.shape[3] <= struct_idx:
             return 0
 
-        print('Using ' + self.image.get_filename())
+        log.info('Using ' + self.image.get_filename())
 
         lab_vol = self.image.get_data()
         lab_sum = np.sum(lab_vol == struct_idx)
@@ -472,7 +475,7 @@ class LabelAtlas (Atlas):
         return masked_probs/lab_sum if lab_sum > 0 else 0
 
     def get_description(self, x, y, z):
-        '''
+        """
         Returns the label corresponding to the given coordinates
         Parameters
         ----------
@@ -482,7 +485,7 @@ class LabelAtlas (Atlas):
         Returns
         -------
         string
-        '''
+        """
         i, j, k = mm_to_voxcoord(self.image, x, y, z)
 
         if is_valid_coordinate(self.image, i, j, k):
@@ -491,7 +494,7 @@ class LabelAtlas (Atlas):
             index = 0
 
         text = self.name + '\n'
-        if self.labels.has_key(index):
+        if index in self.labels:
             text += self.labels[index]
 
         return text

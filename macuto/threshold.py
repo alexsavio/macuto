@@ -49,7 +49,7 @@ def apply_threshold(values, thr, method='robust'):
     elif method == 'percentile': return percentile_threshold  (values, thr)
 
 
-def find_histogram(vol, hist, mini, maxi, mask, use_mask):
+def find_histogram(vol, hist, mini, maxi, mask=None):
     """
     For robust limits calculation
 
@@ -71,10 +71,10 @@ def find_histogram(vol, hist, mini, maxi, mask, use_mask):
     fA = float(hist.size)/(maxi-mini)
     fB = (float(hist.size)*float(-mini)) / (maxi-mini)
 
-    if use_mask:
-        a = vol[mask > 0.5].flatten()
-    else:
+    if mask is None:
         a = vol.flatten()
+    else:
+        a = vol[mask > 0.5].flatten()
 
     a = (a*fA + fB).astype(int)
     h = hist.size - 1
@@ -118,7 +118,7 @@ def percentile_threshold(distances, thr=95):
     return sels
 
 
-def find_thresholds(vol, mask, use_mask=True):
+def find_thresholds(vol, mask=None):
     """
     For robust limits calculation
     @param vol:
@@ -139,15 +139,13 @@ def find_thresholds(vol, mask, use_mask=True):
 
     thresh98 = float(0)
     thresh2  = float(0)
-    mini     = float(0)
-    maxi     = float(0)
 
-    if use_mask:
-        mini = vol[mask > 0].min()
-        maxi = vol[mask > 0].max()
-    else:
+    if mask is None:
         mini = vol.min()
         maxi = vol.max()
+    else:
+        mini = vol[mask > 0].min()
+        maxi = vol[mask > 0].max()
 
     while jump == 1 or ((float(thresh98) - thresh2) < (maxi - mini)/10.):
         if jump > 1:
@@ -159,15 +157,14 @@ def find_thresholds(vol, mask, use_mask=True):
             mini   = tmpmin
 
         if jump == max_jumps or mini == maxi:
-            if use_mask:
-                mini = vol[mask > 0].min()
-                maxi = vol[mask > 0].max()
-            else:
+            if mask is None:
                 mini = vol.min()
                 maxi = vol.max()
+            else:
+                mini = vol[mask > 0].min()
+                maxi = vol[mask > 0].max()
 
-        hist, validsize = find_histogram(vol, hist, mini, maxi,
-                                         mask, use_mask)
+        hist, validsize = find_histogram(vol, hist, mini, maxi, mask)
 
         if validsize < 1:
             thresh2  = mini
@@ -213,7 +210,7 @@ def find_thresholds(vol, mask, use_mask=True):
     return minval, maxval
 
 
-def robust_min(vol, mask=''):
+def robust_min(vol, mask=None):
     """
 
     @param vol:
@@ -223,7 +220,7 @@ def robust_min(vol, mask=''):
     return find_thresholds(vol, mask)[0]
 
 
-def robust_max (vol, mask=''):
+def robust_max (vol, mask=None):
     """
 
     @param vol:

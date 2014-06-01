@@ -10,7 +10,8 @@
 #-------------------------------------------------------------------------------
 
 import os
-import logging as log
+import sys
+import logging
 
 import numpy as np
 import nibabel as nib
@@ -18,6 +19,8 @@ from sklearn.preprocessing import LabelEncoder
 
 from ..files.names import parse_subjects_list
 from ..files.names import grep_one
+
+log = logging.getLogger(__name__)
 
 
 def load_data(subjsf, datadir, maskf, labelsf=None):
@@ -46,11 +49,13 @@ def load_data(subjsf, datadir, maskf, labelsf=None):
 
     #checking mask and first subject dimensions match
     if imgsiz != msk.shape:
-        log.error('Subject image and mask dimensions should coincide.')
-        raise
+        msg = 'Subject image {0} and mask {1} dimensions do ' \
+              'not coincide.'.format(subjs[0], maskf)
+        log.error(msg)
+        raise(ValueError(msg))
 
     #relabeling scores to integers, if needed
-    if not np.all(scores.astype(np.int) == scores):
+    if not np.all(scores.astype(int) == scores):
     #    unis = np.unique(scores)
     #    scs  = np.zeros (scores.shape, dtype=int)
     #    for k in np.arange(len(unis)):
@@ -113,7 +118,8 @@ def write_svmperf_dat(filename, dataname, data, labels):
     nfeats = data.shape[1]
     nlabs  = len(labels)
     if nlabs != nsamps:
-        err = 'dimensions (rows) of data -1 must agree with number of labels!'
+        err = 'Dimensions (rows) of data -1 must agree with number of labels!'
+        log.error(err)
         raise IOError(err)
 
     label_chk = False
@@ -124,26 +130,26 @@ def write_svmperf_dat(filename, dataname, data, labels):
         label_chk = labels[0] == 1 or labels[0] == -1
 
     if not label_chk:
-        err = 'labels vector should have only -1 or 1 values!'
+        err = ':abels vector should have only -1 or 1 values!'
+        log.error(err)
         raise IOError(err)
 
     # Open/create file
-    fd = open(filename, 'w')
+    with open(filename, 'w') as fd:
 
-    # Write headings
-    fd.write('#' + dataname + '\n')
+        # Write headings
+        fd.write('#' + dataname + '\n')
 
-    # Writing format for the data (comma delimited matrix)
-    format = '%+d '
-    for i in np.arange(nfeats):
-        format = format + str(i+1) + ':%6.4f '
+        # Writing format for the data (comma delimited matrix)
+        format = '%+d '
+        for i in np.arange(nfeats):
+            format += str(i+1) + ':%6.4f '
 
-    labels = labels.reshape(nsamps, 1)
-    data = np.concatenate((labels, data), axis=1)
+        labels = labels.reshape(nsamps, 1)
+        data = np.concatenate((labels, data), axis=1)
 
-    # Write data
-    np.savetxt(fd, data, format)
-    fd.close()
+        # Write data
+        np.savetxt(fd, data, format)
 
 
 def write_arff(filename, dataname, featnames, data, labels):
@@ -181,44 +187,44 @@ def write_arff(filename, dataname, featnames, data, labels):
     nsamps = data.shape[0]
     nfeats = data.shape[1]
     if nfeats != len(featnames):
-        err = 'dimensions (column) of data must agree with number of variable name!'
+        err = 'Dimensions (column) of data must agree ' \
+              'with number of variable name!'
+        log.error(err)
         raise IOError(err)
 
     # Open/create file
-    fd = open(filename, 'w')
+    with open(filename, 'w') as fd:
 
-    #Write headings
-    fd.write('@RELATION ' + dataname + '\n')
+        #Write headings
+        fd.write('@RELATION ' + dataname + '\n')
 
-    # Writing feature names in the arff file format.
-    for i in featnames:
-        fd.write('@ATTRIBUTE ' + str(i) + ' NUMERIC\n')
+        # Writing feature names in the arff file format.
+        for i in featnames:
+            fd.write('@ATTRIBUTE ' + str(i) + ' NUMERIC\n')
 
-    # Write classes
-    #classes = str(np.unique(labels)).replace('[','').replace(']','');
-    classes = np.unique(labels).astype(int)
-    classes = classes.reshape(1, len(classes))
-    fd.write  ('@ATTRIBUTE class {')
-    np.savetxt(fd, classes, fmt='%d', delimiter=',', newline='}')
-    fd.write  ('\n')
+        # Write classes
+        #classes = str(np.unique(labels)).replace('[','').replace(']','');
+        classes = np.unique(labels).astype(int)
+        classes = classes.reshape(1, len(classes))
+        fd.write('@ATTRIBUTE class {')
+        np.savetxt(fd, classes, fmt='%d', delimiter=',', newline='}')
+        fd.write('\n')
 
-    # Write data
-    fd.write('@DATA\n')
+        # Write data
+        fd.write('@DATA\n')
 
-    # Writing format for the data (comma delimited matrix)
-    fmt = ''
-    for i in featnames:
-        fmt = fmt + ' %6.4f,'
+        # Writing format for the data (comma delimited matrix)
+        fmt = ''
+        for i in featnames:
+            fmt += ' %6.4f,'
 
-    fmt = fmt + ' %d'
+        fmt += ' %d'
 
-    labels = labels.reshape(nsamps, 1)
-    data = np.concatenate((data, labels), axis=1)
+        labels = labels.reshape(nsamps, 1)
+        data = np.concatenate((data, labels), axis=1)
 
-    # Write data
-    np.savetxt(fd, data, fmt)
-
-    fd.close()
+        # Write data
+        np.savetxt(fd, data, fmt)
 
 
 def read_svmperf_results(logpath, predspath='', testlabels=''):

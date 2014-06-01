@@ -11,6 +11,7 @@ import nitime.analysis as nta
 #http://scikit-learn.org/stable/modules/covariance.html
 #http://nilearn.github.io/developers/group_sparse_covariance.html
 
+
 class TimeSeriesGroupMeasure(object):
     """
     A strategy class to use any of the time series
@@ -246,7 +247,9 @@ class MeanSeedCorrelationMeasure(SeedCorrelationMeasure):
         List of correlation values between each ts_set1 timeseries and the
         timeseries in ts_set2
         """
-        super(MeanSeedCorrelationMeasure, self).__init__(ts_set1, ts_set2, lb=lb, ub=ub, TR=2, **kwargs)
+        super(MeanSeedCorrelationMeasure, self).__init__(ts_set1, ts_set2,
+                                                         lb=lb, ub=ub, TR=2,
+                                                         **kwargs)
         self.measure_value = np.mean(self.measure_value)
 
 
@@ -280,7 +283,8 @@ class SeedCoherenceMeasure(object):
 
         fft_par = kwargs.pop('NFFT', None)
         if fft_par is not None:
-            analyzer = nta.SeedCoherenceAnalyzer(ts_set1, ts_set2, lb=lb, ub=ub, method={'NFFT': fft_par})
+            analyzer = nta.SeedCoherenceAnalyzer(ts_set1, ts_set2, lb=lb, ub=ub,
+                                                 method={'NFFT': fft_par})
         else:
             analyzer = nta.SeedCoherenceAnalyzer(ts_set1, ts_set2, lb=lb, ub=ub)
 
@@ -322,7 +326,9 @@ class MeanSeedCoherenceMeasure(SeedCoherenceMeasure):
         List of correlation values between each ts_set1 timeseries and the
         timeseries in ts_set2
         """
-        super(MeanSeedCorrelationMeasure, self).__init__(ts_set1, ts_set2, lb=lb, ub=ub, TR=2, **kwargs)
+        super(MeanSeedCoherenceMeasure, self).__init__(ts_set1, ts_set2,
+                                                         lb=lb, ub=ub, TR=2,
+                                                         **kwargs)
         self.measure_value = np.mean(self.measure_value)
 
 

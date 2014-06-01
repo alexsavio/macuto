@@ -19,8 +19,9 @@ import pandas as pd
 from pandas import HDFStore
 from itertools import product
 
-import logging as log
-log.basicConfig(level=log.INFO)
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class HdfDataBuffer(object):
@@ -145,15 +146,18 @@ class HdfDataBuffer(object):
             return self._datasets[ds_name]
 
         try:
-            ds = self._group.create_dataset(ds_name, (1, 1), maxshape=None, dtype=dtype)
-            self._dataset[ds_name] = ds
+            ds = self._group.create_dataset(ds_name, (1, 1), maxshape=None,
+                                            dtype=dtype)
+            self._datasets[ds_name] = ds
             return ds
 
         except ValueError as ve:
-            log.error('Error creating empty dataset ' + ds_name + ' in ' + self._hdf_basepath)
-            print(str(ve))
+            log.error('Error creating empty dataset '
+                      '{0} in {1}.'.format(ds_name, self._hdf_basepath))
+            log.error(ve)
+            raise
 
-    def create_dataset(self, ds_name, data, attrs={}, dtype=None):
+    def create_dataset(self, ds_name, data, attrs=None, dtype=None):
         """
         Saves a Numpy array in a dataset in the HDF file, registers it as
         ds_name and returns the h5py dataset.
@@ -177,18 +181,21 @@ class HdfDataBuffer(object):
                 if dtype is None:
                     dtype = data.dtype
 
-                ds = self._group.create_dataset(ds_name, data.shape, dtype=dtype)
+                ds = self._group.create_dataset(ds_name, data.shape,
+                                                dtype=dtype)
 
-                if attrs:
+                if attrs is not None:
                     for key in attrs:
                         setattr(ds.attrs, key, attrs[key])
 
             ds.read_direct(data)
-            self._dataset[ds_name] = ds
+            self._datasets[ds_name] = ds
 
         except ValueError as ve:
-            log.error('Error creating dataset ' + ds_name + ' in ' + self._hdf_basepath)
-            print(str(ve))
+            log.error('Error creating dataset '
+                      '{0} in {1}.'.format(ds_name, self._hdf_basepath))
+            log.error(ve)
+            raise
 
         return ds
 
@@ -267,9 +274,11 @@ class NumpyHDFStore(HDFStore):
 
         idx_colranges = [range_values[x] for x in idx_colnames]
 
-        fullindex = pd.Index([p for p in product(*idx_colranges)], name=tuple(idx_colnames))
+        fullindex = pd.Index([p for p in product(*idx_colranges)],
+                             name=tuple(idx_colnames))
 
-        fulldf = df.reindex(index=fullindex, fill_value=fill_value, method=fill_method)
+        fulldf = df.reindex(index=fullindex, fill_value=fill_value,
+                            method=fill_method)
 
         fulldf.index.names = idx_colnames
 
@@ -298,7 +307,7 @@ class NumpyHDFStore(HDFStore):
 
         return self._read_array(node)
 
-    def put(self, key, value, attrs={}, format=None, append=False, **kwargs):
+    def put(self, key, value, attrs=None, format=None, append=False, **kwargs):
         """
         Store object in HDFStore
 
@@ -348,7 +357,7 @@ class NumpyHDFStore(HDFStore):
             ds_name = kwargs.get('ds_name', self._array_dsname)
 
             ds = self._handle.createArray(group, ds_name, value)
-            if attrs:
+            if attrs is not None:
                 for key in attrs:
                     setattr(ds.attrs, key, attrs[key])
 
@@ -370,7 +379,8 @@ class NumpyHDFStore(HDFStore):
                         attrs={'axes': df.index.names},
                         ds_name=ds_name, append=True)
 
-    def put_df_as_ndarray(self, key, df, range_values, loop_multiindex=False, unstack=False, fill_value=0, fill_method=None):
+    def put_df_as_ndarray(self, key, df, range_values, loop_multiindex=False,
+                          unstack=False, fill_value=0, fill_method=None):
         """
         Returns a PyTables HDF Array from df in the shape given by its index columns
         range values.

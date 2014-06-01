@@ -13,15 +13,13 @@ try:
 except:
     from pathlib import Path as path
 
+from macuto.config import (DICOM_FILE_EXTENSIONS,
+                           OUTPUT_DICOM_EXTENSION)
+
 #logging config
 logging.basicConfig(level=logging.DEBUG, filename='anonymizer.log', 
                     format="%(asctime)-15s %(message)s")
 log = logging.getLogger('anonymizer')
-
-#Acceptable extensions for DICOM files
-dicom_file_extensions = ['.IMA', '.DICOM', '.DCM']
-dicom_file_extensions.extend([x.lower() for x in dicom_file_extensions])
-output_dicom_extension = '.dcm'
 
 #santiago search idregex
 #santiago_idregex = '[N|P]?\\d\\d*-?\\d?$'
@@ -171,7 +169,7 @@ def file_names(acqfolder):
     subj_path = path(acqfolder)
 
     done = -1
-    for ext in dicom_file_extensions:
+    for ext in DICOM_FILE_EXTENSIONS:
         file_lst = subj_path.glob('*' + ext)
         if file_lst:
             rename_file_group_to_serial_nums(file_lst)
@@ -199,7 +197,7 @@ def dicom_headers(acqpath):
     if subj_path.isfile():
         anonymize_dicom_file(subj_path)
     else:
-        for ext in dicom_file_extensions:
+        for ext in DICOM_FILE_EXTENSIONS:
             file_lst = subj_path.glob('*' + ext)
             for dcm_file in file_lst:
                 try:
@@ -227,7 +225,7 @@ def dicom_to_nii(acqpath):
             return -1
 
     else:
-         for ext in dicom_file_extensions:
+         for ext in DICOM_FILE_EXTENSIONS:
             regex = '*' + ext
             if subj_path.glob(regex):
                 try:
@@ -247,7 +245,7 @@ def get_all_patient_mri_ids(subjfolder):
 
     subj_ids = set()
 
-    for ext in dicom_file_extensions:
+    for ext in DICOM_FILE_EXTENSIONS:
         file_lst = []
         file_lst.extend(glob(os.path.join(subjfolder, '*', '*' + ext)))
         file_lst.extend(glob(os.path.join(subjfolder, '*' + ext)))
@@ -267,7 +265,7 @@ def get_patient_mri_id(subjfolder):
     """
     assert(os.path.exists(subjfolder))
 
-    for ext in dicom_file_extensions:
+    for ext in DICOM_FILE_EXTENSIONS:
         file_lst = []
         file_lst.extend(glob(os.path.join(subjfolder, '*', '*' + ext)))
         file_lst.extend(glob(os.path.join(subjfolder, '*' + ext)))
@@ -316,9 +314,9 @@ def anonymize_dicom_file(dcm_file, remove_private_tags=False, remove_curves=Fals
     # Remove data elements (should only do so if DICOM type 3 optional) 
     # Use general loop so easy to add more later
     # Could also have done: del ds.OtherPatientIDs, etc.
-    for name in ['OtherPatientIDs']:
-        if name in plan:
-            delattr(ds, name)
+    #for name in ['OtherPatientIDs']:
+    #    if name in plan:
+    #        delattr(ds, name)
 
     # Same as above but for blanking data elements that are type 2.
     for name in ['PatientsBirthDate']:
@@ -368,7 +366,7 @@ def rename_file_group_to_serial_nums(file_lst):
     c = 1
     for f in file_lst:
         dirname = path.abspath(f.dirname())
-        fdest = f.joinpath(dirname, "{0:04d}".format(c) + output_dicom_extension)
+        fdest = f.joinpath(dirname, "{0:04d}".format(c) + OUTPUT_DICOM_EXTENSION)
         log.info('Renaming {0} to {1}'.format(f, fdest))
         f.rename(fdest)
         c += 1

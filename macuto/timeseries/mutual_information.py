@@ -3,20 +3,21 @@ from math import log
 from scipy import histogram, digitize
 from collections import defaultdict
 
-#---------------------------------------------------------------------
-import math
-import numpy
-import scipy
-from scipy.stats import gaussian_kde
-from scipy.integrate import dblquad
+# #---------------------------------------------------------------------
+# import math
+# import numpy
+# import scipy
+# from scipy.stats import gaussian_kde
+# from scipy.integrate import dblquad
 
 # Constants
-MIN_DOUBLE = 4.9406564584124654e-324
+#MIN_DOUBLE = 4.9406564584124654e-324
                     # The minimum size of a Float64; used here to prevent the
                     #  logarithmic function from hitting its undefined region
                     #  at its asymptote of 0.
-INF=1E12  # The floating-point representation for "infinity"
+#INF=1E12  # The floating-point representation for "infinity"
 
+'''
 # x and y are previously defined as collections of
 # floating point values with the same length
 
@@ -38,9 +39,11 @@ mutual_info = lambda a,b: gkde_xy([a,b]) * \
     dblquad(mutual_info, -INF, INF, lambda a: 0, lambda a: INF)
 
 print('minfo_xy = ', minfo_xy)
+'''
 
-#---------------------------------------------------------------------
 from sklearn.metrics import mutual_info_score
+
+log2 = lambda x: log(x, 2)
 
 
 def calc_MI(x, y, bins):
@@ -49,11 +52,8 @@ def calc_MI(x, y, bins):
     return mi
 
 
-#----------------------------------------------------------------------
-log2 = lambda x: log(x, 2)
-
 def mutual_information(x, y):
-    return entropy(y) - conditional_entropy(x,y)
+    return entropy(y) - conditional_entropy(x, y)
 
 
 def conditional_entropy(x, y):
@@ -75,7 +75,8 @@ def conditional_entropy(x, y):
         x1 = x[y == ey]
         condPxy = compute_distribution(digitize(x1,  bx))
 
-        for k, v in condPxy.iteritems():
+        for k in condPxy:
+            v = condPxy[k]
             res += (v * Py[ey] * (log2(Px[k]) - log2(v * Py[ey])))
     return res
 
@@ -87,7 +88,7 @@ def entropy(y):
     # P(Y)
     Py = compute_distribution(y)
     res = 0.0
-    for k, v in Py.iteritems():
+    for v in Py.values():
         res += v*log2(v)
     return -res
 

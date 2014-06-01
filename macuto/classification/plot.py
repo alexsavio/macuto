@@ -9,6 +9,12 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
+import os
+import numpy as np
+
+from ..strings import filter_objlist
+
+
 def save_fig_to_png(fig, fname, facecolor=None, dpi=300):
     """
     @param fig:
@@ -21,10 +27,11 @@ def save_fig_to_png(fig, fname, facecolor=None, dpi=300):
     import pylab as plt
 
     print("Saving " + fname)
-    fig.set_size_inches(22,16)
+    fig.set_size_inches(22, 16)
     fig.tight_layout()
-    fig.savefig(fname, bbox_inches='tight', pad_inches=0,
-                dpi=dpi, facecolor=facecolor)
+    fig.savefig(fname, bbox_inches='tight', pad_inches=0, dpi=dpi,
+                facecolor=facecolor)
+
     plt.close(fig)
 
 
@@ -45,9 +52,13 @@ def subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, yvals, yvariances, yrange,
     @param sty:
     @param show_legend:
     """
-    line = ax.errorbar(prefs_thrs, yvals, yerr=yvariances, color=clor, marker=mark, ls=sty, label=c, lw=2, elinewidth=2, capsize=5)
+    line = ax.errorbar(prefs_thrs, yvals, yerr=yvariances, color=clor,
+                       marker=mark, ls=sty, label=c, lw=2, elinewidth=2,
+                       capsize=5)
+
     ax.set_xlabel(xlabel, size='xx-large')
     ax.set_ylabel(ylabel, labelpad=10, size='xx-large')
+
     #ax.set_yticks(yrange)
     plt.yticks(yrange, size='x-large')
     ax.grid(which='major', axis='x', linewidth=0.75, linestyle='-', color='0.75')
@@ -55,11 +66,12 @@ def subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, yvals, yvariances, yrange,
     ax.grid(which='major', axis='y', linewidth=0.75, linestyle='-', color='0.75')
     ax.grid(which='minor', axis='y', linewidth=0.25, linestyle='-', color='0.75')
     plt.xticks(prefs_thrs, rotation='vertical', size='x-large')
+
     if show_legend:
         ax.legend(loc=3)
 
 
-def plot_results (results, wd, dataf, prefs_methods, prefs_thrs, clf_methods):
+def plot_results(results, wd, subjsf, prefs_methods, prefs_thrs, clf_methods):
     """
 
     @param results:
@@ -91,14 +103,14 @@ def plot_results (results, wd, dataf, prefs_methods, prefs_thrs, clf_methods):
 
         for p in prefs_methods:
             print(p)
-            resfp = aizc.filter_objlist (resf, 'prefs', p)
+            resfp = filter_objlist(resf, 'prefs', p)
 
             fig = plt.figure(p + '_' + os.path.basename(f))
 
             i = 0
             for c in clf_methods:
                 print(c)
-                resfpc = aizc.filter_objlist (resfp, 'cl', c)
+                resfpc = filter_objlist(resfp, 'cl', c)
 
                 clor = colors[i]
                 mark = markrs[i]
@@ -109,7 +121,7 @@ def plot_results (results, wd, dataf, prefs_methods, prefs_thrs, clf_methods):
                 maccs, msens, mspec, mprec, mfone, mrauc = [], [], [], [], [], []
                 vaccs, vsens, vspec, vprec, vfone, vrauc = [], [], [], [], [], []
                 for t in prefs_thrs:
-                    resfpct = aizc.filter_objlist (resfpc, 'prefs_thr', t)[0]
+                    resfpct = filter_objlist (resfpc, 'prefs_thr', t)[0]
 
                     #metrics[i, :] = np.array([acc, sens, spec, prec, f1, roc_auc])
                     metrs = np.array(resfpct.metrics)
@@ -136,32 +148,39 @@ def plot_results (results, wd, dataf, prefs_methods, prefs_thrs, clf_methods):
                 xlabel = 'threshold'
 
                 ylabel = 'accuracy'
-                ax     = plt.subplot(2,3,1)
-                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, maccs, vaccs, yrange, c, clor, mark, sty, True)
+                ax     = plt.subplot(2, 3, 1)
+                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, maccs, vaccs,
+                             yrange, c, clor, mark, sty, True)
 
                 ylabel = 'sensitivity'
-                ax     = plt.subplot(2,3,2)
-                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, msens, vsens, yrange, c, clor, mark, sty, False)
+                ax     = plt.subplot(2, 3, 2)
+                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, msens, vsens,
+                             yrange, c, clor, mark, sty, False)
 
                 figure_title = str.upper(p[0]) + p[1:] + ' on ' + str(os.path.basename(f))
-                plt.text(0.5, 1.08, figure_title, horizontalalignment='center', fontsize=20, transform = ax.transAxes, fontname='Ubuntu')
+                plt.text(0.5, 1.08, figure_title, horizontalalignment='center',
+                         fontsize=20, transform = ax.transAxes)
                 #plt.title (figure_title)
 
                 ylabel = 'specificity'
-                ax     = plt.subplot(2,3,3)
-                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mspec, vspec, yrange, c, clor, mark, sty, False)
+                ax     = plt.subplot(2, 3, 3)
+                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mspec, vspec,
+                             yrange, c, clor, mark, sty, False)
 
                 ylabel = 'precision'
-                ax     = plt.subplot(2,3,4)
-                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mprec, vprec, yrange, c, clor, mark, sty, False)
+                ax     = plt.subplot(2, 3, 4)
+                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mprec, vprec,
+                             yrange, c, clor, mark, sty, False)
 
                 ylabel = 'F1-score'
-                ax     = plt.subplot(2,3,5)
-                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mfone, vfone, yrange, c, clor, mark, sty, False)
+                ax     = plt.subplot(2, 3, 5)
+                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mfone, vfone,
+                             yrange, c, clor, mark, sty, False)
 
                 ylabel = 'ROC AUC'
-                ax     = plt.subplot(2,3,6)
-                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mrauc, vrauc, yrange, c, clor, mark, sty, False)
+                ax     = plt.subplot(2, 3, 6)
+                subplot_this(plt, ax, xlabel, ylabel, prefs_thrs, mrauc, vrauc,
+                             yrange, c, clor, mark, sty, False)
 
             #fig.show()
             #raw_input("Press Enter to continue...")
