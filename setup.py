@@ -21,9 +21,11 @@ script_path = os.path.join('macuto', 'scripts')
 
 install_reqs = parse_requirements('requirements.txt')
 
+LICENSE = 'new BSD'
+
 setup_dict = dict(
     name = 'macuto',
-    version = '0.2.0',
+    version = '0.3.0',
     description = 'MRI Analysis and Classification Tools',
 
     license = 'BSD 3-Clause',
@@ -58,7 +60,7 @@ setup_dict = dict(
         'Natural Language :: English',
         'Environment :: Console',
         'Intended Audience :: Healthcare Industry',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'License :: OSI Approved ::' + LICENSE,
         'Operating System :: OS Independent',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
