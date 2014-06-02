@@ -78,8 +78,7 @@ def perform_classification(subjsf, labelsf, outfile, datadir, maskf,
         #indices = np.where(mask > 0)
 
     preds, probs, best_pars, presels, cv, \
-    importance, scores, \
-    y, truth = extract_and_classify(X, y, scores, prefsmethod, prefsthr,
+    importance, y, truth = extract_and_classify(X, y, prefsmethod, prefsthr,
                                     fsmethod1, fsmethod2, clfmethod, cvmethod,
                                     stratified, stddize, thrmethod, n_cpus)
 
@@ -156,7 +155,7 @@ def pre_featsel(X, y, method, thr=95, dist_function=None, thr_method='robust'):
     return m
 
 
-def extract_and_classify (X, y, scores, prefsmethod, prefsthr,
+def extract_and_classify (X, y, prefsmethod, prefsthr,
                           fsmethod1, fsmethod2, clfmethod, cvmethod,
                           stratified, stddize, thrmethod='robust',
                           n_cpus=1, gs_scoring='accuracy'):
@@ -166,8 +165,6 @@ def extract_and_classify (X, y, scores, prefsmethod, prefsthr,
     X:
 
     y:
-
-    scores:
 
     prefsmethod:
 
@@ -196,7 +193,7 @@ def extract_and_classify (X, y, scores, prefsmethod, prefsthr,
 
     Returns
     -------
-    preds, probs, best_pars, presels, cv, importance, scores, y, truth
+    preds, probs, best_pars, presels, cv, importance, y, truth
 
     """
 
@@ -238,7 +235,6 @@ def extract_and_classify (X, y, scores, prefsmethod, prefsthr,
 
         #PRE feature selection
         if prefsmethod != 'none':
-            #sc_train = scores[train]
             presels[fc] = pre_featsel(X_train, y_train,
                                       prefsmethod, prefsthr, thrmethod)
             if not presels[fc].any():
@@ -284,4 +280,4 @@ def extract_and_classify (X, y, scores, prefsmethod, prefsthr,
 
         fc += 1
 
-    return preds, probs, best_pars, presels, cv, importance, scores, y, truth
+    return preds, probs, best_pars, presels, cv, importance, y, truth

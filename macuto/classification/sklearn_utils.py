@@ -296,10 +296,10 @@ def get_pipeline(fsmethod1, fsmethod2, clfmethod, n_samps, n_feats, n_cpus):
         log.info(info)
 
         #union of feature selection processes
-        fs1, fs1p = get_fsmethod (fs1n, n_feats, n_samps, n_cpus)
+        fs1, fs1p = get_fsmethod (fs1n, n_feats, n_cpus)
         fs1p = append_to_keys(fs1p, fs1n + '__')
         if fs2n != 'none':
-            fs2, fs2p = get_fsmethod(fs2n, n_feats, n_samps, n_cpus)
+            fs2, fs2p = get_fsmethod(fs2n, n_feats, n_cpus)
             fs2p = append_to_keys(fs2p, fs2n + '__')
 
             combined_features = FeatureUnion([(fs1n, fs1), (fs2n, fs2)])
