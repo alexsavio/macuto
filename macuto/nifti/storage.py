@@ -22,7 +22,7 @@ from nipy import save_image
 log = logging.getLogger(__name__)
 
 
-def save_niigz(vol, filepath, affine, header=None):
+def save_niigz(vol, filepath, affine=None, header=None):
     """
     Saves a volume into a Nifti (.nii.gz) file.
 
