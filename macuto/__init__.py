@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import logging
-from config import LOG_LEVEL
+from .config import LOG_LEVEL
 
 logging.basicConfig(level=LOG_LEVEL, filename='macuto.log',
                     format="%(asctime)-15s %(message)s")
