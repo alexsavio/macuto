@@ -13,9 +13,10 @@ import os
 import sys
 import shelve
 import logging
-
+ 
 import numpy as np
 import nibabel as nib
+from scipy import stats
 from sklearn.preprocessing import StandardScaler
 from sklearn.grid_search import (ParameterGrid,
                                  GridSearchCV)
@@ -224,6 +225,20 @@ def extract_and_classify (X, y, prefsmethod, prefsthr,
         #data cv separation
         X_train, X_test, \
         y_train, y_test = X[train, :], X[test, :], y[train], y[test]
+
+        # We correct NaN values in x_train and x_test
+        nan_mean = stats.nanmean(X_train)
+        nan_train = np.isnan(X_train)
+        nan_test = np.isnan(X_test)
+
+        X_test[nan_test] = 0
+        X_test = X_test + nan_test*nan_mean
+
+        X_train[nan_train] = 0
+        X_train = X_train + nan_train*nan_mean
+
+        #y_train = y_train.ravel()
+        #y_test = y_test.ravel()
 
         #scaling
         #if clfmethod == 'linearsvc' or clfmethod == 'onevsonesvc':

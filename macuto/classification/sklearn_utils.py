@@ -153,14 +153,19 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
     @return:
     fsmethods[fsmethod], fsgrid[fsmethod]
     """
+    #calculate RFE and RFECV step
+    if n_feats <= 20:
+        rfe_step = 1
+    else:
+        rfe_step = 0.05
 
     #Feature selection procedures
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
-    fsmethods = { 'rfe'       : RFE(estimator=SVC(kernel="linear"), step=0.05,
+    fsmethods = { 'rfe'       : RFE(estimator=SVC(kernel="linear"), step=rfe_step,
                                     n_features_to_select=2),
 
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
-                  'rfecv'     : RFECV(estimator=SVC(kernel="linear"), step=0.05,
+                  'rfecv'     : RFECV(estimator=SVC(kernel="linear"), step=rfe_step,
                                       loss_func=roc_auc_score), #cv=3, default; cv=StratifiedKFold(n_subjs, 3)
 
                                 #Univariate Feature selection: http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectPercentile.html
@@ -309,7 +314,7 @@ def get_pipeline(fsmethod1, fsmethod2, clfmethod, n_samps, n_feats, n_cpus):
             fsp = fs1p
 
     #classifier instance
-    classif, clp = get_clfmethod(clfmethod, n_feats, n_samps)
+    classif, clp = get_clfmethod(clfmethod, n_feats)
     #clp     = append_to_keys(clgrid[clfmethod], clfmethod + '__')
 
     #if clfmethod == 'gmm':
