@@ -9,31 +9,24 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
-import os
-import sys
-import shelve
 import logging
  
 import numpy as np
 import nibabel as nib
 from scipy import stats
 from sklearn.preprocessing import StandardScaler
-from sklearn.grid_search import (ParameterGrid,
-                                 GridSearchCV)
+from sklearn.grid_search import GridSearchCV
 
 from .data_io import load_data
 from .sklearn_utils import (get_cv_method,
-                            get_pipeline,
-                            get_clfmethod,
-                            get_fsmethod)
+                            get_pipeline)
 
 from .features import (pearson_correlation,
                        bhattacharyya_dist,
                        welch_ttest,
                        distance_computation)
 
-from ..files.names import (get_extension,
-                           remove_ext)
+from ..files.names import get_extension
 from ..storage import save_variables_to_shelve
 from ..threshold import (rank_threshold,
                          percentile_threshold,
@@ -42,17 +35,31 @@ from ..threshold import (rank_threshold,
 log = logging.getLogger(__name__)
 
 
-def perform_classification(subjsf, labelsf, outfile, datadir, maskf,
-                           clfmethod, fsmethod1, fsmethod2,
-                           prefsmethod, prefsthr, cvmethod, thrmethod,
-                           stratified, stddize, n_cpus):
+def perform_classification(subjsf, labelsf, outfile, datadir, maskf, clfmethod,
+                           fsmethod1, fsmethod2, prefsmethod, prefsthr,
+                           cvmethod, thrmethod, stratified, stddize, n_cpus):
     """
-    @param subjsf:
-    @param labelsf:
-    @param outfile:
-    @param datadir:
-    @param maskf:
-    @param clfmethod:
+    @param subjsf: string
+    Path to subjects list file
+
+    @param labelsf: string
+    Path to labels list file
+    Must be in the same order as subjsf
+
+    @param outfile: string
+    Path to output report file
+
+    @param datadir: string
+    Path to where the data files are in case subjsf does not have
+    absolute paths.
+
+    @param maskf: string
+    Path to a mask file
+
+    @param clfmethod: string
+    Choice for classification method
+    choices:
+
     @param fsmethod1:
     @param fsmethod2:
     @param prefsmethod:
