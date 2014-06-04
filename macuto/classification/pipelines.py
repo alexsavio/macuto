@@ -274,7 +274,7 @@ def extract_and_classify (X, y, prefsmethod, prefsthr,
 
         #creating grid search
         gs = GridSearchCV(pipe, params, n_jobs=n_cpus, verbose=1,
-                          scoring=gs_scoring)
+                          scoring=gs_scoring, verbose=False)
 
         #do it
         log.info('Running grid search')
