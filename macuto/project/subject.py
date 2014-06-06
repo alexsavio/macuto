@@ -12,9 +12,8 @@ class Subject(object):
     """
     def __init__(self):
         self.private = PrivateData()
-        self.private.name =
-        self.private.birthdate =
+        self.private.name = ''
+        self.private.birthdate = ''
 
         self.id
         self.images
-        self.

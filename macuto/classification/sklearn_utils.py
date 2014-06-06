@@ -9,7 +9,6 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
-import sys
 import numpy as np
 import logging
 
@@ -37,11 +36,6 @@ from sklearn.cross_validation import StratifiedKFold
 
 #scores
 from sklearn.metrics import roc_auc_score
-#from sklearn.metrics import accuracy_score
-#from sklearn.metrics import precision_score
-#from sklearn.metrics import recall_score
-#from sklearn.metrics import confusion_matrix
-#from sklearn.metrics import f1_score
 
 #other decompositions
 from sklearn.decomposition import PCA

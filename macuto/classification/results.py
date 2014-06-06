@@ -192,9 +192,10 @@ def get_cv_significance(cv_targets, cv_preds):
     return np.mean(signfs)
 
 
-def get_confusion_matrix_fisher_significance (table, alternative='two-sided'):
+def get_confusion_matrix_fisher_significance(table, alternative='two-sided'):
     """
     Returns the value of fisher_exact test on table.
+
 
     Parameters
     ----------

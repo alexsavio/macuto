@@ -10,7 +10,7 @@
 #-------------------------------------------------------------------------------
 
 import re
-
+import numpy as np
 
 def filter_objlist(olist, fieldname, fieldval):
     """
@@ -173,3 +173,60 @@ def is_valid_regex(string):
     except re.error:
         is_valid = False
     return is_valid
+
+
+def remove_from_string(string, values):
+    """
+
+    :param string:
+    :param values:
+    :return:
+    """
+    for v in values:
+        string = string.replace(v, '')
+
+    return string
+
+
+def to_numbers(values, ntype=float, regex=r'\b\d+\b', fill_value=np.NaN,
+               remove_symbols=['<', '>', '=']):
+    """
+    Extracts all numbers in a string, join them and
+    transform the result to ntype.
+
+    :param values: list of strings
+    List of strings that may contain numbers
+
+    :param ntype: transformation function
+    float or int
+
+    :param regex: string
+    Regular expression to extract the numbers
+    from the strings
+
+    :param fill_value:
+    Value to fill the strings that could not
+    be converted.
+
+    :param remove_symbols: list of strings
+     String values that should be removed of the strings
+     before conversion. If None or empty, no filtering
+     will be performed.
+
+    :return:
+    list of ntypes
+    """
+    numbers = []
+    for v in values:
+        try:
+            if remove_symbols is not None:
+                v = remove_from_string(v, remove_symbols)
+
+            numbers.append(ntype(v))
+        except ValueError:
+            if fill_value is not None:
+                numbers.append(np.NaN)
+            else:
+                pass
+
+    return numbers
