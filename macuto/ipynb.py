@@ -1,4 +1,8 @@
+
+import pandas as pd
+from tabulate import tabulate
 from collections import OrderedDict
+
 
 class ListTable(list):
     """ Overridden list class which takes a 2-dimensional list of
@@ -16,6 +20,26 @@ class ListTable(list):
             html.append("</tr>")
         html.append("</table>")
         return ''.join(html)
+
+    #https://bitbucket.org/astanin/python-tabulate
+    def tabulate(self, tablefmt='plain'):
+        """
+
+        :param tablefmt: string
+         Supported table formats are:
+        "plain"
+        "simple"
+        "grid"
+        "pipe"
+        "orgtbl"
+        "rst"
+        "mediawiki"
+        "latex"
+
+        :return: tabulate
+        Tabulated content
+        """
+        return tabulate(self, tablefmt=tablefmt)
 
 
 class DictTable(OrderedDict):
@@ -36,3 +60,23 @@ class DictTable(OrderedDict):
 
         html.append("</table>")
         return ''.join(html)
+
+    #https://bitbucket.org/astanin/python-tabulate
+    def tabulate(self, tablefmt='plain'):
+        """
+
+        :param tablefmt: string
+         Supported table formats are:
+        "plain"
+        "simple"
+        "grid"
+        "pipe"
+        "orgtbl"
+        "rst"
+        "mediawiki"
+        "latex"
+
+        :return: tabulate
+        Tabulated content
+        """
+        return tabulate(list(self.items()), tablefmt=tablefmt)
