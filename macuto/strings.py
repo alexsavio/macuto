@@ -219,8 +219,9 @@ def to_numbers(values, ntype=float, regex=r'\b\d+\b', fill_value=np.NaN,
     numbers = []
     for v in values:
         try:
-            if remove_symbols is not None:
-                v = remove_from_string(v, remove_symbols)
+            if isinstance(v, str):
+                if remove_symbols is not None:
+                    v = remove_from_string(v, remove_symbols)
 
             numbers.append(ntype(v))
         except ValueError:
