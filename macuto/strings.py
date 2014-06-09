@@ -188,8 +188,8 @@ def remove_from_string(string, values):
     return string
 
 
-def to_numbers(values, ntype=float, regex=r'\b\d+\b', fill_value=np.NaN,
-               remove_symbols=['<', '>', '=']):
+def to_numbers(values, ntype=float, regex=r"[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?",
+               fill_value=np.NaN, remove_symbols=['<', '>', '=']):
     """
     Extracts all numbers in a string, join them and
     transform the result to ntype.
@@ -217,13 +217,21 @@ def to_numbers(values, ntype=float, regex=r'\b\d+\b', fill_value=np.NaN,
     list of ntypes
     """
     numbers = []
+    values = values.copy()
     for v in values:
         try:
             if isinstance(v, str):
                 if remove_symbols is not None:
                     v = remove_from_string(v, remove_symbols)
 
-            numbers.append(ntype(v))
+                if regex:
+                    v = ''.join(re.findall(regex, v))
+
+                numbers.append(ntype(v))
+
+            elif isinstance(v, (int, float, complex)):
+                numbers.append(ntype(v))
+
         except ValueError:
             if fill_value is not None:
                 numbers.append(np.NaN)
