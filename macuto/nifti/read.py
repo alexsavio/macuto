@@ -75,6 +75,36 @@ def get_masked_nii_data(nii_file, mask_file):
     return vol[mask_indices], mask_indices, mask.shape
 
 
+def vector_to_volume(vector, mask_indices, mask_shape, dtype=None):
+    """
+    Transform a given vector to
+
+    :param vector: np.array
+
+    :param mask_indices: np.array
+    mask_indices = np.where(mask > 0)
+
+    :param mask_shape: tuple
+
+    :param dtype: return type
+    If None, will get the type from vector
+
+    :return:
+    np.array
+    """
+    if dtype is None:
+        dtype = vector.dtype
+
+    try:
+        volume = np.zeros(mask_shape, dtype=dtype)
+        volume[mask_indices] = vector
+        return volume
+    except:
+        log.error('Error on transforming vector to volume.')
+        log.error("Unexpected error:", sys.exc_info()[0])
+        raise
+
+
 def niftilist_to_array(nii_filelist, outdtype=None):
     '''
     From the list of absolute paths to nifti files, creates a Numpy array
