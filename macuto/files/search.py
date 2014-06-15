@@ -33,7 +33,9 @@ def dir_search(regex, wd=None):
 
 def dir_match(regex, wd=None):
     """
-    Filter
+    Creates a list of files that match the match_regex within wd.
+    The list of files will have wd as path prefix.
+
     @param regex: string
     @param wd: string
     working directory
