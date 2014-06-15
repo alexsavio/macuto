@@ -134,7 +134,11 @@ def niftilist_to_array(nii_filelist, outdtype=None):
     vol_shape: Tuple with shape of the volumes, for reshaping.
 
     '''
-    vol = get_nii_data(nii_filelist[0])
+    try:
+        vol = get_nii_data(nii_filelist[0])
+    except IndexError as ie:
+        log.error('nii_filelist should not be empty.')
+        raise
 
     if not outdtype:
         outdtype = vol.dtype
