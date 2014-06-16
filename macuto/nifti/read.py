@@ -172,12 +172,6 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, outdtype=None):
     Path to a Nifti mask file.
     Should be the same shape as the files in nii_filelist.
 
-    @param smoothmm: int
-    Integer indicating the size of the FWHM Gaussian smoothing kernel you would
-    like for smoothing the volume before flattening it.
-    Need FSL and nipype.
-    See smooth_volume() source code.
-
     @param outdtype: dtype
     Type of the elements of the array, if not set will obtain the dtype from
     the first nifti file.

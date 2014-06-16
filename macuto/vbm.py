@@ -1,5 +1,6 @@
 
 import numpy as np
+from itertools import permutations
 
 from nipy.modalities.fmri.glm import GeneralLinearModel
 
@@ -7,8 +8,6 @@ from macuto.nifti.read import niftilist_mask_to_array
 
 import logging
 log = logging.getLogger(__name__)
-
-
 
 class VBMAnalyzer(object):
     """
@@ -143,23 +142,17 @@ class VBMAnalyzer(object):
         #varying where the -1 is, for each group
         n_groups = len(self._labels)
         contrasts = []
-        template = np.ones(n_groups, dtype=int)
-        for g in range(n_groups):
-            temp = template.copy()
-            temp[g] = -1
-            contrasts.append(temp)
+        if n_groups == 2:
+            contrasts.append([-1,  1])
+            contrasts.append([ 1, -1])
 
-        #if there are more groups we have to
-        # do both contrasts, [-1, 1, 1] and [1, -1, -1]
-        if n_groups > 2:
-            reverse_contrasts = []
-            for c in contrasts:
-                reverse_contrasts.append(contrasts[c] * -1)
-
-            contrasts.extend(reverse_contrasts)
+        #if there are 3 groups we have to
+        # do permutations of [-1, 0, 1]
+        elif n_groups == 3:
+            for p in permutations([-1, 0, 1]):
+                contrasts.append(p)
 
         return contrasts
-
 
     def fit(self, file_dict, mask_file=None, regressors=None):
         """
@@ -210,6 +203,15 @@ class VBMAnalyzer(object):
         #
         # pvalue005_c1=contrast1.p_value(0.005)
         # pvalue005_c2=contrast2.p_value(0.005)
+
+    def bonferroni_correct(self):
+
+
+    def grf_correct(self):
+
+
+    def randomise_correct(self):
+
 
     def save_result(self, file_path):
         """
