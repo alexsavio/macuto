@@ -9,6 +9,7 @@ from macuto.nifti.read import niftilist_mask_to_array
 import logging
 log = logging.getLogger(__name__)
 
+
 class VBMAnalyzer(object):
     """
 
@@ -63,8 +64,11 @@ class VBMAnalyzer(object):
         group_regressors = self._create_group_regressors(labels)
 
         if regressors is not None:
-            group_regressors = np.concatenate((group_regressors, regressors),
-                                              axis=1)
+            try:
+                group_regressors = np.concatenate((group_regressors, regressors),
+                                                  axis=1)
+            except:
+                raise
 
         return group_regressors
 
@@ -140,17 +144,20 @@ class VBMAnalyzer(object):
         """
         #create a list of arrays with [1, -1]
         #varying where the -1 is, for each group
-        n_groups = len(self._labels)
+        n_groups = len(np.unique(self._labels))
         contrasts = []
         if n_groups == 2:
-            contrasts.append([-1,  1])
             contrasts.append([ 1, -1])
+            contrasts.append([-1,  1])
 
         #if there are 3 groups we have to
         # do permutations of [-1, 0, 1]
         elif n_groups == 3:
             for p in permutations([-1, 0, 1]):
                 contrasts.append(p)
+
+        else:
+            raise NotImplementedError
 
         return contrasts
 
@@ -170,13 +177,16 @@ class VBMAnalyzer(object):
         #fit GeneralLinearModel
         self.glm_model = self._nipy_glm(self._x, self._y)
 
-    def transform(self, contrast_type='t'):
+    def transform(self, contrast_type='t', correction_type='fwe'):
         """
         Apply GLM constrast comparing each group one vs. all.
 
         :param contrast_type: string
         Defines the type of contrast. See GeneralLinearModel.contrast help.
         choices = {'t', 'F'}
+
+        :param correction_type: string
+        choices = {'bonferroni', 'fwe', 'fdr'}
 
         :return:
         """
@@ -189,12 +199,12 @@ class VBMAnalyzer(object):
         #http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/0XX-random-fields.ipynb
         #http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/Functional-Connectivity-Nitime.ipynb
 
-        # contrast1 = glm_model.contrast([-1,  1], contrast_type='t')
-        # contrast2 = glm_model.contrast([ 1, -1], contrast_type='t')
+        contrast1 = self._nipy_glm.contrast(contrasts[0], contrast_type='t')
+        contrast2 = self._nipy_glm.contrast(contrasts[1], contrast_type='t')
         #
         # # compute the t-stat
-        # ttest1 = contrast1.stat()
-        # ttest2 = contrast2.stat()
+        ttest1 = contrast1.stat()
+        ttest2 = contrast2.stat()
         #
         # # compute the p-value
         # p1 = contrast1.p_value()
@@ -205,13 +215,16 @@ class VBMAnalyzer(object):
         # pvalue005_c2=contrast2.p_value(0.005)
 
     def bonferroni_correct(self):
-
+        pass
+        #TODO
 
     def grf_correct(self):
-
+        pass
+        #TODO
 
     def randomise_correct(self):
-
+        pass
+        #TODO
 
     def save_result(self, file_path):
         """
@@ -239,7 +252,7 @@ class VBMAnalyzer(object):
         #TODO
 
 
-class VBMAnalyzer(VBMAnalyzer):
+class VBMAnalyzer2(VBMAnalyzer):
     """
 
     """
@@ -301,3 +314,70 @@ class VBMAnalyzer(VBMAnalyzer):
         #TODO
         betah, yfitted, resid = self._glm(self._x, self._y)
         t, p =  self._t_test(betah, resid, self._x)
+
+
+if __name__ == '__main__':
+    #REFERENCES
+    #http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/010-Multiple_comparison.ipynb
+    #http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/006-GLM_t_F.ipynb
+    #http://nipy.org/nipy/stable/api/generated/nipy.algorithms.statistics.models.glm.html
+    #http://docs.scipy.org/doc/scipy-0.13.0/reference/generated/scipy.linalg.lstsq.html
+
+    def get_files_for_comparison(dirpath, group_sets):
+        """
+
+        :param dirpath:
+        :param group_sets:
+        :return:
+        """
+        dirfiles = os.listdir(dirpath)
+        file_dict = OrderedDict()
+        labels = []
+        for idx, gs in enumerate(group_sets):
+            group_files = []
+            for g in gs:
+                file_lst = [os.path.join(dirpath, fname) for fname in dirfiles if g in fname]
+                #group_files = get_file_list(dirpath, g)
+                group_files.extend(file_lst)
+                labels.extend([idx] * len(group_files))
+
+            file_dict[str(gs)] = group_files
+
+        return file_dict, labels
+
+
+    import socket
+    hn = socket.gethostname()
+    if hn == 'darya':
+        infolder="/home/darya/Documents/santiago/vbm/GM_VBM/data4D"
+        GMfolder="/home/darya/Documents/santiago/vbm/GM_VBM/vbm_crl_ea_python/data"#"/home/darya/Documents/santiago/vbm/GM_VBM/data3D"
+        maskfolder="/home/darya/Documents/santiago/vbm/GM_VBM/mask"
+        outfolder="/home/darya/Documents/santiago/vbm/GM_VBM/vbm_crl_ea_python/vbm_out"
+        #WMfolder="/home/darya/Documents/santiago/vbm/WM"
+    elif hn == 'buccaneer' or hn == 'finn' or hn == 'corsair':
+        root = '/home/alexandre/Dropbox/Data/santiago'
+        GMfolder = os.path.join(root, 'data3D')
+        maskfolder = os.path.join(os.environ['FSLDIR'], 'data', 'standard')
+        #outfolder="" -
+
+    maskfile = os.path.join(maskfolder, 'MNI152_T1_2mm_brain_mask.nii.gz')
+
+    #define group comparisons
+    group_comparisons = OrderedDict([('Control vs. AD',     ({'crl'}, {'ea'})),
+                                     ('Control vs. MCI',    ({'crl'}, {'dcl'})),
+                                     ('Control vs. BD',     ({'crl'}, {'tb'})),
+                                     ('Control vs. AD+MCI', ({'crl'}, {'ea', 'dcl'})),
+                                     ('BD vs. AD',          ({'tb'},  {'ea'})),
+                                     ('BD vs. AD+MCI',      ({'tb'},  {'ea', 'dcl'}))])
+
+
+    #get list of volume files
+    file_lst, labels = get_files_for_comparison(GMfolder, ({'crl'}, {'ea'}))
+
+
+
+    #create image data matrix
+    #y, mask_indices, mask_shape = niftilist_mask_to_array(file_lst, maskfile)
+
+    #create data regressors
+    #x = vbm.create_design_matrix(labels, regressors=None)
