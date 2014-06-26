@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import os
 import re
@@ -7,6 +8,7 @@ import baker
 import dicom
 import logging
 import subprocess
+from collections import defaultdict
 from glob import glob
 try:
     from path import path
@@ -16,13 +18,26 @@ except:
 from macuto.config import (DICOM_FILE_EXTENSIONS,
                            OUTPUT_DICOM_EXTENSION)
 
+from macuto.exceptions import LoggedError
+
+
 #logging config
-logging.basicConfig(level=logging.DEBUG, filename='anonymizer.log', 
-                    format="%(asctime)-15s %(message)s")
-log = logging.getLogger('anonymizer')
+log = logging.getLogger(__name__)
 
 #santiago search idregex
 #santiago_idregex = '[N|P]?\\d\\d*-?\\d?$'
+
+
+class EmptySubjectFolder(LoggedError):
+    pass
+
+
+class FolderDoesNotExist(LoggedError):
+    pass
+
+
+class OutputFolderAlreadyExists(LoggedError):
+    pass
 
 
 @baker.command(default=True,
@@ -58,8 +73,8 @@ def subject(subjfolder, idregex='', not_rename_folder=False):
             raise
 
         if not subj_folder:
-            log.error('Got empty subj_folder from folder_name renaming function.')
-            return -1
+            raise EmptySubjectFolder('Got empty subj_folder from folder_name '
+                                     'renaming function.')
 
     log.info('Anonymizing folder: ' + subjfolder + ' to ' + subj_folder)
 
@@ -69,10 +84,113 @@ def subject(subjfolder, idregex='', not_rename_folder=False):
             try:
                 dicom_folder(foldr)
             except Exception as e:
-                log.error('Error anonymizing folder or file {0}.'.format(foldr))
-                return -1
+                raise LoggedError(str(e))
 
-    return 0
+
+@baker.command(shortopts={'input_folder': 'i',
+                          'output_folder': 'o',
+                          'header_field': 'h',
+                          'overwrite': 'w'})
+def batch(input_folder, output_folder, header_field='PatientID',
+          overwrite=False):
+    """Will get all DICOMs inside the input_folder and copy them
+    separated and organized by the different header_field values
+    found in all these DICOM files.
+    After that, will convert the files to nifti using MRICron dcm2nii
+
+    :param input_folder: str
+
+    :param output_folder: str
+
+    :param header_field: str
+
+    :param overwrite: bool
+    If True and the output_folder exists, will remove its files.
+    """
+    log.info('{0} {1} {2}'.format(input_folder, output_folder, header_field))
+
+    if os.path.exists(output_folder):
+        if not overwrite:
+            if os.listdir(output_folder):
+                msg = 'Output folder {0} is not empty. ' \
+                      'Please change it or empty it.'.format(output_folder)
+                raise OutputFolderAlreadyExists(msg)
+        else:
+            import shutil
+            shutil.rmtree(output_folder)
+
+    log.info('Listing DICOM all files in {0}.'.format(input_folder))
+    dicoms = get_dicom_files(input_folder)
+
+    log.info('Grouping DICOM files by subject.')
+    dicom_sets = group_dicom_files(dicoms, header_field)
+
+    try:
+        new_dicom_sets = create_dicom_subject_folders(output_folder, dicom_sets)
+    except Exception as exc:
+        raise LoggedError('ERROR create_dicom_subject_folders: '
+                          '{0}'.format(str(exc)))
+
+    for dcm_set in new_dicom_sets:
+        try:
+            dicom_to_nii(os.path.join(output_folder, dcm_set))
+        except Exception as exc:
+            raise LoggedError('ERROR dicom_to_nii {0}. {1}'.format(dcm_set,
+                                                                   str(exc)))
+
+
+def create_dicom_subject_folders(out_path, dicom_sets):
+    """
+
+    :param out_path: str
+     Path to the output directory
+
+    :param dicom_sets: dict of {str: list of strs}
+     Groups of dicom files
+    """
+    import shutil
+
+    try:
+        if not os.path.exists(out_path):
+            os.mkdir(out_path)
+
+        new_groups = defaultdict(list)
+        for group in dicom_sets:
+            group_path = os.path.join(out_path, str(group))
+            os.mkdir(group_path)
+
+            group_dicoms = dicom_sets[group]
+            for idx, dcm in enumerate(group_dicoms):
+                num = str(idx).zfill(5)
+                new_dcm = os.path.join(group_path, num + DICOM_FILE_EXTENSIONS[0].lower())
+                log.info('Copying {0} -> {1}'.format(dcm, new_dcm))
+                shutil.copyfile(dcm, new_dcm)
+                new_groups[group].append(new_dcm)
+
+        return new_groups
+
+    except:
+        raise
+
+
+def group_dicom_files(dicom_paths, hdr_field='PatientID'):
+    """
+
+    :param dicom_paths: str
+    :return: dict of dicom_paths
+    """
+    dicom_groups = defaultdict(list)
+    for dcm in dicom_paths:
+        hdr = dicom.read_file(dcm)
+
+        try:
+            group_key = getattr(hdr, hdr_field)
+        except:
+            raise
+
+        dicom_groups[group_key].append(dcm)
+
+    return dicom_groups
 
 
 @baker.command(shortopts={'acqfolder': 'i'})
@@ -84,7 +202,7 @@ def dicom_folder(acqfolder):
 
     :param acqfolder: Path to the subject's acquisition folder
     """
-    log.info('anonymizer.py dicom_folder {0}'.format(acqfolder))
+    log.info('{0}'.format(acqfolder))
 
     acqfolder = get_abspath(acqfolder)
 
@@ -93,9 +211,8 @@ def dicom_folder(acqfolder):
         dicom_to_nii(acqfolder)
         file_names(acqfolder)
     except Exception as e:
-        msg = 'Error anonymizing folder or file {0}.'.format(acqfolder)
-        log.error(msg)
-        raise Exception(msg)
+        raise LoggedError('Cannot anonymize folder or '
+                          'file {0}.'.format(acqfolder))
 
 
 @baker.command(shortopts={'subjfolder': 'i', 'newfolder': 'o',
@@ -111,9 +228,8 @@ def folder_name(subjfolder, newfolder=None, idregex=None):
 
     :param idregex: Regex to search for ID in folder name
     """
-    log.info('anonymizer.py folder_name {0} {1} {2}'.format(subjfolder.encode('utf-8'),
-                                                            newfolder,
-                                                            idregex))
+    log.info('{0} {1} {2}'.format(subjfolder.encode('utf-8'), newfolder,
+                                  idregex))
 
     subjfolder = get_abspath(subjfolder)
 
@@ -134,8 +250,8 @@ def folder_name(subjfolder, newfolder=None, idregex=None):
         if len(subjid) > 3:
             newfolder = subjid
         else:
-            log.error('Could not find "{0}" on folder name {1}.'.format(idregex,
-                                                                        basedir))
+            raise LoggedError('Could not find "{0}" on folder name '
+                              '{1}.'.format(idregex, basedir))
 
     #try to guess new folder name from DICOM headers
     if newfolder is None:
@@ -203,14 +319,13 @@ def dicom_headers(acqpath):
                 try:
                     anonymize_dicom_file(dcm_file)
                 except Exception as e:
-                    log.error('Could not anonymize file ' + dcm_file)
-                    return -1
-    return 0
+                    raise LoggedError('Could not anonymize file ' + dcm_file)
 
 
 @baker.command(params={"acqpath": "Path to the subject's acquisition folder with DICOM files"},
-               shortopts={'acqpath': 'i'})
-def dicom_to_nii(acqpath):
+               shortopts={'acqpath': 'i',
+                          'use_known_extensions': 'e'})
+def dicom_to_nii(acqpath, use_known_extensions=False):
     """Uses dcm2nii to convert all DICOM files within acqpath to NifTI.
     """
     log.info('anonymizer.py dicom_to_nii {0}'.format(acqpath))
@@ -218,23 +333,33 @@ def dicom_to_nii(acqpath):
     subj_path = get_abspath(acqpath)
 
     if subj_path.isfile():
-        try:
-            subprocess.call('dcm2nii {0}'.format(subj_path), shell=True)
-        except Exception as e:
-            log.error('Error calling dcm2nii on {0}'.format(subj_path))
-            return -1
+        call_dcm2nii(subj_path)
 
     else:
-         for ext in DICOM_FILE_EXTENSIONS:
-            regex = '*' + ext
-            if subj_path.glob(regex):
-                try:
-                    subprocess.call('dcm2nii {0}'.format(subj_path.joinpath(regex)), shell=True)
-                except Exception as e:
-                    log.error('Error calling dcm2nii on {0}'.format(subj_path.joinpath(regex)))
-                    return -1
+        if use_known_extensions:
+            for ext in DICOM_FILE_EXTENSIONS:
+                regex = '*' + ext
+                if subj_path.glob(regex):
+                    call_dcm2nii(subj_path.joinpath(regex))
+        else:
+            regex = '*'
+            call_dcm2nii(subj_path.joinpath(regex))
 
-    return 0
+
+def call_dcm2nii(input_path):
+    """
+
+    :param input_path: str
+    :return:
+    """
+    try:
+        log.info('dcm2nii {0}'.format(input_path))
+        return subprocess.call('dcm2nii {0}'.format(input_path),
+                               shell=True)
+
+    except Exception as e:
+        raise LoggedError('Error calling dcm2nii on {0}. {1}'.format(input_path,
+                                                                     str(e)))
 
 
 def get_all_patient_mri_ids(subjfolder):
@@ -281,7 +406,8 @@ def get_patient_mri_id(subjfolder):
     return None
 
 
-def anonymize_dicom_file(dcm_file, remove_private_tags=False, remove_curves=False):
+def anonymize_dicom_file(dcm_file, remove_private_tags=False,
+                         remove_curves=False):
     """Anonymizes the given dcm_file.
 
     Anonymizing means: putting nonsense information into tags:
@@ -332,8 +458,6 @@ def anonymize_dicom_file(dcm_file, remove_private_tags=False, remove_curves=Fals
     # write the 'anonymized' DICOM out under the new filename
     plan.save_as(dcm_file)
 
-    return 0
-
 
 def anonymize_dicom_file_dcmtk(dcm_file):
     """Anonymizes the given dcm_file.
@@ -376,18 +500,47 @@ def get_abspath(folderpath):
     """Returns the absolute path of folderpath.
     If the path does not exist, will raise IOError.
     """
+    #if not os.path.exists(folderpath):
+    #    raise FolderDoesNotExist('Acquisition folder {0} not '
+    #                             'found.'.format(folderpath))
+
     try:
-        folderpath = path(folderpath).abspath()
+        return path(folderpath).abspath()
     except:
         raise
 
-    if not folderpath.exists():
-        msg = 'Acquisition folder {0} not found.'.format(folderpath)
-        log.error(msg)
-        raise IOError(msg)
 
-    return folderpath
+def get_files(dirpath):
+    return [os.path.join(dp, f) for dp, dn, filenames in
+            os.walk(dirpath) for f in filenames]
+
+
+def get_dicom_files(dirpath):
+    return [os.path.join(dp, f) for dp, dn, filenames in
+            os.walk(dirpath) for f in filenames
+            if is_dicom_file(os.path.join(dp, f))]
+
+
+def is_dicom_file(filepath):
+    """
+
+    :param filepath: string
+     Path to DICOM file
+
+    :return: bool
+    """
+    filename = path(filepath).basename()
+    if filename == 'DICOMDIR':
+        return False
+
+    try:
+        _ = dicom.read_file(filepath)
+    except:
+        return False
+
+    return True
 
 
 if __name__ == '__main__':
-    baker.run()
+    #baker.run()
+    batch('/home/alexandre/Desktop/new_ariadna', '/home/alexandre/Desktop/new_ariadna_nii', overwrite=True)
