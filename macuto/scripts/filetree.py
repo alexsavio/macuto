@@ -6,11 +6,18 @@ import logging
 from path import path
 
 from macuto.scriptutils import whoami
+from macuto.exceptions import LoggedError
 
 #logging config
-logging.basicConfig(level=logging.DEBUG, filename='filetree.log',
-                    format="%(asctime)-15s %(message)s")
-log = logging.getLogger('filetree')
+log = logging.getLogger(__name__)
+
+
+class FolderAlreadyExists(LoggedError):
+    pass
+
+
+class FileTreeMapError(LoggedError):
+    pass
 
 
 @baker.command(default=True,
@@ -42,24 +49,35 @@ def copy(configfile='', destpath='', overwrite=False, sub_node=''):
 
     assert(os.path.isfile(configfile))
 
-    if not os.path.exists(destpath):
+    if os.path.exists(destpath):
+        if os.listdir(destpath):
+            raise FolderAlreadyExists('Folder {0} already exists. Please clean '
+                                      'it or change destpath.'.format(destpath))
+    else:
         log.info('Creating folder {0}'.format(destpath))
         path(destpath).makedirs_p()
 
     from macuto.files.file_tree_map import FileTreeMap
     file_map = FileTreeMap()
-    file_map.from_config_file(configfile)
+
+    try:
+        file_map.from_config_file(configfile)
+    except Exception as e:
+        raise FileTreeMapError(str(e))
 
     if sub_node:
         sub_map = file_map.get_node(sub_node)
         if not sub_map:
-            log.error('Could not find sub node {0}'.format(sub_node))
-            return -1
+            raise FileTreeMapError('Could not find sub node '
+                                   '{0}'.format(sub_node))
 
         file_map._filetree = {}
         file_map._filetree[sub_node] = sub_map
 
-    file_map.copy_to(destpath, overwrite=overwrite)
+    try:
+        file_map.copy_to(destpath, overwrite=overwrite)
+    except Exception as e:
+        raise FileTreeMapError(str(e))
 
 
 if __name__ == '__main__':
