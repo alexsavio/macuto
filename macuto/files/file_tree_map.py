@@ -1,7 +1,5 @@
 import os
-import re
 import fnmatch
-import logging
 from functools import reduce
 from collections import OrderedDict
 from path import path
@@ -11,12 +9,17 @@ from path import path
 #    from pathlib import Path as path
 #    path.copyfile = shutil.copyfile
 
+from ..exceptions import *
 from ..strings import (match_list,
                        is_valid_regex)
 
 from .names import get_extension
 
 log = logging.getLogger(__name__)
+
+
+class FileTreeMapError(LoggedError):
+    pass
 
 
 def import_pyfile(filepath, mod_name=None):
@@ -219,14 +222,10 @@ def process_tuple_node(basepath, treemap, ignore_hidden=True):
     :return:
     """
     if not isinstance(treemap, tuple):
-        err = 'treemap node must be a 2-tuple.'
-        log.error(err)
-        raise TypeError(err)
+        raise FileTreeMapError('treemap node must be a 2-tuple.')
 
     if len(treemap) != 2:
-        err = 'treemap node must be a 2-tuple.'
-        log.error(err)
-        raise ValueError(err)
+        raise FileTreeMapError('treemap node must be a 2-tuple.')
 
     file_nodes = OrderedDict()
 
@@ -269,11 +268,20 @@ def populate_subtree(basepath, treemap, verbose=False):
     file_nodes = OrderedDict()
 
     if isinstance(treemap, tuple):
-        file_nodes = process_tuple_node(basepath, treemap)
+        try:
+            file_nodes = process_tuple_node(basepath, treemap)
+        except:
+            raise FileTreeMapError('Error processing tuple node '
+                                   '{0} {1}.'.format(basepath, treemap))
 
     if isinstance(treemap, list):
         for node in treemap:
-            file_nodes.update(process_tuple_node(basepath, node))
+            try:
+                file_nodes.update(process_tuple_node(basepath, node))
+            except:
+                raise FileTreeMapError('Error processing tuple node '
+                                       '{0} {1}.'.format(basepath, node))
+
 
     elif isinstance(treemap, dict):
 
@@ -282,13 +290,20 @@ def populate_subtree(basepath, treemap, verbose=False):
             child_map = treemap[k]
 
             if isinstance(child_map, tuple) or isinstance(child_map, dict):
-                file_nodes[cname] = populate_subtree(basepath, child_map)
+                try:
+                    file_nodes[cname] = populate_subtree(basepath, child_map)
+                except:
+                    raise FileTreeMapError('Error populating subtree'
+                                           '{0} {1}.'.format(basepath,
+                                                             child_map))
+
 
             elif isinstance(child_map, str):
                 if child_map[0] == os.sep:
-                    log.error('Error on node {0}. '
-                              'Relative paths should no start '
-                              'with "{1}"'.format(str(child_map), os.sep))
+                    raise FileTreeMapError('Error on node {0}. '
+                                           'Relative paths should no start '
+                                           'with "{1}"'.format(str(child_map),
+                                                               os.sep))
 
                 subpaths = get_possible_paths(basepath, child_map)
                 if subpaths:
@@ -316,10 +331,24 @@ class FileTreeMap(object):
         self._basepath = ''
         self._ignore_regexes = []
 
+    def __str__(self):
+        """
+
+        :return:
+        """
+        return 'root_path = {0}. \n filetree = {1}.'.format(self._basepath,
+                                                            self._filetree)
+
     def from_config_file(self, config_file, verbose=False):
         """
 
+        :param config_file: str
+         Path to a configuration file.
+         This file must declare a root_path and a filetree regex tree.
+
+        :param verbose: bool
         """
+
         assert(os.path.isfile(config_file))
         self.__init__()
         self._basepath, self._treemap = self._import_config(config_file)
@@ -345,8 +374,8 @@ class FileTreeMap(object):
                                               self._treemap,
                                               verbose)
 
+            log.info('FileTreeMap created: \n {0}.'.format(str(self)))
         except Exception as e:
-            log.error(e)
             raise
 
     def _check_basic_config(self):
@@ -355,9 +384,8 @@ class FileTreeMap(object):
         root_path = self._basepath
         if root_path:
             if not os.path.isabs(root_path) or not os.path.exists(root_path):
-                err = 'The root path does not exist. Got ' + root_path
-                log.error(err)
-                raise ValueError(err)
+                raise FolderNotFound('The root path {0} does not '
+                                     'exist.'.format(root_path))
 
     @staticmethod
     def create_folder(dirpath, overwrite=False):
