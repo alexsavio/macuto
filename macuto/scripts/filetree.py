@@ -2,22 +2,14 @@
 
 import os
 import baker
-import logging
 from path import path
 
 from macuto.scriptutils import whoami
-from macuto.exceptions import LoggedError
+from macuto.exceptions import *
+from macuto.files.file_tree_map import FileTreeMapError
 
 #logging config
 log = logging.getLogger(__name__)
-
-
-class FolderAlreadyExists(LoggedError):
-    pass
-
-
-class FileTreeMapError(LoggedError):
-    pass
 
 
 @baker.command(default=True,
