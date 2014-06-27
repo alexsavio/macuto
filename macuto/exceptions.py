@@ -8,3 +8,12 @@ class LoggedError(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
         log.error(message)
+
+
+class FolderNotFound(LoggedError):
+    pass
+
+
+class FolderAlreadyExists(LoggedError):
+    pass
+
