@@ -162,7 +162,6 @@ def pre_featsel(X, y, method, thr=95, dist_function=None, thr_method='robust'):
 
     return m
 
-
 def extract_and_classify (X, y, prefsmethod, prefsthr,
                           fsmethod1, fsmethod2, clfmethod, cvmethod,
                           stratified, stddize, thrmethod='robust',
@@ -270,7 +269,7 @@ def extract_and_classify (X, y, prefsmethod, prefsthr,
             X_test  = X_test [:, presels[fc] > 0]
 
         pipe, params = get_pipeline(fsmethod1, fsmethod2,
-                                    clfmethod, n_subjs, n_feats, n_cpus)
+                                    clfmethod, n_feats, n_cpus)
 
         #creating grid search
         gs = GridSearchCV(pipe, params, n_jobs=n_cpus, verbose=0,

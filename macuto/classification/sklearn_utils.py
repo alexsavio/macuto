@@ -155,12 +155,12 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
 
     #Feature selection procedures
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
-    fsmethods = { 'rfe'       : RFE(estimator=SVC(kernel="linear"), step=rfe_step,
-                                    n_features_to_select=2),
+    fsmethods = { 'rfe'       : RFE(estimator=SVC(kernel="linear"),
+                                    step=rfe_step, n_features_to_select=2),
 
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
-                  'rfecv'     : RFECV(estimator=SVC(kernel="linear"), step=rfe_step,
-                                      loss_func=roc_auc_score), #cv=3, default; cv=StratifiedKFold(n_subjs, 3)
+                  'rfecv'     : RFECV(estimator=SVC(kernel="linear"),
+                                      step=rfe_step, loss_func=roc_auc_score), #cv=3, default; cv=StratifiedKFold(n_subjs, 3)
 
                                 #Univariate Feature selection: http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectPercentile.html
                   'univariate': SelectPercentile(f_classif, percentile=5),
@@ -203,9 +203,13 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
                'univariate': dict(percentile=[1, 3, 5, 10]),
                'fpr'       : dict(alpha=[1, 3, 5, 10]),
                'fdr'       : dict(alpha=[1, 3, 5, 10]),
-               'extratrees': dict(n_estimators=[1, 3, 5, 10, 30, 50], max_features=max_feats),
-               'pca'       : dict(n_components=n_comps_pca, whiten=[True, False]),
-               'rpca'      : dict(n_components=n_comps, iterated_power = [3, 4, 5], whiten=[True, False]),
+               'extratrees': dict(n_estimators=[1, 3, 5, 10, 30, 50],
+                                  max_features=max_feats),
+               'pca'       : dict(n_components=n_comps_pca,
+                                  whiten=[True, False]),
+               'rpca'      : dict(n_components=n_comps,
+                                  iterated_power = [3, 4, 5],
+                                  whiten=[True, False]),
                'lda'       : dict(n_components=n_comps),
                'anova'     : dict(k=n_comps),
     }
@@ -254,7 +258,7 @@ def get_cv_method(targets, cvmethod='10', stratified=True):
     return StratifiedKFold(targets, int(cvmethod))
 
 
-def get_pipeline(fsmethod1, fsmethod2, clfmethod, n_samps, n_feats, n_cpus):
+def get_pipeline(fsmethod1, fsmethod2, clfmethod, n_feats, n_cpus):
     """
     Returns an instance of a sklearn Pipeline given the parameters
 
@@ -266,9 +270,6 @@ def get_pipeline(fsmethod1, fsmethod2, clfmethod, n_samps, n_feats, n_cpus):
 
     @param clfmethod: string
     See get_clfmethod docstring for valid values
-
-    @param n_samps: int
-    Number of samples or subjects
 
     @param n_feats: int
     Number of features

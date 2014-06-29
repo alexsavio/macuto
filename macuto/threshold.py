@@ -12,6 +12,53 @@
 import numpy as np
 
 
+class Threshold(MacutoObject):
+
+    def __init__(self, threshold_value=95):
+        self._threshold_value = threshold_value
+
+    def fit_transform(self, x):
+        """
+        :param values: numpy array
+
+        :return: numpy array
+        Thresholded array
+        """
+        return apply_threshold(x, self._threshold_value,
+                               self._threshold_method)
+
+
+class RobustThreshold(Threshold):
+    """
+    Zeroes anything lower than the smaller value in the percentile bin after
+    doing a histogram of the data.
+    See: macuto.theshold.find_thresholds
+    """
+    def __init__(self, threshold_value=95):
+        Threshold.__init__(self, threshold_value)
+        self._threshold_method = 'robust'
+
+
+class RankThreshold(Threshold):
+    """
+    Zeroes anything lower than the value of the data that is
+    just above the percentile.
+    """
+    def __init__(self, threshold_value=95):
+        Threshold.__init__(self, threshold_value)
+        self._threshold_method = 'rank'
+
+
+class PercentileThreshold(Threshold):
+    """
+    Zeroes anything lower than the percentile relative to the data.
+    """
+    def __init__(self, threshold_value=95):
+        Threshold.__init__(self, threshold_value)
+        self._threshold_method = 'percentile'
+
+
+
 def binarise(data, lower_bound, upper_bound, inclusive=True):
     """
 
