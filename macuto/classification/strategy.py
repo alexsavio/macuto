@@ -6,6 +6,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
 from .features import distance_computation
+from ..utils import Printable
 from ..threshold import Threshold
 from ..exceptions import LoggedError
 
@@ -16,29 +17,16 @@ from .sklearn_utils import (get_pipeline,
 log = logging.getLogger(__name__)
 
 
-class MacutoObject(object):
-    """
 
-    """
-    def __init__(self):
-        pass
-
-    def __str__(self):
-        sb = []
-        for key in self.__dict__:
-            sb.append("{key}='{value}'".format(key=key,
-                                               value=self.__dict__[key]))
-
-        return ', '.join(sb)
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class FeatureSelection(MacutoObject):
+class FeatureSelection(Printable):
 
     def select_from(self, X, y):
         raise NotImplementedError
+
+
+class DistanceMeasure(Printable):
+
+    def fit_transform(self):
 
 
 class DistanceBasedFeatureSelection(FeatureSelection):
@@ -161,7 +149,7 @@ def pre_featsel(X, y, method, thr=95, dist_function=None, thr_method='robust'):
 
     return m
 
-class ClassificationPipeline(MacutoObject):
+class ClassificationPipeline(Printable):
     """
 
     """
@@ -172,7 +160,7 @@ class ClassificationPipeline(MacutoObject):
                  thrmethod='robust', n_cpus=1, gs_scoring='accuracy'):
         """
         """
-        MacutoObject.__init__(self)
+        Printable.__init__(self)
 
         self.n_feats = n_feats
         self.prefsmethod = prefsmethod
