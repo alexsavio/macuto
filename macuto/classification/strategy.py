@@ -1,11 +1,26 @@
+# -*- coding: utf-8 -*-
+
+#------------------------------------------------------------------------------
+#Authors:
+# Alexandre Manhaes Savio <alexsavio@gmail.com>
+# Darya Chyzhyk <darya.chyzhyk@gmail.com>
+# Borja Ayerdi <ayerdi.borja@gmail.com>
+# Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
+# Neurita S.L.
+#
+# BSD 3-Clause License
+#
+# 2014, Alexandre Manhaes Savio
+# Use this at your own risk!
+#------------------------------------------------------------------------------
+
+
 import logging
 
 import numpy as np
 from scipy import stats
 from sklearn.grid_search import GridSearchCV
 from sklearn.preprocessing import StandardScaler
-
-from .features import distance_computation
 from ..utils import Printable
 from ..threshold import Threshold
 from ..exceptions import LoggedError
@@ -18,136 +33,6 @@ log = logging.getLogger(__name__)
 
 
 
-class FeatureSelection(Printable):
-
-    def select_from(self, X, y):
-        raise NotImplementedError
-
-
-class DistanceMeasure(Printable):
-
-    def fit_transform(self):
-
-
-class DistanceBasedFeatureSelection(FeatureSelection):
-    """
-
-    """
-    def __init__(self, distance_function, threshold):
-        raise NotImplementedError
-
-    def select_from(self, x, y):
-        raise NotImplementedError
-
-
-class ScipyDistanceFeatureSelection(DistanceBasedFeatureSelection):
-    """
-    This can use any distance function in Scipy:
-     http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
-
-    """
-
-    def __init__(self, distance_function, threshold):
-        """
-        :param dist_function: function
-        distance function
-
-        :return:
-        """
-        if not hasattr(dist_function, '__call__'):
-            raise ValueError('dist_function must be a function')
-
-        import scipy.spatial.distance as scipy_dist
-        if not hasattr(scipy_dist, dist_function.__name__):
-            raise ValueError('dist_function must be a scipy.spatial.distance '
-                             'function.')
-
-        self._dist_function = dist_function
-
-    def select_from(self, x, y):
-        """
-        Apply any given 1-D distance function to x and y.
-        Have a look at:
-        http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
-
-        :param x: numpy array
-        Shape: n_samples x n_features
-
-        :param y: numpy array or list
-        Size: n_samples
-
-        :return: numpy array
-        Size: n_features
-        """
-        n_feats = x.shape[1]
-
-        #creating output volume file
-        p = np.zeros(n_feats)
-
-        #calculating dist_function across all subjects
-        for i in list(range(x.shape[1])):
-            p[i] = self._dist_function(x[:, i], y)[0]
-
-        p[np.isnan(p)] = 0
-
-        return p
-
-
-
-def pre_featsel(X, y, method, thr=95, dist_function=None, thr_method='robust'):
-    """
-    INPUT
-    X             : data ([n_samps x n_feats] matrix)
-    y             : class labels
-    method        : distance measure: 'pearson', 'bhattacharyya', 'welcht', ''
-                    if method == '', will use dist_function
-    thr           : percentile distance threshold
-    dist_function :
-    thr_method    : method for thresholding: 'none', 'robust', 'ranking'
-
-    OUTPUT
-    m          : distance measure (thresholded or not)
-    """
-
-    #pre feature selection, measuring distances
-    #Pearson correlation
-    if method == 'pearson':
-        log.info('Calculating Pearson correlation')
-        m = np.abs(pearson_correlation(X, y))
-
-    #Bhattacharyya distance
-    elif method == 'bhattacharyya':
-        log.info('Calculating Bhattacharyya distance')
-        m = bhattacharyya_dist(X, y)
-
-    #Welch's t-test
-    elif method == 'welcht':
-        log.info("Calculating Welch's t-test")
-        m = welch_ttest (X, y)
-
-    elif method == '':
-        log.info ("Calculating distance between data and class labels")
-        #http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
-        m = distance_computation(X, y, dist_function)
-
-    #if all distance values are 0
-    if not m.any():
-        log.info("No differences between groups have been found. "
-                 "Are you sure you want to continue?")
-        return m
-
-    #threshold data
-    if thr_method != 'none':
-        if thr_method == 'robust':
-            mt = robust_range_threshold(m, thr)
-        elif thr_method == 'percentile':
-            mt = percentile_threshold(m, thr)
-        elif thr_method == 'rank':
-            mt = rank_threshold(m, thr)
-
-        return mt
-
-    return m
 
 class ClassificationPipeline(Printable):
     """

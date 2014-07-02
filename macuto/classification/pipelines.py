@@ -1,13 +1,18 @@
-# coding=utf-8
-#-------------------------------------------------------------------------------
+# -*- coding: utf-8 -*-
 
-#Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
-#Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
-#Universidad del Pais Vasco UPV/EHU
+#------------------------------------------------------------------------------
+#Authors:
+# Alexandre Manhaes Savio <alexsavio@gmail.com>
+# Darya Chyzhyk <darya.chyzhyk@gmail.com>
+# Borja Ayerdi <ayerdi.borja@gmail.com>
+# Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
+# Neurita S.L.
 #
-#2013, Alexandre Manhaes Savio
-#Use this at your own risk!
-#-------------------------------------------------------------------------------
+# BSD 3-Clause License
+#
+# 2014, Alexandre Manhaes Savio
+# Use this at your own risk!
+#------------------------------------------------------------------------------
 
 import logging
  

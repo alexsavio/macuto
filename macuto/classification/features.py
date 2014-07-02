@@ -1,23 +1,146 @@
-# coding=utf-8
-#-------------------------------------------------------------------------------
+# -*- coding: utf-8 -*-
 
-#Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
-#Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
-#Universidad del Pais Vasco UPV/EHU
+#------------------------------------------------------------------------------
+#Authors:
+# Alexandre Manhaes Savio <alexsavio@gmail.com>
+# Darya Chyzhyk <darya.chyzhyk@gmail.com>
+# Borja Ayerdi <ayerdi.borja@gmail.com>
+# Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
+# Neurita S.L.
 #
-#2013, Alexandre Manhaes Savio
-#Use this at your own risk!
-#-------------------------------------------------------------------------------
+# BSD 3-Clause License
+#
+# 2014, Alexandre Manhaes Savio
+# Use this at your own risk!
+#------------------------------------------------------------------------------
 
 import os
 import numpy as np
 import scipy.stats as stats
 import logging
 
-from ..threshold import apply_threshold
+from .distance import (DistanceMeasure,
+                       PearsonCorrelationDistance,
+                       WelchTestDistance,
+                       BhatacharyyaGaussianDistance)
+
+from ..threshold import (RobustThreshold,
+                         RankThreshold,
+                         PercentileThreshold)
+
+from ..utils import Printable
 from ..storage import ExportData
+from ..exceptions import LoggedValueError
+
 
 log = logging.getLogger(__name__)
+
+
+class FeatureSelection(Printable): pass
+#    def select_from(self, X):
+#        raise NotImplementedError
+
+
+class SupervisedFeatureSelection(FeatureSelection): pass
+#    def select_from(self, X, y):
+#        raise NotImplementedError
+
+
+class DistanceBasedFeatureSelection(SupervisedFeatureSelection):
+    """
+
+    """
+
+    def __init__(self, distance_measure, threshold_method):
+        """
+
+        :param distance_measure: macuto.classification.distance.DistanceMeasure
+        :param threshold_method: macuto.threshold.Threshold
+        """
+        self._distance_measure = distance_measure
+        self._threshold_method = threshold_method
+
+    def fit_transform(self, x, y):
+        """
+
+        :param X: np.ndarray
+         n_samps x n_feats
+
+        :param y: vector
+         n_samps class labels
+
+        :return: thresholded distance measures
+        """
+
+        self._distances = self._distance_measure.fit_transform(x, y)
+        self._thresholded = self._threshold_method.fit_transform(x)
+
+        return self._thresholded
+
+
+def feature_selection(X, y, method, thr=95, dist_function=None,
+                      thr_method='robust'):
+    """
+    INPUT
+    X             : data ([n_samps x n_feats] matrix)
+    y             : class labels
+    method        : distance measure: 'pearson', 'bhattacharyya', 'welcht', ''
+                    if method == '' or None, will try to use dist_function
+    thr           : percentile distance threshold
+    dist_function :
+    thr_method    : method for thresholding: None, 'robust', 'ranking',
+                                             'percentile'
+
+    OUTPUT
+    m          : distance measure (thresholded or not)
+    """
+
+    #pre feature selection, measuring distances
+    #Pearson correlation
+    if method == 'pearson':
+        log.info('Calculating Pearson correlation')
+        distance = PearsonCorrelationDistance()
+
+    #Bhattacharyya distance
+    elif method == 'bhattacharyya':
+        log.info('Calculating Bhattacharyya distance')
+        distance = BhatacharyyaGaussianDistance()
+
+    #Welch's t-test
+    elif method == 'welcht':
+        log.info("Calculating Welch's t-test")
+        distance = WelchTestDistance()
+
+    else:
+        if dist_function is not None:
+            log.info ("Calculating {0} distance between data and "
+                      "class labels".format(dist_function.__name__))
+            #http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
+            distance = DistanceMeasure(dist_function)
+        else:
+            raise LoggedValueError('Not valid argument input values.')
+
+    dists = distance.fit_transform(X, y)
+
+    #if all distance values are 0
+    if not dists.any():
+        log.info("No differences between groups have been found. "
+                 "Are you sure you want to continue?")
+        return dists
+
+    #threshold data
+    threshold = None
+    if thr_method == 'robust':
+        threshold = RobustThreshold(thr)
+    elif thr_method == 'percentile':
+        threshold = PercentileThreshold(thr)
+    elif thr_method == 'rank':
+        threshold = RankThreshold(thr)
+
+    if threshold is not None:
+        dists = threshold.fit_transform(dists)
+
+    return dists
 
 
 def calculate_stats(data):
@@ -63,7 +186,8 @@ def calculate_hist3d(data, bins):
     return feats
 
 
-def create_feature_sets(fsmethod, data, msk, y, outdir, outbasename, otype='.h5'):
+def create_feature_sets(fsmethod, data, msk, y, outdir, outbasename,
+                        otype='.h5'):
     """
     @param fsmethod:
 
@@ -85,7 +209,8 @@ def create_feature_sets(fsmethod, data, msk, y, outdir, outbasename, otype='.h5'
 
     @return:
     """
-    np.savetxt(os.path.join(outdir, outbasename + '_labels.txt'), y, fmt="%.2f")
+    np.savetxt(os.path.join(outdir, outbasename + '_labels.txt'), y,
+               fmt="%.2f")
 
     outfname = os.path.join(outdir, outbasename)
     log.info('Creating ' + outfname)
@@ -103,195 +228,3 @@ def create_feature_sets(fsmethod, data, msk, y, outdir, outbasename, otype='.h5'
 
     #save file
     ExportData.save_variables(outfname + otype, {'feats': feats})
-
-
-def pearson_correlation(x, y):
-    """
-    Calculates for each feature in X the
-    pearson correlation with y.
-
-    @param x: numpy array
-    Shape: n_samples x n_features
-
-    @param y: numpy array or list
-    Size: n_samples
-
-    @return: numpy array
-    Size: n_features
-    """
-    return distance_computation(x, y, stats.pearsonr)
-
-
-#-------------------------------------------------------------------------------
-def distance_computation(x, y, dist_function):
-    """
-    Calculates for each feature in X the
-    given dist_function with y.
-
-    @param x: numpy array
-    Shape: n_samples x n_features
-
-    @param y: numpy array or list
-    Size: n_samples
-
-    @param dist_function: function
-    distance function
-
-    @return: numpy array
-    Size: n_features
-
-    @note:
-    Apply any given 1-D distance function to X and y.
-    Have a look at:
-    http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
-    """
-    #number of features
-    n_feats = x.shape[1]
-
-    #creating output volume file
-    p = np.zeros(n_feats)
-
-    #calculating dist_function across all subjects
-    for i in list(range(x.shape[1])):
-        p[i] = dist_function(x[:, i], y)[0]
-
-    p[np.isnan(p)] = 0
-
-    return p
-
-
-def bhattacharyya_dist(x, y):
-    """
-    Univariate Gaussian Bhattacharyya distance
-    between the groups in X, labeled by y.
-
-    @param x: numpy array
-    Shape: n_samples x n_features
-
-    @param y: numpy array or list
-    Size: n_samples
-
-    @return:
-    """
-    classes = np.unique(y)
-    n_class = len(classes)
-    n_feats = x.shape[1]
-
-    b = np.zeros(n_feats)
-    for i in np.arange(n_class):
-        for j in np.arange(i + 1, n_class):
-            if j > i:
-                xi = x[y == i, :]
-                xj = x[y == j, :]
-
-                mi = np.mean (xi, axis=0)
-                mj = np.mean (xj, axis=0)
-
-                vi = np.var  (xi, axis=0)
-                vj = np.var  (xj, axis=0)
-
-                si = np.std  (xi, axis=0)
-                sj = np.std  (xj, axis=0)
-
-                d = 0.25 * (np.square(mi - mj) / (vi + vj)) + 0.5 * (np.log((vi + vj) / (2*si*sj)))
-                d[np.isnan(d)] = 0
-                d[np.isinf(d)] = 0
-
-                b = np.maximum(b, d)
-
-    return b
-
-
-def welch_ttest(x, y):
-    """
-    Welch's t-test between the groups in X, labeled by y.
-
-    @param x: numpy array
-    Shape: n_samples x n_features
-
-    @param y: numpy array or list
-    Size: n_samples
-
-    @return:
-    """
-    classes = np.unique(y)
-    n_class = len(classes)
-    n_feats = x.shape[1]
-
-    b = np.zeros(n_feats)
-    for i in np.arange(n_class):
-        for j in np.arange(i+1, n_class):
-            if j > i:
-                xi = x[y == i, :]
-                xj = x[y == j, :]
-                yi = y[y == i]
-                yj = y[y == j]
-
-                mi = np.mean (xi, axis=0)
-                mj = np.mean (xj, axis=0)
-
-                vi = np.var  (xi, axis=0)
-                vj = np.var  (xj, axis=0)
-
-                n_subjsi = len(yi)
-                n_subjsj = len(yj)
-
-                t = (mi - mj) / np.sqrt((np.square(vi) / n_subjsi) + (np.square(vj) / n_subjsj))
-                t[np.isnan(t)] = 0
-                t[np.isinf(t)] = 0
-
-                b = np.maximum(b, t)
-
-    return b
-
-
-def feature_selection(x, y, method, thr=95, dist_function=None,
-                      thr_method='robust'):
-    """
-    Parameters
-    ----------
-    @param: x             : data ([n_samps x n_feats] matrix)
-    @param: y             : class labels
-    @param: method        : distance measure: 'pearson', 'bhattacharyya', 'welcht', ''
-                            if method == '', will use dist_function
-    @param: thr           : percentile distance threshold
-    @param: dist_function :
-    @param: thr_method    : method for thresholding: 'none', 'robust', 'ranking', 'percentile'
-                            See .threshold.apply_threshold docstring.
-
-    Returns
-    -------
-    @return m          : distance measure (thresholded or not)
-    """
-    #pre feature selection, measuring distances
-    #Pearson correlation
-    if method == 'pearson':
-        log.info('Calculating Pearson correlation')
-        m = np.abs(pearson_correlation(x, y))
-
-    #Bhattacharyya distance
-    elif method == 'bhattacharyya':
-        log.info('Calculating Bhattacharyya distance')
-        m = bhattacharyya_dist (x, y)
-
-    #Welch's t-test
-    elif method == 'welcht':
-        log.info("Calculating Welch's t-test")
-        m = welch_ttest(x, y)
-
-    elif method == '':
-        log.info('Calculating distance between data and class labels')
-        #http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
-        m = distance_computation(x, y, dist_function)
-
-    #if all distance values are 0
-    if not m.any():
-        log.info("No differences between groups have been found. "
-                 "Are you sure you want to continue?")
-        return m
-
-    #threshold data
-    if thr_method != 'none':
-        return apply_threshold(m, thr, thr_method)
-
-    return m
