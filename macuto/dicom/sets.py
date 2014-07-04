@@ -3,17 +3,20 @@ __author__ = 'alexandre'
 import os
 import dicom
 from dicom.dataset import FileDataset
+from collections import OrderedDict
+import logging
 
-from ..exceptions import LoggedError, FileNotFound
+#from ..exceptions import LoggedError, FileNotFound
 
+log = logging.getLogger(__name__)
 
-FIELD_WEIGHTS = {'file_path': 0.4,
-                 'PatientID': 1,
-                 'PatientName': 1,
-                 'PatientAddress': 1,
-                 'PatientSex': 0.2,
-                 'AcquisitionDate': 0.4,
-                 'PatientBirthDate': 0.3}
+FIELD_WEIGHTS = OrderedDict([('file_path', 0.4),
+                             ('PatientID', 1),
+                             ('PatientName', 1),
+                             ('PatientAddress', 1),
+                             ('PatientSex', 0.2),
+                             ('AcquisitionDate', 0.4),
+                             ('PatientBirthDate', 0.3)])
 
 
 class DistanceMeasure(object):
@@ -71,12 +74,20 @@ class DicomFileDistance(DistanceMeasure):
         dcm1 = DicomFile(file_path1)
         dcm2 = DicomFile(file_path2)
 
+        self.dists = []
         try:
             dist = 0
             for field_name in self.field_weights:
-                str1 = getattr(dcm1, field_name)
-                str2 = getattr(dcm2, field_name)
+                str1 = str(getattr(dcm1, field_name))
+                str2 = str(getattr(dcm2, field_name))
+
+                if not str1 or not str2:
+                    continue
+
+                #log.debug(str1, str2)
+                print('{0} vs {1}'.format(str1, str2))
                 weight = self.field_weights[field_name]
+                self.dists.append(self.distance_measure(str1, str2) * weight)
                 dist += self.distance_measure(str1, str2) * weight
 
             return dist/len(self.field_weights)
