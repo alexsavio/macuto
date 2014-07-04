@@ -542,5 +542,5 @@ def is_dicom_file(filepath):
 
 
 if __name__ == '__main__':
-    #baker.run()
-    batch('/home/alexandre/Desktop/new_ariadna', '/home/alexandre/Desktop/new_ariadna_nii', overwrite=True)
+    baker.run()
+    #batch('/home/alexandre/Desktop/new_ariadna', '/home/alexandre/Desktop/new_ariadna_nii', overwrite=True)
