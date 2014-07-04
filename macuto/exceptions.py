@@ -17,13 +17,11 @@ class PathNotFoundError(LoggedError):
 
         msg = 'Could not find {0} {1}.'.format(self.path_type,
                                                file_path)
-        if message is None:
-            message = msg
-        else:
-            message += '. ' + msg
+        if message is not None:
+            msg += '. ' + message
 
-        Exception.__init__(self, message)
-        log.error(message)
+        Exception.__init__(self, msg)
+        log.error(msg)
 
 
 class FileNotFound(PathNotFoundError):
@@ -41,13 +39,11 @@ class PathAlreadyExists(LoggedError):
 
         msg = '{0} {1} already exists {1}.'.format(self.path_type.capitalize(),
                                                    file_path)
-        if message is None:
-            message = msg
-        else:
-            message += '. ' + msg
+        if message is not None:
+            msg += '. ' + message
 
-        Exception.__init__(self, message)
-        log.error(message)
+        Exception.__init__(self, msg)
+        log.error(msg)
 
 
 class FileAlreadyExists(LoggedError):
