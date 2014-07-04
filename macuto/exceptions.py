@@ -10,10 +10,49 @@ class LoggedError(Exception):
         log.error(message)
 
 
-class FolderNotFound(LoggedError):
-    pass
+class PathNotFoundError(LoggedError):
+    path_type = 'path'
+
+    def __init__(self, file_path, message=None):
+
+        msg = 'Could not find {0} {1}.'.format(self.path_type,
+                                               file_path)
+        if message is None:
+            message = msg
+        else:
+            message += '. ' + msg
+
+        Exception.__init__(self, message)
+        log.error(message)
+
+
+class FileNotFound(PathNotFoundError):
+    path_type = 'file'
+
+
+class FolderNotFound(PathNotFoundError):
+    path_type = 'folder'
+
+
+class PathAlreadyExists(LoggedError):
+    path_type = 'path'
+
+    def __init__(self, file_path, message=None):
+
+        msg = '{0} {1} already exists {1}.'.format(self.path_type.capitalize(),
+                                                   file_path)
+        if message is None:
+            message = msg
+        else:
+            message += '. ' + msg
+
+        Exception.__init__(self, message)
+        log.error(message)
+
+
+class FileAlreadyExists(LoggedError):
+    path_type = 'file'
 
 
 class FolderAlreadyExists(LoggedError):
-    pass
-
+    path_type = 'folder'
