@@ -32,8 +32,6 @@ from .sklearn_utils import (get_pipeline,
 log = logging.getLogger(__name__)
 
 
-
-
 class ClassificationPipeline(Printable):
     """
 
