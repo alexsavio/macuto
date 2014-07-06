@@ -3,13 +3,14 @@ import os
 import logging
 import numpy as np
 
+from collections import defaultdict
 from ..more_collections import DefaultOrderedDict
 from ..files.names import get_abspath
 from ..config import (DICOM_FILE_EXTENSIONS,
                       OUTPUT_DICOM_EXTENSION)
 from .comparison import DicomFileDistance
 from ..exceptions import LoggedError
-from .utils import group_dicom_files, call_dcm2nii, get_dicom_files
+from .utils import DicomFile, group_dicom_files, get_dicom_files
 
 log = logging.getLogger(__name__)
 
@@ -32,8 +33,8 @@ class DicomFilesClustering(object):
         :param folders:
         :return:
         """
-        self._folders = None
-        self._files = None
+        self._folders = []
+        self._files = []
         self._file_dists = None
         self._subjs = DefaultOrderedDict(list)
 
@@ -52,8 +53,8 @@ class DicomFilesClustering(object):
     def _update(self):
         self._update_file_list()
         self._calculate_file_distances()
-        self._update_subjs_dict()
-        self._reorder_file_list()
+        #self._update_subjs_dict()
+        #self._reorder_file_list()
 
     def _update_file_list(self):
 
@@ -67,9 +68,20 @@ class DicomFilesClustering(object):
 
         log.info('Calculating distance between DICOM files.')
         n_files = len(self._files)
+
+        dist_method = DicomFileDistance()
+
         self._file_dists = np.zeros((n_files, n_files))
-        for idx, dcm in enumerate(self._files):
-            self._file_dists[idx, idx] = 0
+
+        for idxi in range(n_files):
+            dist_method.dcmf1 = DicomFile(self._files[idxi])
+
+            for idxj in range(idxi+1, n_files):
+                dist_method.dcmf2 = DicomFile(self._files[idxj])
+
+                if idxi != idxj:
+                    self._file_dists[idxi, idxj] = dist_method.transform()
+
 
     def _update_subjs_dict(self):
         raise NotImplementedError
@@ -84,51 +96,51 @@ class DicomFilesClustering(object):
         #print mylist
 
 
-def batch(input_folder, output_folder, header_field='PatientID',
-          overwrite=False):
-    """Will get all DICOMs inside the input_folder and copy them
-    separated and organized by the different header_field values
-    found in all these DICOM files.
-    After that, will convert the files to nifti using MRICron dcm2nii
-
-    :param input_folder: str
-
-    :param output_folder: str
-
-    :param header_field: str
-
-    :param overwrite: bool
-    If True and the output_folder exists, will remove its files.
-    """
-    log.info('{0} {1} {2}'.format(input_folder, output_folder, header_field))
-
-    if os.path.exists(output_folder):
-        if not overwrite:
-            if os.listdir(output_folder):
-                msg = 'Please change it or empty it.'
-                raise FolderAlreadyExists(output_folder, msg)
-        else:
-            import shutil
-            shutil.rmtree(output_folder)
-
-    log.info('Listing DICOM all files in {0}.'.format(input_folder))
-    dicoms = get_dicom_files(input_folder)
-
-    log.info('Grouping DICOM files by subject.')
-    dicom_sets = group_dicom_files(dicoms, header_field)
-
-    try:
-        new_dicom_sets = create_dicom_subject_folders(output_folder, dicom_sets)
-    except Exception as exc:
-        raise LoggedError('ERROR create_dicom_subject_folders: '
-                          '{0}'.format(str(exc)))
-
-    for dcm_set in new_dicom_sets:
-        try:
-            dicom_to_nii(os.path.join(output_folder, dcm_set))
-        except Exception as exc:
-            raise LoggedError('ERROR dicom_to_nii {0}. {1}'.format(dcm_set,
-                                                                   str(exc)))
+# def batch(input_folder, output_folder, header_field='PatientID',
+#           overwrite=False):
+#     """Will get all DICOMs inside the input_folder and copy them
+#     separated and organized by the different header_field values
+#     found in all these DICOM files.
+#     After that, will convert the files to nifti using MRICron dcm2nii
+#
+#     :param input_folder: str
+#
+#     :param output_folder: str
+#
+#     :param header_field: str
+#
+#     :param overwrite: bool
+#     If True and the output_folder exists, will remove its files.
+#     """
+#     log.info('{0} {1} {2}'.format(input_folder, output_folder, header_field))
+#
+#     if os.path.exists(output_folder):
+#         if not overwrite:
+#             if os.listdir(output_folder):
+#                 msg = 'Please change it or empty it.'
+#                 raise FolderAlreadyExists(output_folder, msg)
+#         else:
+#             import shutil
+#             shutil.rmtree(output_folder)
+#
+#     log.info('Listing DICOM all files in {0}.'.format(input_folder))
+#     dicoms = get_dicom_files(input_folder)
+#
+#     log.info('Grouping DICOM files by subject.')
+#     dicom_sets = group_dicom_files(dicoms, header_field)
+#
+#     try:
+#         new_dicom_sets = create_dicom_subject_folders(output_folder, dicom_sets)
+#     except Exception as exc:
+#         raise LoggedError('ERROR create_dicom_subject_folders: '
+#                           '{0}'.format(str(exc)))
+#
+#     for dcm_set in new_dicom_sets:
+#         try:
+#             dicom_to_nii(os.path.join(output_folder, dcm_set))
+#         except Exception as exc:
+#             raise LoggedError('ERROR dicom_to_nii {0}. {1}'.format(dcm_set,
+#                                                                    str(exc)))
 
 
 def create_dicom_subject_folders(out_path, dicom_sets):
@@ -180,4 +192,10 @@ def rename_file_group_to_serial_nums(file_lst):
         f.rename(fdest)
         c += 1
 
+if __name__ == '__main__':
 
+    from macuto.dicom.sets import DicomFilesClustering
+
+    wd = '/media/alexandre/cobre/santiago/data'
+
+    dcmclusters = DicomFilesClustering(wd)

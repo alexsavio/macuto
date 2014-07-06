@@ -2,12 +2,53 @@ import os
 import dicom
 import logging
 import subprocess
+from dicom.dataset import FileDataset
 from collections import defaultdict
 
-from ..exceptions import LoggedError, FolderNotFound
+from ..exceptions import LoggedError, FileNotFound
 
 log = logging.getLogger(__name__)
 
+
+class DicomFile(FileDataset):
+
+    def __init__(self, file_path, preamble=None, file_meta=None,
+                 is_implicit_VR=True, is_little_endian=True):
+        """
+
+        :param file_path: str
+        Full path and filename to the file.
+        Use None if is a BytesIO.
+
+        :param dataset:
+        some form of dictionary, usually a Dataset from read_dataset()
+
+        :param preamble: the 128-byte DICOM preamble
+
+        :param file_meta: dataset
+        The file meta info dataset, as returned by _read_file_meta,
+        or an empty dataset if no file meta information is in the file
+
+        :param is_implicit_VR: bool
+        True if implicit VR transfer syntax used; False if explicit VR.
+        Default is True.
+
+        :param is_little_endian: bool
+         True if little-endian transfer syntax used; False if big-endian.
+         Default is True.
+        """
+        if not os.path.exists(file_path):
+            raise FileNotFound(file_path)
+
+        try:
+            dcm = dicom.read_file(file_path)
+
+            FileDataset.__init__(self, file_path, dcm, preamble, file_meta,
+                                 is_implicit_VR, is_little_endian)
+
+            self.file_path = os.path.abspath(file_path)
+        except Exception as exc:
+            raise LoggedError(str(exc))
 
 def get_dicom_files(dirpath):
     return [os.path.join(dp, f) for dp, dn, filenames in
