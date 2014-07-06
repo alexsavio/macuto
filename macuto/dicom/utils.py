@@ -2,7 +2,6 @@ import os
 import dicom
 import logging
 import subprocess
-from dicom.dataset import FileDataset
 from collections import defaultdict
 from dicom.dataset import FileDataset
 
@@ -52,8 +51,14 @@ class DicomFile(FileDataset):
             raise LoggedError(str(exc))
 
 
-def get_dicom_files(dirpath):
+def get_dicom_file_paths(dirpath):
     return [os.path.join(dp, f) for dp, dn, filenames in
+            os.walk(dirpath) for f in filenames
+            if is_dicom_file(os.path.join(dp, f))]
+
+
+def get_dicomfiles(dirpath):
+    return [DicomFile(os.path.join(dp, f)) for dp, dn, filenames in
             os.walk(dirpath) for f in filenames
             if is_dicom_file(os.path.join(dp, f))]
 

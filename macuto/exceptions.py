@@ -24,6 +24,10 @@ class PathNotFoundError(LoggedError):
         log.error(msg)
 
 
+class ValueError(LoggedError):
+    pass
+
+
 class FileNotFound(PathNotFoundError):
     path_type = 'file'
 

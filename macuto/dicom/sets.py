@@ -1,99 +1,86 @@
 
 import os
 import logging
-import numpy as np
 from collections import defaultdict
 
-from collections import defaultdict
-from ..more_collections import DefaultOrderedDict
-from ..files.names import get_abspath
 from ..config import (DICOM_FILE_EXTENSIONS,
                       OUTPUT_DICOM_EXTENSION)
-from .comparison import DicomFileDistance
-from ..exceptions import LoggedError, FolderAlreadyExists
-from .utils import DicomFile, group_dicom_files, get_dicom_files
+from ..exceptions import LoggedError, ValueError
+from ..files.names import get_abspath
+from ..more_collections import ItemSet
+from .utils import get_dicomfiles, get_dicom_file_paths
 
 log = logging.getLogger(__name__)
 
 
-class DicomFilesClustering(object):
-    """A self-organizing set file of DICOM files.
-    It uses macuto.dicom.comparison.DicomDistanceMeasure to compare
-    all DICOM files within a set of folders and create clusters of DICOM files
-    that are similar.
+class DicomFileSet(ItemSet):
 
-    This has been created to automatically generate sets of files for different
-    subjects.
-
-    Set the fields/weights in DICOM_FIELD_WEIGHTS to adjust this.
-    """
-
-    def __init__(self, folders):
+    def __init__(self, folders, store_metadata=False):
         """
 
         :param folders:
+        :param store_metadata:
         :return:
         """
-        self._folders = []
-        self._files = []
-        self._file_dists = None
-        self._subjs = DefaultOrderedDict(list)
 
-        self.add_folder(folders)
+        self.items = set()
+        self.store_metadata = store_metadata
 
-    def add_folder(self, folder_path):
-
-        if isinstance(folder_path, list):
-            for folder in folder_path:
-                self._folders.extend(get_abspath(folder))
+        if isinstance(folders, list):
+            self.from_list(folders)
+        elif isinstance(folders, str):
+            self.add_folder(folders)
         else:
-            self._folders.append(get_abspath(folder_path))
+            raise ValueError('ValueError: Could not recognize folders '
+                             'argument value.')
 
-        self._update()
+    def add_folder(self, folder):
+        """
 
-    def _update(self):
-        self._update_file_list()
-        self._calculate_file_distances()
-        #self._update_subjs_dict()
-        #self._reorder_file_list()
+        :param folder: str
+         Path to a new folder containing Dicom files.
+        :return:
+        """
+        if self.store_metadata:
+            try:
+                new_fileset = get_dicomfiles(folder)
+            except LoggedError as lerr:
+                raise lerr
+        else:
+            new_fileset = get_dicom_file_paths(folder)
 
-    def _update_file_list(self):
+        new_fileset = set(new_fileset)
 
-        self._files = []
-        for folder in self._folders:
-            log.info('Detecting DICOM files within {0}.'.format(folder))
+        if self.items:
+            self.items.union(new_fileset)
+        else:
+            self.items = new_fileset
 
-            self._files.extend(get_dicom_files(folder))
+    def from_list(self, folders):
+        """
 
-    def _calculate_file_distances(self):
+        :param folders: list of str
 
-        log.info('Calculating distance between DICOM files.')
-        n_files = len(self._files)
+        :return
+        """
+        self.items = set()
+        for folder in folders:
+            self.add_folder(folder)
 
-        dist_method = DicomFileDistance()
+    def from_set(self, fileset):
+        self.items = fileset
 
-        self._file_dists = np.zeros((n_files, n_files))
+    def to_list(self):
+        return list(self.items)
 
-        for idxi in range(n_files):
-            dist_method.dcmf1 = DicomFile(self._files[idxi])
+    def to_folder(self, output_path):
+        """
 
-            for idxj in range(idxi+1, n_files):
-                dist_method.dcmf2 = DicomFile(self._files[idxj])
-
-                if idxi != idxj:
-                    self._file_dists[idxi, idxj] = dist_method.transform()
-
-    def _update_subjs_dict(self):
+        :param output_path:
+        :return:
+        """
         raise NotImplementedError
         #TODO
-
-    def _reorder_file_list(self):
-        raise NotImplementedError
-        #TODO
-        #mylist=['a','b','c','d','e']
-        #myorder=[3,2,0,1,4]
-        #mylist = [ mylist[i] for i in myorder]
-        #print mylist
 
 
 # def batch(input_folder, output_folder, header_field='PatientID',
@@ -193,9 +180,4 @@ def rename_file_group_to_serial_nums(file_lst):
         c += 1
 
 if __name__ == '__main__':
-
-    from macuto.dicom.sets import DicomFilesClustering
-
-    wd = '/media/alexandre/cobre/santiago/data'
-
-    dcmclusters = DicomFilesClustering(wd)
+    pass
