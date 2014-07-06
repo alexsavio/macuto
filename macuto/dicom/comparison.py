@@ -1,10 +1,10 @@
 __author__ = 'alexandre'
 
 import os
-import dicom
 import logging
 
-from ..exceptions import LoggedError, FileNotFound
+from .utils import DicomFile
+from ..exceptions import LoggedError
 from ..config import DICOM_FIELD_WEIGHTS
 
 log = logging.getLogger(__name__)

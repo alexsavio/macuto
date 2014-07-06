@@ -2,6 +2,7 @@
 import os
 import logging
 import numpy as np
+from collections import defaultdict
 
 from collections import defaultdict
 from ..more_collections import DefaultOrderedDict
@@ -9,7 +10,7 @@ from ..files.names import get_abspath
 from ..config import (DICOM_FILE_EXTENSIONS,
                       OUTPUT_DICOM_EXTENSION)
 from .comparison import DicomFileDistance
-from ..exceptions import LoggedError
+from ..exceptions import LoggedError, FolderAlreadyExists
 from .utils import DicomFile, group_dicom_files, get_dicom_files
 
 log = logging.getLogger(__name__)
@@ -81,7 +82,6 @@ class DicomFilesClustering(object):
 
                 if idxi != idxj:
                     self._file_dists[idxi, idxj] = dist_method.transform()
-
 
     def _update_subjs_dict(self):
         raise NotImplementedError

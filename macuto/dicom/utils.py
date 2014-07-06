@@ -4,6 +4,7 @@ import logging
 import subprocess
 from dicom.dataset import FileDataset
 from collections import defaultdict
+from dicom.dataset import FileDataset
 
 from ..exceptions import LoggedError, FileNotFound
 
@@ -49,6 +50,7 @@ class DicomFile(FileDataset):
             self.file_path = os.path.abspath(file_path)
         except Exception as exc:
             raise LoggedError(str(exc))
+
 
 def get_dicom_files(dirpath):
     return [os.path.join(dp, f) for dp, dn, filenames in
@@ -141,7 +143,6 @@ def anonymize_dicom_file(dcm_file, remove_private_tags=False,
         """Called from the dataset "walk" recursive function for all data elements."""
         if data_element.VR == "PN":
             data_element.value = 'Anonymous'
-
 
     def curves_callback(ds, data_element):
         """Called from the dataset "walk" recursive function for all data elements."""
