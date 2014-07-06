@@ -78,7 +78,8 @@ def is_dicom_file(filepath):
 
     try:
         _ = dicom.read_file(filepath)
-    except:
+    except Exception as exc:
+        LoggedError(str(exc))
         return False
 
     return True

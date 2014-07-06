@@ -2,6 +2,7 @@ __author__ = 'alexandre'
 
 import os
 import logging
+import numpy as np
 
 from .utils import DicomFile
 from ..exceptions import LoggedError
@@ -25,6 +26,10 @@ class DicomFileDistance(DistanceMeasure):
     similarity_measure = Levenshtein.ratio
     inv_sum_weights = 1/sum(field_weights.values())
 
+    def __init__(self):
+        self.dcmf1 = None
+        self.dcmf2 = None
+
     def fit(self, file_path1, file_path2):
         self.dcmf1 = DicomFile(file_path1)
         self.dcmf2 = DicomFile(file_path2)
@@ -34,6 +39,9 @@ class DicomFileDistance(DistanceMeasure):
         return self.transform()
 
     def transform(self):
+
+        if self.dcmf1 is None or self.dcmf2 is None:
+            return np.inf
 
         if len(self.field_weights) == 0:
             raise LoggedError('Field weights are not set.')
