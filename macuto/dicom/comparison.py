@@ -116,7 +116,7 @@ class DicomFilesClustering(object):
         for folder in self._folders:
             log.info('Detecting DICOM files within {0}.'.format(folder))
 
-            self._files.extend(get_dicom_files_paths(folder))
+            self._files.extend(get_dicom_file_paths(folder))
 
     def _calculate_file_distances(self):
 

@@ -13,7 +13,7 @@ from .utils import get_dicomfiles, get_dicom_file_paths
 log = logging.getLogger(__name__)
 
 
-class DicomFileSet(ItemSet):
+class DicomFileList(ItemSet):
 
     def __init__(self, folders, store_metadata=False):
         """
@@ -23,7 +23,7 @@ class DicomFileSet(ItemSet):
         :return:
         """
 
-        self.items = set()
+        self.items = []
         self.store_metadata = store_metadata
 
         if isinstance(folders, list):
@@ -43,18 +43,16 @@ class DicomFileSet(ItemSet):
         """
         if self.store_metadata:
             try:
-                new_fileset = get_dicomfiles(folder)
+                new_filelst = get_dicomfiles(folder)
             except LoggedError as lerr:
                 raise lerr
         else:
-            new_fileset = get_dicom_file_paths(folder)
-
-        new_fileset = set(new_fileset)
+            new_filelst = get_dicom_file_paths(folder)
 
         if self.items:
-            self.items.union(new_fileset)
+            self.items.extend(new_filelst)
         else:
-            self.items = new_fileset
+            self.items = new_filelst
 
     def from_list(self, folders):
         """
@@ -63,12 +61,12 @@ class DicomFileSet(ItemSet):
 
         :return
         """
-        self.items = set()
+        self.items = []
         for folder in folders:
             self.add_folder(folder)
 
     def from_set(self, fileset):
-        self.items = fileset
+        self.items = list(fileset)
 
     def to_list(self):
         return list(self.items)
@@ -180,4 +178,16 @@ def rename_file_group_to_serial_nums(file_lst):
         c += 1
 
 if __name__ == '__main__':
-    pass
+    from macuto.dicom.sets import DicomFileList
+
+    datadir_hd = '/media/alexandre/cobre/santiago/test' #HD 4.2GB in 9981 DICOMS
+    #%timeit dicoms = DicomFileList(datadir_hd, store_metadata=True)
+    #1 loops, best of 3: 38.4 s per loop
+
+    datadir_ssd = '/scratch/santiago_test' #SSD 4.2GB in 9981 DICOMS
+    #%timeit dicoms = DicomFileList(datadir_ssd, store_metadata=True)
+    #1 loops, best of 3: 38 s per loop
+
+    datadir = '/scratch/santiago'
+    from macuto.dicom.sets import DicomFileList
+    dicoms = DicomFileList(datadir, store_metadata=True)

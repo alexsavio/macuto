@@ -199,3 +199,15 @@ def anonymize_dicom_file_dcmtk(dcm_file):
                     shell=True)
 
     os.remove(dcm_file + '.bak')
+
+if __name__ == '__main__':
+
+    from macuto.dicom.utils import DicomFile
+
+    dcm_file_hd = '/home/alexandre/Projects/bcc/macuto/macuto/dicom/subj1_01.IMA'
+    #%timeit DicomFile(dcm_file_hd)
+    #1000 loops, best of 3: 1.75 ms per loop
+
+    dcm_file_ssd = '/scratch/subj1_01.IMA'
+    #%timeit DicomFile(dcm_file_ssd)
+    #1000 loops, best of 3: 1.75 ms per loop
