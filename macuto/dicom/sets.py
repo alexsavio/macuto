@@ -15,24 +15,33 @@ log = logging.getLogger(__name__)
 
 class DicomFileList(ItemSet):
 
-    def __init__(self, folders, store_metadata=False):
+    def __init__(self, folders, store_metadata=False, header_fields=None):
         """
 
-        :param folders:
-        :param store_metadata:
-        :return:
+        :param folders: str or list of str
+        Paths to folders containing DICOM files.
+        If None, won't look for files anywhere.
+
+        :param store_metadata: bool
+
+        :param header_fields: set of strings
+        Set of header fields to be stored for each DICOM file.
+        If store_metadata is False, this won't be used.
+
         """
 
         self.items = []
         self.store_metadata = store_metadata
+        self.header_fields = header_fields
 
-        if isinstance(folders, list):
-            self.from_list(folders)
-        elif isinstance(folders, str):
-            self.add_folder(folders)
-        else:
-            raise ValueError('ValueError: Could not recognize folders '
-                             'argument value.')
+        if folders is not None:
+            if isinstance(folders, list):
+                self.from_list(folders)
+            elif isinstance(folders, str):
+                self.add_folder(folders)
+            else:
+                raise ValueError('ValueError: Could not recognize folders '
+                                 'argument value.')
 
     def add_folder(self, folder):
         """
@@ -43,7 +52,7 @@ class DicomFileList(ItemSet):
         """
         if self.store_metadata:
             try:
-                new_filelst = get_dicomfiles(folder)
+                new_filelst = get_dicomfiles(folder, self.header_fields)
             except LoggedError as lerr:
                 raise lerr
         else:
