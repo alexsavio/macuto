@@ -1,19 +1,19 @@
 
 import os
 import logging
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from ..config import (DICOM_FILE_EXTENSIONS,
                       OUTPUT_DICOM_EXTENSION)
 from ..exceptions import LoggedError, ValueError
 from ..files.names import get_abspath
 from ..more_collections import ItemSet
-from .utils import get_dicomfiles, get_dicom_file_paths
+from .utils import DicomFile, is_dicom_file
 
 log = logging.getLogger(__name__)
 
 
-class DicomFileList(ItemSet):
+class GenericDicomsList(ItemSet):
 
     def __init__(self, folders, store_metadata=False, header_fields=None):
         """
@@ -23,6 +23,9 @@ class DicomFileList(ItemSet):
         If None, won't look for files anywhere.
 
         :param store_metadata: bool
+        If True, will either make a list of DicomFiles, or
+        a simple DICOM header (namedtuples) with the fields specified
+        in header_fields.
 
         :param header_fields: set of strings
         Set of header fields to be stored for each DICOM file.
@@ -50,13 +53,25 @@ class DicomFileList(ItemSet):
          Path to a new folder containing Dicom files.
         :return:
         """
-        if self.store_metadata:
-            try:
-                new_filelst = get_dicomfiles(folder, self.header_fields)
-            except LoggedError as lerr:
-                raise lerr
+
+        def _get_dicoms(build_dcm, root_path, header_fields=None):
+            return [build_dcm(dp, f, header_fields) for dp, dn, filenames in os.walk(root_path)
+                    for f in filenames if is_dicom_file(os.path.join(dp, f))]
+
+        if not self.store_metadata:
+            build_dcm = lambda dp, f, flds: os.path.join(dp, f)
         else:
-            new_filelst = get_dicom_file_paths(folder)
+            if self.header_fields is None:
+                build_dcm = lambda dp, f, flds: DicomFile(os.path.join(dp, f))
+            else:
+                DicomHeader = namedtuple('DicomHeader', self.header_fields)
+
+                build_dcm = lambda dp, f, flds: DicomHeader._make(DicomFile(os.path.join(dp, f)).get_attributes(self.header_fields))
+
+        try:
+            new_filelst = _get_dicoms(build_dcm, folder, self.header_fields)
+        except LoggedError as lerr:
+            raise lerr
 
         if self.items:
             self.items.extend(new_filelst)

@@ -10,11 +10,10 @@ from ..exceptions import LoggedError, FileNotFound
 log = logging.getLogger(__name__)
 
 
-
 class DicomFile(FileDataset):
 
-    def __init__(self, file_path, header_fields=None, preamble=None,
-                 file_meta=None, is_implicit_VR=True, is_little_endian=True):
+    def __init__(self, file_path, preamble=None, file_meta=None,
+                 is_implicit_VR=True, is_little_endian=True):
         """
 
         :param file_path: str
@@ -52,11 +51,18 @@ class DicomFile(FileDataset):
 
             self.file_path = os.path.abspath(file_path)
 
-            if header_fields:
-                self._update_header_fields()
-
         except Exception as exc:
             raise LoggedError(str(exc))
+
+    def get_attributes(self, attributes):
+        """
+        """
+        try:
+            attrs = [getattr(self, attr) for attr in attributes]
+        except Exception as exc:
+            raise LoggedError(str(exc))
+
+        return tuple(attrs)
 
 
 def get_dicom_file_paths(dirpath):
@@ -64,11 +70,10 @@ def get_dicom_file_paths(dirpath):
             for f in filenames if is_dicom_file(os.path.join(dp, f))]
 
 
-def get_dicomfiles(dirpath, header_fields=None):
-    return [DicomFile(os.path.join(dp, f), header_fields)
+def get_dicomfiles(dirpath):
+    return [DicomFile(os.path.join(dp, f))
             for dp, dn, filenames in os.walk(dirpath)
             for f in filenames if is_dicom_file(os.path.join(dp, f))]
-
 
 def is_dicom_file(filepath):
     """
