@@ -6,10 +6,9 @@ import numpy as np
 
 from ..more_collections import DefaultOrderedDict
 from ..config import DICOM_FIELD_WEIGHTS
-from ..files.names import get_abspath
 from ..exceptions import LoggedError
 
-from .utils import DicomFile, get_dicom_file_paths
+from .utils import DicomFile
 from .sets import GenericDicomsList
 
 log = logging.getLogger(__name__)
@@ -169,13 +168,11 @@ if __name__ == '__main__':
         from macuto.dicom.comparison import DicomFilesClustering
 
         from macuto.config import DICOM_FIELD_WEIGHTS
-        from macuto.dicom.sets import GenericDicomsList
 
         datadir = '/scratch/santiago'
         header_fields = tuple(DICOM_FIELD_WEIGHTS.keys())
 
-        dicoms = GenericDicomsList(datadir, store_metadata=True,
-                               header_fields=header_fields)
-
-        dcmclusters = DicomFilesClustering(dicom_set=dicoms)
+        dcmclusters = DicomFilesClustering(folders=datadir,
+                                           store_metadata=True,
+                                           header_fields=header_fields)
         #TODO
