@@ -55,18 +55,32 @@ class GenericDicomsList(ItemSet):
         """
 
         def _get_dicoms(build_dcm, root_path, header_fields=None):
-            return [build_dcm(dp, f, header_fields) for dp, dn, filenames in os.walk(root_path)
-                    for f in filenames if is_dicom_file(os.path.join(dp, f))]
+            #return [build_dcm(dp, f, header_fields) for dp, dn, filenames in os.walk(root_path)
+            #        for f in filenames if is_dicom_file(os.path.join(dp, f))]
+
+            dicoms = []
+            f = None
+            try:
+                for dp, dn, filenames in os.walk(root_path):
+                    for f in filenames:
+                        fpath = os.path.join(dp, f)
+                        if is_dicom_file(fpath):
+                            dicoms.append(build_dcm(fpath, header_fields))
+            except Exception as exc:
+                raise LoggedError('Error reading file {0}. '
+                                  '{1}'.format(os.path.join(dp, f), str(exc)))
+
+            return dicoms
 
         if not self.store_metadata:
-            build_dcm = lambda dp, f, flds: os.path.join(dp, f)
+            build_dcm = lambda fpath, flds: fpath
         else:
             if self.header_fields is None:
-                build_dcm = lambda dp, f, flds: DicomFile(os.path.join(dp, f))
+                build_dcm = lambda fpath, flds: DicomFile(fpath)
             else:
                 DicomHeader = namedtuple('DicomHeader', self.header_fields)
 
-                build_dcm = lambda dp, f, flds: DicomHeader._make(DicomFile(os.path.join(dp, f)).get_attributes(self.header_fields))
+                build_dcm = lambda fpath, flds: DicomHeader._make(DicomFile(fpath).get_attributes(self.header_fields))
 
         try:
             new_filelst = _get_dicoms(build_dcm, folder, self.header_fields)
@@ -202,7 +216,8 @@ def rename_file_group_to_serial_nums(file_lst):
         c += 1
 
 if __name__ == '__main__':
-    from macuto.dicom.sets import DicomFileList
+    from macuto.config import DICOM_FIELD_WEIGHTS
+    from macuto.dicom.sets import GenericDicomsList
 
     datadir_hd = '/media/alexandre/cobre/santiago/test' #HD 4.2GB in 9981 DICOMS
     #%timeit dicoms = DicomFileList(datadir_hd, store_metadata=True)
@@ -213,5 +228,7 @@ if __name__ == '__main__':
     #1 loops, best of 3: 38 s per loop
 
     datadir = '/scratch/santiago'
-    from macuto.dicom.sets import DicomFileList
-    dicoms = DicomFileList(datadir, store_metadata=True)
+    header_fields = tuple(DICOM_FIELD_WEIGHTS.keys())
+
+    dicoms = GenericDicomsList(datadir, store_metadata=True,
+                           header_fields=header_fields)

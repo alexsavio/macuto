@@ -8,7 +8,9 @@ from ..more_collections import DefaultOrderedDict
 from ..config import DICOM_FIELD_WEIGHTS
 from ..files.names import get_abspath
 from ..exceptions import LoggedError
+
 from .utils import DicomFile, get_dicom_file_paths
+from .sets import GenericDicomsList
 
 log = logging.getLogger(__name__)
 
@@ -81,60 +83,54 @@ class DicomFilesClustering(object):
     Set the fields/weights in DICOM_FIELD_WEIGHTS to adjust this.
     """
 
-    def __init__(self, folders):
+    def __init__(self, folders=None, store_metadata=False, header_fields=None):
         """
 
-        :param folders:
-        :return:
+        :param folders: str or list of str
+        Paths to folders containing DICOM files.
+        If None, won't look for files anywhere.
+
+        :param store_metadata: bool
+        If True, will either make a list of DicomFiles, or
+        a simple DICOM header (namedtuples) with the fields specified
+        in header_fields.
+
+        :param header_fields: set of strings
+        Set of header fields to be stored for each DICOM file.
+        If store_metadata is False, this won't be used.
+
         """
-        self._folders = []
         self._file_dists = None
         self._subjs = DefaultOrderedDict(list)
 
-        #self.dicom_files =
-        self.add_folder(folders)
-
-    def add_folder(self, folder_path):
-
-        if isinstance(folder_path, list):
-            for folder in folder_path:
-                self._folders.extend(get_abspath(folder))
-        else:
-            self._folders.append(get_abspath(folder_path))
-
-        self._update()
+        self._dicoms = GenericDicomsList(folders, store_metadata,
+                                         header_fields)
 
     def _update(self):
-        self._update_file_list()
         self._calculate_file_distances()
         #self._update_subjs_dict()
         #self._reorder_file_list()
 
-    def _update_file_list(self):
-
-        self._files = []
-        for folder in self._folders:
-            log.info('Detecting DICOM files within {0}.'.format(folder))
-
-            self._files.extend(get_dicom_file_paths(folder))
-
     def _calculate_file_distances(self):
 
         log.info('Calculating distance between DICOM files.')
-        n_files = len(self._files)
+        n_files = len(self._dicoms)
 
         dist_method = DicomFileDistance()
 
         self._file_dists = np.zeros((n_files, n_files))
 
         for idxi in range(n_files):
-            dist_method.dcmf1 = DicomFile(self._files[idxi])
+            dist_method.dcmf1 = DicomFile(self._dicoms[idxi])
 
             for idxj in range(idxi+1, n_files):
-                dist_method.dcmf2 = DicomFile(self._files[idxj])
+                dist_method.dcmf2 = DicomFile(self._dicoms[idxj])
 
                 if idxi != idxj:
                     self._file_dists[idxi, idxj] = dist_method.transform()
+
+    def from_dicom_set(self, dicom_set):
+        self._dicoms = dicom_set
 
     def _update_subjs_dict(self):
         raise NotImplementedError
@@ -170,7 +166,16 @@ if __name__ == '__main__':
 
 
     def test_DicomFilesClustering():
-        from macuto.dicom.sets import DicomFilesClustering
-        wd = '/media/alexandre/cobre/santiago/data'
-        dcmclusters = DicomFilesClustering(wd)
+        from macuto.dicom.comparison import DicomFilesClustering
+
+        from macuto.config import DICOM_FIELD_WEIGHTS
+        from macuto.dicom.sets import GenericDicomsList
+
+        datadir = '/scratch/santiago'
+        header_fields = tuple(DICOM_FIELD_WEIGHTS.keys())
+
+        dicoms = GenericDicomsList(datadir, store_metadata=True,
+                               header_fields=header_fields)
+
+        dcmclusters = DicomFilesClustering(dicom_set=dicoms)
         #TODO

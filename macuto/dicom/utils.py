@@ -44,7 +44,7 @@ class DicomFile(FileDataset):
             raise FileNotFound(file_path)
 
         try:
-            dcm = dicom.read_file(file_path)
+            dcm = dicom.read_file(file_path, force=True)
 
             FileDataset.__init__(self, file_path, dcm, preamble, file_meta,
                                  is_implicit_VR, is_little_endian)
@@ -52,13 +52,14 @@ class DicomFile(FileDataset):
             self.file_path = os.path.abspath(file_path)
 
         except Exception as exc:
-            raise LoggedError(str(exc))
+            raise LoggedError('Error reading file {0}. {1}.'.format(file_path,
+                                                                    str(exc)))
 
-    def get_attributes(self, attributes):
+    def get_attributes(self, attributes, default=''):
         """
         """
         try:
-            attrs = [getattr(self, attr) for attr in attributes]
+            attrs = [getattr(self, attr, default) for attr in attributes]
         except Exception as exc:
             raise LoggedError(str(exc))
 
@@ -96,7 +97,8 @@ def is_dicom_file(filepath):
     try:
         _ = dicom.read_file(filepath)
     except Exception as exc:
-        LoggedError(str(exc))
+        LoggedError('Checking if {0} was a DICOM, but returned False. '
+                    'Reason: {1}'.format(filepath, str(exc)))
         return False
 
     return True

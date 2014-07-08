@@ -19,6 +19,9 @@ class ItemSet(object):
         else:
             raise LoggedError('Item set has no __getitem__ implemented.')
 
+    def __len__(self):
+        return len(self.items)
+
 
 class DefaultOrderedDict(OrderedDict):
     """An defauldict and OrderedDict.
