@@ -1,38 +1,50 @@
 
 import os
 import logging
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from ..config import (DICOM_FILE_EXTENSIONS,
                       OUTPUT_DICOM_EXTENSION)
 from ..exceptions import LoggedError, ValueError
 from ..files.names import get_abspath
 from ..more_collections import ItemSet
-from .utils import get_dicomfiles, get_dicom_file_paths
+from .utils import DicomFile, is_dicom_file
 
 log = logging.getLogger(__name__)
 
 
-class DicomFileSet(ItemSet):
+class GenericDicomsList(ItemSet):
 
-    def __init__(self, folders, store_metadata=False):
+    def __init__(self, folders, store_metadata=False, header_fields=None):
         """
 
-        :param folders:
-        :param store_metadata:
-        :return:
+        :param folders: str or list of str
+        Paths to folders containing DICOM files.
+        If None, won't look for files anywhere.
+
+        :param store_metadata: bool
+        If True, will either make a list of DicomFiles, or
+        a simple DICOM header (namedtuples) with the fields specified
+        in header_fields.
+
+        :param header_fields: set of strings
+        Set of header fields to be stored for each DICOM file.
+        If store_metadata is False, this won't be used.
+
         """
 
-        self.items = set()
+        self.items = []
         self.store_metadata = store_metadata
+        self.header_fields = header_fields
 
-        if isinstance(folders, list):
-            self.from_list(folders)
-        elif isinstance(folders, str):
-            self.add_folder(folders)
-        else:
-            raise ValueError('ValueError: Could not recognize folders '
-                             'argument value.')
+        if folders is not None:
+            if isinstance(folders, list):
+                self.from_list(folders)
+            elif isinstance(folders, str):
+                self.add_folder(folders)
+            else:
+                raise ValueError('ValueError: Could not recognize folders '
+                                 'argument value.')
 
     def add_folder(self, folder):
         """
@@ -41,20 +53,30 @@ class DicomFileSet(ItemSet):
          Path to a new folder containing Dicom files.
         :return:
         """
-        if self.store_metadata:
-            try:
-                new_fileset = get_dicomfiles(folder)
-            except LoggedError as lerr:
-                raise lerr
-        else:
-            new_fileset = get_dicom_file_paths(folder)
 
-        new_fileset = set(new_fileset)
+        def _get_dicoms(build_dcm, root_path, header_fields=None):
+            return [build_dcm(dp, f, header_fields) for dp, dn, filenames in os.walk(root_path)
+                    for f in filenames if is_dicom_file(os.path.join(dp, f))]
+
+        if not self.store_metadata:
+            build_dcm = lambda dp, f, flds: os.path.join(dp, f)
+        else:
+            if self.header_fields is None:
+                build_dcm = lambda dp, f, flds: DicomFile(os.path.join(dp, f))
+            else:
+                DicomHeader = namedtuple('DicomHeader', self.header_fields)
+
+                build_dcm = lambda dp, f, flds: DicomHeader._make(DicomFile(os.path.join(dp, f)).get_attributes(self.header_fields))
+
+        try:
+            new_filelst = _get_dicoms(build_dcm, folder, self.header_fields)
+        except LoggedError as lerr:
+            raise lerr
 
         if self.items:
-            self.items.union(new_fileset)
+            self.items.extend(new_filelst)
         else:
-            self.items = new_fileset
+            self.items = new_filelst
 
     def from_list(self, folders):
         """
@@ -63,12 +85,12 @@ class DicomFileSet(ItemSet):
 
         :return
         """
-        self.items = set()
+        self.items = []
         for folder in folders:
             self.add_folder(folder)
 
     def from_set(self, fileset):
-        self.items = fileset
+        self.items = list(fileset)
 
     def to_list(self):
         return list(self.items)
@@ -180,4 +202,16 @@ def rename_file_group_to_serial_nums(file_lst):
         c += 1
 
 if __name__ == '__main__':
-    pass
+    from macuto.dicom.sets import DicomFileList
+
+    datadir_hd = '/media/alexandre/cobre/santiago/test' #HD 4.2GB in 9981 DICOMS
+    #%timeit dicoms = DicomFileList(datadir_hd, store_metadata=True)
+    #1 loops, best of 3: 38.4 s per loop
+
+    datadir_ssd = '/scratch/santiago_test' #SSD 4.2GB in 9981 DICOMS
+    #%timeit dicoms = DicomFileList(datadir_ssd, store_metadata=True)
+    #1 loops, best of 3: 38 s per loop
+
+    datadir = '/scratch/santiago'
+    from macuto.dicom.sets import DicomFileList
+    dicoms = DicomFileList(datadir, store_metadata=True)

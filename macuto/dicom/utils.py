@@ -20,6 +20,9 @@ class DicomFile(FileDataset):
         Full path and filename to the file.
         Use None if is a BytesIO.
 
+        :param header_fields: subset of DICOM header fields to be
+         stored here, the rest will be ignored.
+
         :param dataset:
         some form of dictionary, usually a Dataset from read_dataset()
 
@@ -47,21 +50,30 @@ class DicomFile(FileDataset):
                                  is_implicit_VR, is_little_endian)
 
             self.file_path = os.path.abspath(file_path)
+
         except Exception as exc:
             raise LoggedError(str(exc))
 
+    def get_attributes(self, attributes):
+        """
+        """
+        try:
+            attrs = [getattr(self, attr) for attr in attributes]
+        except Exception as exc:
+            raise LoggedError(str(exc))
+
+        return tuple(attrs)
+
 
 def get_dicom_file_paths(dirpath):
-    return [os.path.join(dp, f) for dp, dn, filenames in
-            os.walk(dirpath) for f in filenames
-            if is_dicom_file(os.path.join(dp, f))]
+    return [os.path.join(dp, f) for dp, dn, filenames in os.walk(dirpath)
+            for f in filenames if is_dicom_file(os.path.join(dp, f))]
 
 
 def get_dicomfiles(dirpath):
-    return [DicomFile(os.path.join(dp, f)) for dp, dn, filenames in
-            os.walk(dirpath) for f in filenames
-            if is_dicom_file(os.path.join(dp, f))]
-
+    return [DicomFile(os.path.join(dp, f))
+            for dp, dn, filenames in os.walk(dirpath)
+            for f in filenames if is_dicom_file(os.path.join(dp, f))]
 
 def is_dicom_file(filepath):
     """
@@ -199,3 +211,15 @@ def anonymize_dicom_file_dcmtk(dcm_file):
                     shell=True)
 
     os.remove(dcm_file + '.bak')
+
+if __name__ == '__main__':
+
+    from macuto.dicom.utils import DicomFile
+
+    dcm_file_hd = '/home/alexandre/Projects/bcc/macuto/macuto/dicom/subj1_01.IMA'
+    #%timeit DicomFile(dcm_file_hd)
+    #1000 loops, best of 3: 1.75 ms per loop
+
+    dcm_file_ssd = '/scratch/subj1_01.IMA'
+    #%timeit DicomFile(dcm_file_ssd)
+    #1000 loops, best of 3: 1.75 ms per loop
