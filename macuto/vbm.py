@@ -161,15 +161,28 @@ class VBMAnalyzer(object):
 
         return contrasts
 
-    def fit(self, file_dict, mask_file=None, regressors=None):
+    def fit(self, file_dict, smooth_size=4, mask_file=None, regressors=None):
         """
 
-        :param filedict:
-        :param mask:
-        :return:
+        :param file_dict: dict
+        file_dict is a dictionary: string/int -> list of file paths
+
+        :param smooth_size: int
+        gaussian kernel size (smooth_size in mm, not voxels)
+
+        The key is a string or int representing the group name.
+        The values are lists of absolute paths to nifti files which represent
+        the subject files (GM or WM tissue volumes)
+
+        :param mask_file: str
+        Path to a mask file of the same shape as the files in file_dict
+
+        :param regressors: np.array
+        Array of size [n_subjs x n_regressors]
+
         """
         #extract masked subjects data matrix from dict of files
-        self._extract_data(file_dict, mask_file)
+        self._extract_data(file_dict, mask_file, smooth_size)
 
         #create data regressors
         self._x = self._create_design_matrix(self._labels, regressors)
