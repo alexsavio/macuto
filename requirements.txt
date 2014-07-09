@@ -1,4 +1,4 @@
-numpy>=1.7
+numpy>=1.8
 scipy>=0.13
 cython
 pydicom
@@ -17,3 +17,4 @@ baker
 pypath
 numexpr
 pandas
+python-Levenshtein

@@ -17,8 +17,24 @@ import logging
 import subprocess
 
 from ..config import ALLOWED_EXTS
+from ..exceptions import FolderNotFound
 
 log = logging.getLogger(__name__)
+
+
+def get_abspath(folderpath):
+    """Returns the absolute path of folderpath.
+    If the path does not exist, will raise IOError.
+    """
+    if not os.path.exists(folderpath):
+        raise FolderNotFound(folderpath)
+
+    return os.path.abspath(folderpath)
+
+
+def get_files(dirpath):
+    return [os.path.join(dp, f) for dp, dn, filenames in
+            os.walk(dirpath) for f in filenames]
 
 
 def get_extension(fpath, check_if_exists=False):
