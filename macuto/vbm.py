@@ -5,8 +5,7 @@ from itertools import permutations
 from nipy.modalities.fmri.glm import GeneralLinearModel
 
 from .exceptions import LoggedError
-from .nifti.read import niftilist_mask_to_array
-from .nifti.sets import NiftiSubjectsList
+from .nifti.sets import NiftiSubjectsSet
 
 import logging
 log = logging.getLogger(__name__)
@@ -97,8 +96,8 @@ class VBMAnalyzer(object):
         if len(classes) < 2:
             raise LoggedError('VBM needs more than one group.')
 
-        self._subj_files = NiftiSubjectsList(file_dict, mask_file, smooth_mm,
-                                             smooth_mask)
+        self._subj_files = NiftiSubjectsSet(file_dict, mask_file, smooth_mm,
+                                            smooth_mask)
 
         self._labels, self._label_values = self._determine_labels()
 

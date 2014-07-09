@@ -21,7 +21,7 @@ from macuto.dicom.utils import (get_dicom_files, is_dicom_file, call_dcm2nii,
                                 anonymize_dicom_file, group_dicom_files,
                                 anonymize_dicom_file_dcmtk)
 
-from macuto.exceptions import LoggedError, FolderNotFound, FolderAlreadyExists
+from macuto.exceptions import LoggedError, FolderAlreadyExists
 from macuto.config import (DICOM_FILE_EXTENSIONS,
                            OUTPUT_DICOM_EXTENSION)
 
@@ -70,8 +70,8 @@ def subject(subjfolder, idregex='', not_rename_folder=False):
             raise
 
         if not subj_folder:
-            raise EmptySubjectFolder('Got empty subj_folder from folder_name '
-                                     'renaming function.')
+            raise EmptySubjectFolder(log, 'Got empty subj_folder from folder_name '
+                                          'renaming function.')
 
     log.info('Anonymizing folder: ' + subjfolder + ' to ' + subj_folder)
 
@@ -81,7 +81,7 @@ def subject(subjfolder, idregex='', not_rename_folder=False):
             try:
                 dicom_folder(foldr)
             except Exception as e:
-                raise LoggedError(str(e))
+                raise LoggedError(log, str(e))
 
 
 @baker.command(shortopts={'input_folder': 'i',
@@ -110,7 +110,7 @@ def batch(input_folder, output_folder, header_field='PatientID',
         if not overwrite:
             if os.listdir(output_folder):
                 msg = 'Please change it or empty it.'
-                raise FolderAlreadyExists(output_folder, msg)
+                raise FolderAlreadyExists(log, output_folder, msg)
         else:
             import shutil
             shutil.rmtree(output_folder)
@@ -124,15 +124,15 @@ def batch(input_folder, output_folder, header_field='PatientID',
     try:
         new_dicom_sets = create_dicom_subject_folders(output_folder, dicom_sets)
     except Exception as exc:
-        raise LoggedError('ERROR create_dicom_subject_folders: '
-                          '{0}'.format(str(exc)))
+        raise LoggedError(log, 'ERROR create_dicom_subject_folders: '
+                               '{0}'.format(str(exc)))
 
     for dcm_set in new_dicom_sets:
         try:
             dicom_to_nii(os.path.join(output_folder, dcm_set))
         except Exception as exc:
-            raise LoggedError('ERROR dicom_to_nii {0}. {1}'.format(dcm_set,
-                                                                   str(exc)))
+            raise LoggedError(log, 'ERROR dicom_to_nii {0}. {1}'.format(dcm_set,
+                                                                        str(exc)))
 
 
 @baker.command(shortopts={'acqfolder': 'i'})
@@ -153,8 +153,8 @@ def dicom_folder(acqfolder):
         dicom_to_nii(acqfolder)
         file_names(acqfolder)
     except Exception as e:
-        raise LoggedError('Cannot anonymize folder or '
-                          'file {0}.'.format(acqfolder))
+        raise LoggedError(log, 'Cannot anonymize folder or '
+                               'file {0}.'.format(acqfolder))
 
 
 @baker.command(shortopts={'subjfolder': 'i', 'newfolder': 'o',
@@ -192,8 +192,8 @@ def folder_name(subjfolder, newfolder=None, idregex=None):
         if len(subjid) > 3:
             newfolder = subjid
         else:
-            raise LoggedError('Could not find "{0}" on folder name '
-                              '{1}.'.format(idregex, basedir))
+            raise LoggedError(log, 'Could not find "{0}" on folder name '
+                                   '{1}.'.format(idregex, basedir))
 
     #try to guess new folder name from DICOM headers
     if newfolder is None:
@@ -261,7 +261,7 @@ def dicom_headers(acqpath):
                 try:
                     anonymize_dicom_file(dcm_file)
                 except Exception as e:
-                    raise LoggedError('Could not anonymize file ' + dcm_file)
+                    raise LoggedError(log, 'Could not anonymize file ' + dcm_file)
 
 
 @baker.command(params={"acqpath": "Path to the subject's acquisition folder with DICOM files"},

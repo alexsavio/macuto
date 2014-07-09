@@ -20,11 +20,10 @@ class PathNotFoundError(LoggedError):
         if message is not None:
             msg += '. ' + message
 
-        Exception.__init__(self, msg)
-        log.error(msg)
+        LoggedError.__init__(self, msg)
 
 
-class ValueError(LoggedError):
+class LoggedValueError(LoggedError):
     pass
 
 
@@ -46,8 +45,7 @@ class PathAlreadyExists(LoggedError):
         if message is not None:
             msg += '. ' + message
 
-        Exception.__init__(self, msg)
-        log.error(msg)
+        LoggedError.__init__(self, msg)
 
 
 class FileAlreadyExists(LoggedError):

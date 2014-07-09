@@ -9,7 +9,7 @@ from ..config import DICOM_FIELD_WEIGHTS
 from ..exceptions import LoggedError
 
 from .utils import DicomFile
-from .sets import GenericDicomsList
+from .sets import DicomsGenericSet
 
 log = logging.getLogger(__name__)
 
@@ -102,8 +102,8 @@ class DicomFilesClustering(object):
         self._file_dists = None
         self._subjs = DefaultOrderedDict(list)
 
-        self._dicoms = GenericDicomsList(folders, store_metadata,
-                                         header_fields)
+        self._dicoms = DicomsGenericSet(folders, store_metadata,
+                                        header_fields)
 
     def _update(self):
         self._calculate_file_distances()
@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
         from macuto.config import DICOM_FIELD_WEIGHTS
 
-        datadir = '/scratch/santiago'
+        datadir = '/media/alexandre/cobre/santiago'
         header_fields = tuple(DICOM_FIELD_WEIGHTS.keys())
 
         dcmclusters = DicomFilesClustering(folders=datadir,

@@ -222,10 +222,10 @@ def process_tuple_node(basepath, treemap, ignore_hidden=True):
     :return:
     """
     if not isinstance(treemap, tuple):
-        raise FileTreeMapError('treemap node must be a 2-tuple.')
+        raise FileTreeMapError(log, 'treemap node must be a 2-tuple.')
 
     if len(treemap) != 2:
-        raise FileTreeMapError('treemap node must be a 2-tuple.')
+        raise FileTreeMapError(log, 'treemap node must be a 2-tuple.')
 
     file_nodes = OrderedDict()
 

@@ -5,7 +5,7 @@ from collections import defaultdict, namedtuple
 
 from ..config import (DICOM_FILE_EXTENSIONS,
                       OUTPUT_DICOM_EXTENSION)
-from ..exceptions import LoggedError, ValueError
+from ..exceptions import LoggedError, LoggedValueError, FolderNotFound
 from ..files.names import get_abspath
 from ..more_collections import ItemSet
 from .utils import DicomFile, is_dicom_file
@@ -13,7 +13,7 @@ from .utils import DicomFile, is_dicom_file
 log = logging.getLogger(__name__)
 
 
-class GenericDicomsList(ItemSet):
+class DicomsGenericSet(ItemSet):
 
     def __init__(self, folders, store_metadata=False, header_fields=None):
         """
@@ -38,13 +38,22 @@ class GenericDicomsList(ItemSet):
         self.header_fields = header_fields
 
         if folders is not None:
-            if isinstance(folders, list):
+            self._add_folders(folders)
+
+    def _add_folders(self, folders):
+        """
+
+        :param folders:
+        :return:
+        """
+        if isinstance(folders, list):
                 self.from_list(folders)
-            elif isinstance(folders, str):
-                self.add_folder(folders)
-            else:
-                raise ValueError('ValueError: Could not recognize folders '
-                                 'argument value.')
+        elif isinstance(folders, str):
+            self.add_folder(folders)
+        else:
+            raise LoggedValueError('Could not recognize folders '
+                                   'argument value.')
+
 
     def add_folder(self, folder):
         """
@@ -53,6 +62,8 @@ class GenericDicomsList(ItemSet):
          Path to a new folder containing Dicom files.
         :return:
         """
+        if not os.path.exists(folder):
+            raise FolderNotFound(folder)
 
         def _get_dicoms(build_dcm, root_path, header_fields=None):
             #return [build_dcm(dp, f, header_fields) for dp, dn, filenames in os.walk(root_path)
@@ -217,7 +228,7 @@ def rename_file_group_to_serial_nums(file_lst):
 
 if __name__ == '__main__':
     from macuto.config import DICOM_FIELD_WEIGHTS
-    from macuto.dicom.sets import GenericDicomsList
+    from macuto.dicom.sets import DicomsGenericSet
 
     datadir_hd = '/media/alexandre/cobre/santiago/test' #HD 4.2GB in 9981 DICOMS
     #%timeit dicoms = DicomFileList(datadir_hd, store_metadata=True)
@@ -230,5 +241,6 @@ if __name__ == '__main__':
     datadir = '/scratch/santiago'
     header_fields = tuple(DICOM_FIELD_WEIGHTS.keys())
 
-    dicoms = GenericDicomsList(datadir, store_metadata=True,
+    dicoms = DicomsGenericSet(datadir, store_metadata=True,
                            header_fields=header_fields)
+

@@ -1,4 +1,3 @@
-__author__ = 'alexandre'
 
 import nibabel as nib
 from nipy.algorithms.kernel_smooth import LinearFilter

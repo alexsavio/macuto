@@ -65,7 +65,7 @@ def load_nipy_img(nii_file):
     :return: nipy.Image
     """
     if not os.path.exists(nii_file):
-        raise FileNotFoundError(nii_file)
+        raise FileNotFoundError(log, nii_file)
 
     try:
         return nipy.load_image(nii_file)

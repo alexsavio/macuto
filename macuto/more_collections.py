@@ -17,7 +17,7 @@ class ItemSet(object):
         if hasattr(self.items, '__getitem__'):
             return self.items[item]
         else:
-            raise LoggedError('Item set has no __getitem__ implemented.')
+            raise LoggedError(log, 'Item set has no __getitem__ implemented.')
 
     def __len__(self):
         return len(self.items)

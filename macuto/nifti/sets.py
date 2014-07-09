@@ -8,7 +8,7 @@ from ..exceptions import ValueError, LoggedError
 from ..more_collections import ItemSet
 
 
-class NiftiSubjectsList(ItemSet):
+class NiftiSubjectsSet(ItemSet):
 
     def __init__(self, subj_files, mask_file=None, all_same_shape=True):
         """
@@ -42,8 +42,8 @@ class NiftiSubjectsList(ItemSet):
         elif isinstance(subj_files, dict):
             self.from_dict(subj_files)
         else:
-            raise ValueError('Could not recognize subj_files argument '
-                             'variable type.')
+            raise ValueError(log, 'Could not recognize subj_files argument '
+                                  'variable type.')
 
     def _check_subj_shapes(self):
         """
@@ -54,8 +54,8 @@ class NiftiSubjectsList(ItemSet):
 
         for img in self.items:
             if img.shape != shape:
-                raise ValueError('Shape mismatch in file'
-                                 ' {0}.'.format(img.file_path))
+                raise ValueError(log, 'Shape mismatch in file'
+                                      ' {0}.'.format(img.file_path))
 
     @staticmethod
     def _load_image(file_path):
@@ -94,8 +94,8 @@ class NiftiSubjectsList(ItemSet):
                 self.labels.append(subj_label)
 
             except Exception as exc:
-                raise ValueError('Error while reading file {0}. '
-                                 'Reason: {1}'.format(sf, str(exc)))
+                raise ValueError(log, 'Error while reading file {0}. '
+                                      'Reason: {1}'.format(sf, str(exc)))
 
     def from_list(self, subj_files):
         """
@@ -108,8 +108,8 @@ class NiftiSubjectsList(ItemSet):
                 nii_img = self._load_image(get_abspath(sf))
                 self.items.append(nii_img)
             except Exception as exc:
-                raise ValueError('Error while reading file {0}. '
-                                 'Reason: {1}'.format(sf, str(exc)))
+                raise ValueError(log, 'Error while reading file {0}. '
+                                      'Reason: {1}'.format(sf, str(exc)))
 
     @property
     def n_subjs(self):
@@ -127,8 +127,8 @@ class NiftiSubjectsList(ItemSet):
          (self.items)
         """
         if len(subj_labels) != self.n_subjs:
-            raise ValueError('The number of given labels is not the same as'
-                             ' the number of subjects.')
+            raise ValueError(log, 'The number of given labels is not the same as'
+                                  ' the number of subjects.')
 
         self.labels = subj_labels
 
@@ -190,8 +190,11 @@ class NiftiSubjectsList(ItemSet):
                 else:
                     outmat[i, :] = vol.flatten()
         except Exception as exc:
-            raise LoggedError('Error flattening file {0}. Reason: '
-                              '{1}'.format(vf.file_path, str(exc)))
+            raise LoggedError(log, 'Error flattening file {0}. Reason: '
+                                   '{1}'.format(vf.file_path, str(exc)))
 
         return outmat, mask_indices, mask_shape
 
+if __name__ == '__main__':
+    #NiftiSubjectsSet(subj_files, mask_file=None, all_same_shape=True)
+    pass

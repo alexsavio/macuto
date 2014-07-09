@@ -41,7 +41,7 @@ class DicomFile(FileDataset):
          Default is True.
         """
         if not os.path.exists(file_path):
-            raise FileNotFound(file_path)
+            raise FileNotFound(log, file_path)
 
         try:
             dcm = dicom.read_file(file_path, force=True)
@@ -52,8 +52,8 @@ class DicomFile(FileDataset):
             self.file_path = os.path.abspath(file_path)
 
         except Exception as exc:
-            raise LoggedError('Error reading file {0}. {1}.'.format(file_path,
-                                                                    str(exc)))
+            raise LoggedError(log, 'Error reading file {0}. {1}.'.format(file_path,
+                                                                         str(exc)))
 
     def get_attributes(self, attributes, default=''):
         """
@@ -61,7 +61,7 @@ class DicomFile(FileDataset):
         try:
             attrs = [getattr(self, attr, default) for attr in attributes]
         except Exception as exc:
-            raise LoggedError(str(exc))
+            raise LoggedError(log, str(exc))
 
         return tuple(attrs)
 
@@ -97,8 +97,8 @@ def is_dicom_file(filepath):
     try:
         _ = dicom.read_file(filepath)
     except Exception as exc:
-        LoggedError('Checking if {0} was a DICOM, but returned False. '
-                    'Reason: {1}'.format(filepath, str(exc)))
+        LoggedError(log, 'Checking if {0} was a DICOM, but returned False. '
+                         'Reason: {1}'.format(filepath, str(exc)))
         return False
 
     return True
@@ -136,8 +136,8 @@ def call_dcm2nii(input_path):
                                shell=True)
 
     except Exception as e:
-        raise LoggedError('Error calling dcm2nii on {0}. {1}'.format(input_path,
-                                                                     str(e)))
+        raise LoggedError(log, 'Error calling dcm2nii on {0}. {1}'.format(input_path,
+                                                                          str(e)))
 
 
 def anonymize_dicom_file(dcm_file, remove_private_tags=False,

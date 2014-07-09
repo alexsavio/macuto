@@ -9,12 +9,9 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
-import logging
-from .config import LOG_LEVEL
+from .logging import setup_logging
 
-logging.basicConfig(level=logging.INFO, filename='macuto.log',
-                    format="%(asctime)-15s %(filename)s %(funcName)s "
-                           "%(levelname)s %(message)s")
+setup_logging()
 
 """
 MR Automatic Classification TOols
