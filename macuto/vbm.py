@@ -4,7 +4,9 @@ from itertools import permutations
 
 from nipy.modalities.fmri.glm import GeneralLinearModel
 
-from macuto.nifti.read import niftilist_mask_to_array
+from .exceptions import LoggedError
+from .nifti.read import niftilist_mask_to_array
+from .nifti.sets import NiftiSubjectsList
 
 import logging
 log = logging.getLogger(__name__)
@@ -22,8 +24,12 @@ class VBMAnalyzer(object):
         """
         self.glm_model = None
 
-        self._file_lst = None
-        self._labels = None
+        self._subj_files = None
+        self._label_values = {}
+        self._labels = []
+        self._smooth_mm = None
+        self._smooth_mask = False
+
         self._mask_indices = None
         self._mask_shape = None
         self._x = None
@@ -48,7 +54,7 @@ class VBMAnalyzer(object):
 
         return group_regressors
 
-    def _create_design_matrix(self, labels, regressors=None):
+    def _create_design_matrix(self, regressors=None):
         """
         Returns a VBM group comparison GLM design matrix.
         Concatenating the design matrix corresponding to group comparison
@@ -61,7 +67,7 @@ class VBMAnalyzer(object):
         :return: np.ndarray
 
         """
-        group_regressors = self._create_group_regressors(labels)
+        group_regressors = self._create_group_regressors()
 
         if regressors is not None:
             try:
@@ -72,8 +78,8 @@ class VBMAnalyzer(object):
 
         return group_regressors
 
-    @staticmethod
-    def _extract_files_from_filedict(file_dict):
+    def _extract_files_from_filedict(self, file_dict, mask_file=None,
+                                     smooth_mm=None, smooth_mask=False):
         """
 
         :param file_dict: dict
@@ -89,40 +95,50 @@ class VBMAnalyzer(object):
         """
         classes = file_dict.keys()
         if len(classes) < 2:
-            msg = 'VBM needs more than one group.'
-            log.error(msg)
+            raise LoggedError('VBM needs more than one group.')
 
-        file_lst = []
-        labels = []
-        for idx, group in file_dict:
-            file_lst.extend(file_dict[group])
-            labels.extend([idx] * len(file_dict[group]))
+        self._subj_files = NiftiSubjectsList(file_dict, mask_file, smooth_mm,
+                                             smooth_mask)
 
-        return file_lst, labels
+        self._labels, self._label_values = self._determine_labels()
 
-    @staticmethod
-    def _extract_data_from_volumes(file_lst, mask_file=None):
+    def _determine_labels(self):
+        """
+
+        :return:
+        """
+        self._labels = self._subj_files.labels
+
+        self._label_values = {}
+        unique = np.unique(self._labels)
+        for idx, u in enumerate(unique):
+            self._label_values[u] = idx
+
+    def _extract_data_from_volumes(self):
         """
 
         :param file_lst:
         :return:
         """
         #create image data matrix
-        return niftilist_mask_to_array(file_lst, mask_file)
+        return self._subj_files.to_matrix(smooth_mm=self._smooth_mm,
+                                          smooth_mask=self._smooth_mask)
 
-    def _extract_data(self, file_dict, mask_file=None):
+    def _extract_data(self, file_dict, mask_file=None, smooth_mm=None,
+                      smooth_mask=False):
         """
 
         :param file_dict:
-        :param mask:
-        :return:
+        :param mask_file:
+        :param smooth_mm:
+        :param smooth_mask:
         """
-        self._file_lst, \
-        self._labels = self._extract_files_from_filedict(file_dict)
+        self._smooth_mm = smooth_mm
+        self._smooth_mask = smooth_mask
+        self._extract_files_from_filedict(file_dict, mask_file)
 
         self._y, self._mask_indices, \
-        self._mask_shape = self._extract_data_from_volumes(self._file_lst,
-                                                           mask_file)
+        self._mask_shape = self._extract_data_from_volumes()
 
     @staticmethod
     def _nipy_glm(x, y):
@@ -136,6 +152,10 @@ class VBMAnalyzer(object):
         myglm.fit(y)
         return myglm
 
+    @property
+    def n_groups(self):
+        return len(self._label_values)
+
     def _create_group_contrasts(self):
         """
 
@@ -144,7 +164,7 @@ class VBMAnalyzer(object):
         """
         #create a list of arrays with [1, -1]
         #varying where the -1 is, for each group
-        n_groups = len(np.unique(self._labels))
+        n_groups = self.n_groups
         contrasts = []
         if n_groups == 2:
             contrasts.append([ 1, -1])
@@ -161,13 +181,13 @@ class VBMAnalyzer(object):
 
         return contrasts
 
-    def fit(self, file_dict, smooth_size=4, mask_file=None, regressors=None):
+    def fit(self, file_dict, smooth_mm=4, mask_file=None, regressors=None):
         """
 
         :param file_dict: dict
         file_dict is a dictionary: string/int -> list of file paths
 
-        :param smooth_size: int
+        :param smooth_mm: int
         gaussian kernel size (smooth_size in mm, not voxels)
 
         The key is a string or int representing the group name.
@@ -182,10 +202,10 @@ class VBMAnalyzer(object):
 
         """
         #extract masked subjects data matrix from dict of files
-        self._extract_data(file_dict, mask_file, smooth_size)
+        self._extract_data(file_dict, mask_file, smooth_mm)
 
         #create data regressors
-        self._x = self._create_design_matrix(self._labels, regressors)
+        self._x = self._create_design_matrix(regressors)
 
         #fit GeneralLinearModel
         self.glm_model = self._nipy_glm(self._x, self._y)

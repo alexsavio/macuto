@@ -9,10 +9,13 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
+import os
 import sys
 import numpy as np
 import nibabel as nib
 import logging
+
+from ..exceptions import FileNotFound
 
 log = logging.getLogger(__name__)
 
@@ -51,6 +54,24 @@ def get_nii_data(nii_file):
         raise
 
     return vol
+
+
+def load_nipy_img(nii_file):
+    """
+
+    :param nii_file: str
+     Path to the nifti file
+
+    :return: nipy.Image
+    """
+    if not os.path.exists(nii_file):
+        raise FileNotFoundError(nii_file)
+
+    try:
+        return nipy.load_image(nii_file)
+    except Exception as exc:
+        raise ValueError('Error reading file {0}. Reason: {1}'.format(nii_file,
+                                                                      str(exc)))
 
 
 def get_masked_nii_data(nii_file, mask_file):
@@ -209,7 +230,3 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, outdtype=None):
         raise
 
     return outmat, mask_indices, mask.shape
-
-
-
-
