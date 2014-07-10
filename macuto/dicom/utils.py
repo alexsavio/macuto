@@ -5,8 +5,6 @@ import subprocess
 from collections import defaultdict
 from dicom.dataset import FileDataset
 
-from ..exceptions import LoggedError, FileNotFound
-
 log = logging.getLogger(__name__)
 
 
@@ -40,9 +38,6 @@ class DicomFile(FileDataset):
          True if little-endian transfer syntax used; False if big-endian.
          Default is True.
         """
-        if not os.path.exists(file_path):
-            raise FileNotFound(log, file_path)
-
         try:
             dcm = dicom.read_file(file_path, force=True)
 
@@ -52,8 +47,7 @@ class DicomFile(FileDataset):
             self.file_path = os.path.abspath(file_path)
 
         except Exception as exc:
-            raise LoggedError(log, 'Error reading file {0}. {1}.'.format(file_path,
-                                                                         str(exc)))
+            log.exception('Error reading file {0}.'.format(file_path))
 
     def get_attributes(self, attributes, default=''):
         """
@@ -61,7 +55,7 @@ class DicomFile(FileDataset):
         try:
             attrs = [getattr(self, attr, default) for attr in attributes]
         except Exception as exc:
-            raise LoggedError(log, str(exc))
+            log.exception('Error reading fields.')
 
         return tuple(attrs)
 
@@ -71,10 +65,11 @@ def get_dicom_file_paths(dirpath):
             for f in filenames if is_dicom_file(os.path.join(dp, f))]
 
 
-def get_dicomfiles(dirpath):
+def get_dicom_files(dirpath):
     return [DicomFile(os.path.join(dp, f))
             for dp, dn, filenames in os.walk(dirpath)
             for f in filenames if is_dicom_file(os.path.join(dp, f))]
+
 
 def is_dicom_file(filepath):
     """
@@ -97,8 +92,8 @@ def is_dicom_file(filepath):
     try:
         _ = dicom.read_file(filepath)
     except Exception as exc:
-        LoggedError(log, 'Checking if {0} was a DICOM, but returned False. '
-                         'Reason: {1}'.format(filepath, str(exc)))
+        log.error('Checking if {0} was a DICOM, but returned '
+                  'False.'.format(filepath))
         return False
 
     return True
@@ -111,15 +106,13 @@ def group_dicom_files(dicom_paths, hdr_field='PatientID'):
     :return: dict of dicom_paths
     """
     dicom_groups = defaultdict(list)
-    for dcm in dicom_paths:
-        hdr = dicom.read_file(dcm)
-
-        try:
+    try:
+        for dcm in dicom_paths:
+            hdr = dicom.read_file(dcm)
             group_key = getattr(hdr, hdr_field)
-        except:
-            raise
-
-        dicom_groups[group_key].append(dcm)
+            dicom_groups[group_key].append(dcm)
+    except Exception as exc:
+        log.exception('Error reading file {0}.'.format(dcm))
 
     return dicom_groups
 
@@ -136,8 +129,7 @@ def call_dcm2nii(input_path):
                                shell=True)
 
     except Exception as e:
-        raise LoggedError(log, 'Error calling dcm2nii on {0}. {1}'.format(input_path,
-                                                                          str(e)))
+        log.exception('Error calling dcm2nii on {0}.'.format(input_path))
 
 
 def anonymize_dicom_file(dcm_file, remove_private_tags=False,
@@ -213,6 +205,7 @@ def anonymize_dicom_file_dcmtk(dcm_file):
                     shell=True)
 
     os.remove(dcm_file + '.bak')
+
 
 if __name__ == '__main__':
 

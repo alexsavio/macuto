@@ -35,7 +35,7 @@ handlers:
 loggers:
  macuto:
   level: ERROR
-  handlers: [console]
+  handlers: [console, info_file_handler, error_file_handler]
   propagate: no
 
 root:

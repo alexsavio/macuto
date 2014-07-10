@@ -7,21 +7,19 @@ import sys
 import baker
 import dicom
 import logging
-import subprocess
-from collections import defaultdict
 from glob import glob
 try:
     from path import path
 except:
     from pathlib import Path as path
 
-from macuto.files.names get_abspath, get_files
-
-from macuto.dicom.utils import (get_dicom_files, is_dicom_file, call_dcm2nii,
+from macuto.files.names import get_abspath, get_files
+from macuto.dicom.sets import create_dicom_subject_folders
+from macuto.dicom.utils import (is_dicom_file, call_dcm2nii,
                                 anonymize_dicom_file, group_dicom_files,
                                 anonymize_dicom_file_dcmtk)
 
-from macuto.exceptions import LoggedError, FolderAlreadyExists
+from macuto.exceptions import FolderAlreadyExists
 from macuto.config import (DICOM_FILE_EXTENSIONS,
                            OUTPUT_DICOM_EXTENSION)
 
@@ -33,7 +31,7 @@ log = logging.getLogger(__name__)
 #santiago_idregex = '[N|P]?\\d\\d*-?\\d?$'
 
 
-class EmptySubjectFolder(LoggedError):
+class EmptySubjectFolder(Exception):
     pass
 
 
@@ -67,21 +65,21 @@ def subject(subjfolder, idregex='', not_rename_folder=False):
         try:
             subj_folder = folder_name(subjfolder, idregex=idregex)
         except:
-            raise
+            log.exception('Error renaming folder {0}.'.format(subjfolder))
 
         if not subj_folder:
-            raise EmptySubjectFolder(log, 'Got empty subj_folder from folder_name '
-                                          'renaming function.')
+            raise EmptySubjectFolder('Got empty subj_folder from folder_name '
+                                     'renaming function.')
 
     log.info('Anonymizing folder: ' + subjfolder + ' to ' + subj_folder)
 
     acqfolders = path(subj_folder).listdir()
-    for foldr in acqfolders:
-        if foldr.isdir():
-            try:
+    try:
+        for foldr in acqfolders:
+            if foldr.isdir():
                 dicom_folder(foldr)
-            except Exception as e:
-                raise LoggedError(log, str(e))
+    except Exception as e:
+        log.exception('Error anonymizing DICOM folder {0}.'.format(foldr))
 
 
 @baker.command(shortopts={'input_folder': 'i',
@@ -124,15 +122,13 @@ def batch(input_folder, output_folder, header_field='PatientID',
     try:
         new_dicom_sets = create_dicom_subject_folders(output_folder, dicom_sets)
     except Exception as exc:
-        raise LoggedError(log, 'ERROR create_dicom_subject_folders: '
-                               '{0}'.format(str(exc)))
+        log.exception('Error creating DICOM subject folders.')
 
-    for dcm_set in new_dicom_sets:
-        try:
+    try:
+        for dcm_set in new_dicom_sets:
             dicom_to_nii(os.path.join(output_folder, dcm_set))
-        except Exception as exc:
-            raise LoggedError(log, 'ERROR dicom_to_nii {0}. {1}'.format(dcm_set,
-                                                                        str(exc)))
+    except Exception as exc:
+        log.exception('Error creating DICOM to NifTI {0}'.format(dcm_set))
 
 
 @baker.command(shortopts={'acqfolder': 'i'})
@@ -153,8 +149,8 @@ def dicom_folder(acqfolder):
         dicom_to_nii(acqfolder)
         file_names(acqfolder)
     except Exception as e:
-        raise LoggedError(log, 'Cannot anonymize folder or '
-                               'file {0}.'.format(acqfolder))
+        log.exception('Cannot anonymize folder or '
+                      'file {0}.'.format(acqfolder))
 
 
 @baker.command(shortopts={'subjfolder': 'i', 'newfolder': 'o',
@@ -192,8 +188,8 @@ def folder_name(subjfolder, newfolder=None, idregex=None):
         if len(subjid) > 3:
             newfolder = subjid
         else:
-            raise LoggedError(log, 'Could not find "{0}" on folder name '
-                                   '{1}.'.format(idregex, basedir))
+            log.exception('Could not find "{0}" on folder name '
+                          '{1}.'.format(idregex, basedir))
 
     #try to guess new folder name from DICOM headers
     if newfolder is None:
@@ -201,7 +197,8 @@ def folder_name(subjfolder, newfolder=None, idregex=None):
         newfolder = get_patient_mri_id(subjfolder)
 
     if newfolder is None:
-        log.error('Could not find a folder name for {0} from DICOMs.'.format(subjfolder))
+        log.error('Could not find a folder name for {0} '
+                  'from DICOMs.'.format(subjfolder))
         return subjfolder
 
     #else:
@@ -245,7 +242,8 @@ def dicom_headers(acqpath):
     PatientName, PatientAddress and PatientBirthDate.
 
     :param acqfolder: Path to the folder where a set of .IMA, .DICOM or .DCM
-                      files are stored. Can also be the path to only one DICOM file.
+                      files are stored. Can also be the path to only one
+                      DICOM file.
     """
     log.info('anonymizer.py dicom_headers {0}'.format(acqpath))
 
@@ -261,10 +259,12 @@ def dicom_headers(acqpath):
                 try:
                     anonymize_dicom_file(dcm_file)
                 except Exception as e:
-                    raise LoggedError(log, 'Could not anonymize file ' + dcm_file)
+                    log.exception('Could not anonymize file '
+                                  '{0}.'.format(dcm_file))
 
 
-@baker.command(params={"acqpath": "Path to the subject's acquisition folder with DICOM files"},
+@baker.command(params={"acqpath": "Path to the subject's acquisition folder "
+                                  "with DICOM files"},
                shortopts={'acqpath': 'i',
                           'use_known_extensions': 'e'})
 def dicom_to_nii(acqpath, use_known_extensions=False):
@@ -342,7 +342,8 @@ def rename_file_group_to_serial_nums(file_lst):
     c = 1
     for f in file_lst:
         dirname = path.abspath(f.dirname())
-        fdest = f.joinpath(dirname, "{0:04d}".format(c) + OUTPUT_DICOM_EXTENSION)
+        fdest = f.joinpath(dirname, "{0:04d}".format(c) +
+                           OUTPUT_DICOM_EXTENSION)
         log.info('Renaming {0} to {1}'.format(f, fdest))
         f.rename(fdest)
         c += 1

@@ -18,3 +18,4 @@ pypath
 numexpr
 pandas
 python-Levenshtein
+pyaml

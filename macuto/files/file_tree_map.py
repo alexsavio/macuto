@@ -1,5 +1,7 @@
 import os
 import fnmatch
+import logging
+
 from functools import reduce
 from collections import OrderedDict
 from path import path
@@ -9,16 +11,15 @@ from path import path
 #    from pathlib import Path as path
 #    path.copyfile = shutil.copyfile
 
-from ..exceptions import *
 from ..strings import (match_list,
                        is_valid_regex)
-
+from ..exceptions import FolderNotFound
 from .names import get_extension
 
 log = logging.getLogger(__name__)
 
 
-class FileTreeMapError(LoggedError):
+class FileTreeMapError(Exception):
     pass
 
 
@@ -113,13 +114,13 @@ def filter_list(lst, pattern):
 
 
 def remove_hidden_files(file_lst):
-    '''
+    """
     Removes the filenames that start with '.'
 
     :param file_lst: list of strings
 
     :return: list of strings
-    '''
+    """
     return [fnom for fnom in file_lst if not fnom.startswith('.')]
 
 
@@ -350,9 +351,13 @@ class FileTreeMap(object):
         """
 
         assert(os.path.isfile(config_file))
+
         self.__init__()
-        self._basepath, self._treemap = self._import_config(config_file)
-        self.update(verbose)
+        try:
+            self._basepath, self._treemap = self._import_config(config_file)
+            self.update(verbose)
+        except Exception as exc:
+            log.exception('Error reading config file.')
 
     def from_dict(self, root_path, filetree, verbose=False):
         """
@@ -376,7 +381,7 @@ class FileTreeMap(object):
 
             log.info('FileTreeMap created: \n {0}.'.format(str(self)))
         except Exception as e:
-            raise
+            log.exception('Error updating file tree.')
 
     def _check_basic_config(self):
         """
@@ -384,8 +389,7 @@ class FileTreeMap(object):
         root_path = self._basepath
         if root_path:
             if not os.path.isabs(root_path) or not os.path.exists(root_path):
-                raise FolderNotFound('The root path {0} does not '
-                                     'exist.'.format(root_path))
+                raise FolderNotFound(root_path)
 
     @staticmethod
     def create_folder(dirpath, overwrite=False):

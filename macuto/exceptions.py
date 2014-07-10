@@ -1,16 +1,6 @@
 
-import logging
 
-log = logging.getLogger(__name__)
-
-
-class LoggedError(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        log.error(message)
-
-
-class PathNotFoundError(LoggedError):
+class PathNotFoundError(Exception):
     path_type = 'path'
 
     def __init__(self, file_path, message=None):
@@ -20,11 +10,20 @@ class PathNotFoundError(LoggedError):
         if message is not None:
             msg += '. ' + message
 
-        LoggedError.__init__(self, msg)
+        Exception.__init__(self, msg)
 
 
-class LoggedValueError(LoggedError):
-    pass
+class PathAlreadyExists(Exception):
+    path_type = 'path'
+
+    def __init__(self, file_path, message=None):
+
+        msg = '{0} {1} already exists {1}.'.format(self.path_type.capitalize(),
+                                                   file_path)
+        if message is not None:
+            msg += '. ' + message
+
+        Exception.__init__(self, msg)
 
 
 class FileNotFound(PathNotFoundError):
@@ -35,22 +34,9 @@ class FolderNotFound(PathNotFoundError):
     path_type = 'folder'
 
 
-class PathAlreadyExists(LoggedError):
-    path_type = 'path'
-
-    def __init__(self, file_path, message=None):
-
-        msg = '{0} {1} already exists {1}.'.format(self.path_type.capitalize(),
-                                                   file_path)
-        if message is not None:
-            msg += '. ' + message
-
-        LoggedError.__init__(self, msg)
-
-
-class FileAlreadyExists(LoggedError):
+class FileAlreadyExists(PathAlreadyExists):
     path_type = 'file'
 
 
-class FolderAlreadyExists(LoggedError):
+class FolderAlreadyExists(PathAlreadyExists):
     path_type = 'folder'

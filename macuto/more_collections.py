@@ -1,5 +1,7 @@
+import logging
 from collections import OrderedDict, Callable
-from .exceptions import LoggedError
+
+log = logging.getLogger(__name__)
 
 
 class ItemSet(object):
@@ -17,7 +19,7 @@ class ItemSet(object):
         if hasattr(self.items, '__getitem__'):
             return self.items[item]
         else:
-            raise LoggedError(log, 'Item set has no __getitem__ implemented.')
+            raise log.exception('Item set has no __getitem__ implemented.')
 
     def __len__(self):
         return len(self.items)

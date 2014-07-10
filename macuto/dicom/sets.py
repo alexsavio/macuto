@@ -5,7 +5,7 @@ from collections import defaultdict, namedtuple
 
 from ..config import (DICOM_FILE_EXTENSIONS,
                       OUTPUT_DICOM_EXTENSION)
-from ..exceptions import LoggedError, LoggedValueError, FolderNotFound
+from ..exceptions import FolderNotFound
 from ..files.names import get_abspath
 from ..more_collections import ItemSet
 from .utils import DicomFile, is_dicom_file
@@ -51,8 +51,7 @@ class DicomsGenericSet(ItemSet):
         elif isinstance(folders, str):
             self.add_folder(folders)
         else:
-            raise LoggedValueError('Could not recognize folders '
-                                   'argument value.')
+            log.exceptions('Could not recognize folders argument value.')
 
 
     def add_folder(self, folder):
@@ -78,8 +77,8 @@ class DicomsGenericSet(ItemSet):
                         if is_dicom_file(fpath):
                             dicoms.append(build_dcm(fpath, header_fields))
             except Exception as exc:
-                raise LoggedError('Error reading file {0}. '
-                                  '{1}'.format(os.path.join(dp, f), str(exc)))
+                log.exceptions('Error reading file '
+                               '{0}.'.format(os.path.join(dp, f)))
 
             return dicoms
 
@@ -95,13 +94,14 @@ class DicomsGenericSet(ItemSet):
 
         try:
             new_filelst = _get_dicoms(build_dcm, folder, self.header_fields)
-        except LoggedError as lerr:
-            raise lerr
 
-        if self.items:
-            self.items.extend(new_filelst)
-        else:
-            self.items = new_filelst
+            if self.items:
+                self.items.extend(new_filelst)
+            else:
+                self.items = new_filelst
+
+        except Exception as exc:
+            log.exception('Error reading list of DICOM files.')
 
     def from_list(self, folders):
         """
@@ -208,7 +208,7 @@ def create_dicom_subject_folders(out_path, dicom_sets):
         return new_groups
 
     except:
-        raise
+        log.exception('Creating DICOM subject folders.')
 
 
 def rename_file_group_to_serial_nums(file_lst):

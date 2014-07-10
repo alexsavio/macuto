@@ -6,7 +6,6 @@ import numpy as np
 
 from ..more_collections import DefaultOrderedDict
 from ..config import DICOM_FIELD_WEIGHTS
-from ..exceptions import LoggedError
 
 from .utils import DicomFile
 from .sets import DicomsGenericSet
@@ -47,7 +46,7 @@ class DicomFileDistance(DistanceMeasure):
             return np.inf
 
         if len(self.field_weights) == 0:
-            raise LoggedError('Field weights are not set.')
+            log.exception('Field weights are not set.')
 
         try:
             dist = 0
@@ -67,7 +66,7 @@ class DicomFileDistance(DistanceMeasure):
             return dist/len(self.field_weights) * self.inv_sum_weights
 
         except Exception as exc:
-            raise LoggedError(str(exc))
+            log.exception('Error calculating DICOM file distance.')
 
 
 class DicomFilesClustering(object):

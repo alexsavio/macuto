@@ -1,13 +1,13 @@
 
+import logging
 import numpy as np
 from itertools import permutations
 
 from nipy.modalities.fmri.glm import GeneralLinearModel
 
-from .exceptions import LoggedError
 from .nifti.sets import NiftiSubjectsSet
 
-import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -24,6 +24,7 @@ class VBMAnalyzer(object):
         self.glm_model = None
 
         self._subj_files = None
+        self._mask_file = None
         self._label_values = {}
         self._labels = []
         self._smooth_mm = None
@@ -66,19 +67,18 @@ class VBMAnalyzer(object):
         :return: np.ndarray
 
         """
-        group_regressors = self._create_group_regressors()
+        group_regressors = self._create_group_regressors(self._labels)
 
         if regressors is not None:
             try:
                 group_regressors = np.concatenate((group_regressors, regressors),
                                                   axis=1)
-            except:
-                raise
+            except Exception as exc:
+                log.exception('Error creating the regressors matrix.')
 
         return group_regressors
 
-    def _extract_files_from_filedict(self, file_dict, mask_file=None,
-                                     smooth_mm=None, smooth_mask=False):
+    def _extract_files_from_filedict(self, file_dict):
         """
 
         :param file_dict: dict
@@ -88,18 +88,16 @@ class VBMAnalyzer(object):
         The values are lists of absolute paths to nifti files which represent
         the subject files (GM or WM tissue volumes)
 
-        :return:
+        :param mask_file: str
 
         :todo: give the option to do tissue segmentation
         """
         classes = file_dict.keys()
         if len(classes) < 2:
-            raise LoggedError('VBM needs more than one group.')
+            raise ValueError('VBM needs more than one group.')
 
-        self._subj_files = NiftiSubjectsSet(file_dict, mask_file, smooth_mm,
-                                            smooth_mask)
-
-        self._labels, self._label_values = self._determine_labels()
+        self._subj_files = NiftiSubjectsSet(file_dict, self._mask_file)
+        self._determine_labels()
 
     def _determine_labels(self):
         """
@@ -134,7 +132,9 @@ class VBMAnalyzer(object):
         """
         self._smooth_mm = smooth_mm
         self._smooth_mask = smooth_mask
-        self._extract_files_from_filedict(file_dict, mask_file)
+        self._mask_file = mask_file
+
+        self._extract_files_from_filedict(file_dict)
 
         self._y, self._mask_indices, \
         self._mask_shape = self._extract_data_from_volumes()
@@ -200,14 +200,18 @@ class VBMAnalyzer(object):
         Array of size [n_subjs x n_regressors]
 
         """
-        #extract masked subjects data matrix from dict of files
-        self._extract_data(file_dict, mask_file, smooth_mm)
+        try:
+            #extract masked subjects data matrix from dict of files
+            self._extract_data(file_dict, mask_file, smooth_mm)
 
-        #create data regressors
-        self._x = self._create_design_matrix(regressors)
+            #create data regressors
+            self._x = self._create_design_matrix(regressors)
 
-        #fit GeneralLinearModel
-        self.glm_model = self._nipy_glm(self._x, self._y)
+            #fit GeneralLinearModel
+            self.glm_model = self._nipy_glm(self._x, self._y)
+        except Exception as exc:
+            log.exception('Error creating the data for the GLM.')
+            raise
 
     def transform(self, contrast_type='t', correction_type='fwe'):
         """
@@ -273,11 +277,9 @@ class VBMAnalyzer(object):
         # save_niigz(p005c1, namep1, affine=None, header=None)
         # save_niigz(p005c2, namep2, affine=None, header=
 
-
     def to_pickle(self):
         pass
         #TODO
-
 
     def to_hdf5(self):
         pass
@@ -354,6 +356,8 @@ if __name__ == '__main__':
     #http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/006-GLM_t_F.ipynb
     #http://nipy.org/nipy/stable/api/generated/nipy.algorithms.statistics.models.glm.html
     #http://docs.scipy.org/doc/scipy-0.13.0/reference/generated/scipy.linalg.lstsq.html
+    import os
+    from collections import OrderedDict
 
     def get_files_for_comparison(dirpath, group_sets):
         """
@@ -390,7 +394,13 @@ if __name__ == '__main__':
         root = '/home/alexandre/Dropbox/Data/santiago'
         GMfolder = os.path.join(root, 'data3D')
         maskfolder = os.path.join(os.environ['FSLDIR'], 'data', 'standard')
-        #outfolder="" -
+
+    #outfolder="" -
+    # elif hn == 'finn':
+    #     from nilearn import datasets
+    #     n_subjects = 50
+    #     dataset_files = datasets.fetch_oasis_vbm(n_subjects=n_subjects)
+    #     age = dataset_files.ext_vars['age'].astype(float)
 
     maskfile = os.path.join(maskfolder, 'MNI152_T1_2mm_brain_mask.nii.gz')
 
@@ -402,11 +412,14 @@ if __name__ == '__main__':
                                      ('BD vs. AD',          ({'tb'},  {'ea'})),
                                      ('BD vs. AD+MCI',      ({'tb'},  {'ea', 'dcl'}))])
 
+    comparison = group_comparisons['BD vs. AD']
 
     #get list of volume files
-    file_lst, labels = get_files_for_comparison(GMfolder, ({'crl'}, {'ea'}))
+    file_dict, labels = get_files_for_comparison(GMfolder, comparison)
 
-
+    from macuto.vbm import VBMAnalyzer
+    vbm = VBMAnalyzer().fit(file_dict, smooth_mm=4, mask_file=maskfile,
+                            regressors=None)
 
     #create image data matrix
     #y, mask_indices, mask_shape = niftilist_mask_to_array(file_lst, maskfile)

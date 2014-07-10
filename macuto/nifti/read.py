@@ -10,12 +10,10 @@
 #-------------------------------------------------------------------------------
 
 import os
-import sys
+import nipy
 import numpy as np
 import nibabel as nib
 import logging
-
-from ..exceptions import FileNotFound
 
 log = logging.getLogger(__name__)
 
@@ -31,10 +29,8 @@ def get_nii_info(nii_file):
         aff = nibf.get_affine()
         hdr = nibf.get_header()
 
-    except:
-        log.error('Error on reading file ' + nii_file)
-        log.error("Unexpected error:", sys.exc_info()[0])
-        raise
+    except Exception as exc:
+        log.exception('Error reading file {0}.'.format(nii_file))
 
     return hdr, aff
 
@@ -48,10 +44,8 @@ def get_nii_data(nii_file):
         nibf = nib.load(nii_file)
         vol = nibf.get_data()
 
-    except:
-        log.error('Error on reading file ' + nii_file)
-        log.error("Unexpected error:", sys.exc_info()[0])
-        raise
+    except Exception as exc:
+        log.exception('Error on reading file {0}.'.format(nii_file))
 
     return vol
 
@@ -70,8 +64,7 @@ def load_nipy_img(nii_file):
     try:
         return nipy.load_image(nii_file)
     except Exception as exc:
-        raise ValueError('Error reading file {0}. Reason: {1}'.format(nii_file,
-                                                                      str(exc)))
+        log.exception('Reading file {0}.')
 
 
 def get_masked_nii_data(nii_file, mask_file):
@@ -87,11 +80,8 @@ def get_masked_nii_data(nii_file, mask_file):
 
         mask = get_nii_data(mask_file)
         mask_indices = np.where(mask > 0)
-
-    except:
-        log.error('Error on reading file ' + nii_file)
-        log.error("Unexpected error:", sys.exc_info()[0])
-        raise
+    except Exception:
+        log.exception('Reading file {0}.'.format(nii_file))
 
     return vol[mask_indices], mask_indices, mask.shape
 
@@ -120,14 +110,12 @@ def vector_to_volume(vector, mask_indices, mask_shape, dtype=None):
         volume = np.zeros(mask_shape, dtype=dtype)
         volume[mask_indices] = vector
         return volume
-    except:
-        log.error('Error on transforming vector to volume.')
-        log.error("Unexpected error:", sys.exc_info()[0])
-        raise
+    except Exception as exc:
+        log.exception('Error on transforming vector to volume.')
 
 
 def niftilist_to_array(nii_filelist, outdtype=None):
-    '''
+    """
     From the list of absolute paths to nifti files, creates a Numpy array
     with the data.
 
@@ -154,12 +142,11 @@ def niftilist_to_array(nii_filelist, outdtype=None):
 
     vol_shape: Tuple with shape of the volumes, for reshaping.
 
-    '''
+    """
     try:
         vol = get_nii_data(nii_filelist[0])
     except IndexError as ie:
-        log.error('nii_filelist should not be empty.')
-        raise
+        log.exception('nii_filelist should not be empty.')
 
     if not outdtype:
         outdtype = vol.dtype
@@ -171,9 +158,7 @@ def niftilist_to_array(nii_filelist, outdtype=None):
             vol = get_nii_data(vf)
             outmat[i, :] = vol.flatten()
     except:
-        log.error('niftilist_to_array: Error on reading file ' + vf)
-        log.error("Unexpected error:", sys.exc_info()[0])
-        raise
+        log.exception('Error on reading file {0}.'.format(vf))
 
     return outmat, vol.shape
 
@@ -224,9 +209,7 @@ def niftilist_mask_to_array(nii_filelist, mask_file=None, outdtype=None):
         for i, vf in enumerate(nii_filelist):
             vol = get_nii_data(vf)
             outmat[i, :] = vol[mask_indices]
-    except:
-        log.error('niftilist_to_array: Error on reading file ' + vf)
-        log.error("Unexpected error:", sys.exc_info()[0])
-        raise
+    except Exception as exc:
+        log.exception('Error on reading file {0}.'.format(vf))
 
     return outmat, mask_indices, mask.shape
