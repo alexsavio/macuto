@@ -55,6 +55,7 @@ class NiftiSubjectsSet(ItemSet):
 
         :return:
         """
+        #TODO: check mask shape too
         shape = self.items[0].shape
 
         for img in self.items:
@@ -81,6 +82,10 @@ class NiftiSubjectsSet(ItemSet):
     @staticmethod
     def _smooth_img(nii_img, smooth_mm):
         """
+
+        :param nii_img: nipy.Image
+
+        :return smooth nipy.Image
         """
         if smooth_mm <= 0:
             return nii_img
@@ -139,7 +144,7 @@ class NiftiSubjectsSet(ItemSet):
 
         self.labels = subj_labels
 
-    def to_matrix(self, smooth_mm, smooth_mask=False, outdtype=None):
+    def to_matrix(self, smooth_mm=0, smooth_mask=False, outdtype=None):
         """
         Creates a Numpy array with the data.
 

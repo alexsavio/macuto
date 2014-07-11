@@ -25,7 +25,7 @@ class VBMAnalyzer(object):
 
         self._subj_files = None
         self._mask_file = None
-        self._label_values = {}
+        self._label_values = []
         self._labels = []
         self._smooth_mm = None
         self._smooth_mask = False
@@ -97,29 +97,21 @@ class VBMAnalyzer(object):
             raise ValueError('VBM needs more than one group.')
 
         self._subj_files = NiftiSubjectsSet(file_dict, self._mask_file)
-        self._determine_labels()
-
-    def _determine_labels(self):
-        """
-
-        :return:
-        """
         self._labels = self._subj_files.labels
+        #self._determine_labels()
 
-        self._label_values = {}
-        unique = np.unique(self._labels)
-        for idx, u in enumerate(unique):
-            self._label_values[u] = idx
-
-    def _extract_data_from_volumes(self):
-        """
-
-        :param file_lst:
-        :return:
-        """
-        #create image data matrix
-        return self._subj_files.to_matrix(smooth_mm=self._smooth_mm,
-                                          smooth_mask=self._smooth_mask)
+    # def _determine_labels(self):
+    #     """
+    #
+    #     :return:
+    #     """
+    #     #self._labels = self._subj_files.labels
+    #     # self._label_values = np.unique(self._labels)
+    #     #
+    #     # self._label_values = {}
+    #     # unique = np.unique(self._labels)
+    #     # for idx, u in enumerate(unique):
+    #     #     self._label_values[u] = idx
 
     def _extract_data(self, file_dict, mask_file=None, smooth_mm=None,
                       smooth_mask=False):
@@ -137,7 +129,8 @@ class VBMAnalyzer(object):
         self._extract_files_from_filedict(file_dict)
 
         self._y, self._mask_indices, \
-        self._mask_shape = self._extract_data_from_volumes()
+        self._mask_shape = self._subj_files.to_matrix(smooth_mm=self._smooth_mm,
+                                                      smooth_mask=self._smooth_mask)
 
     @staticmethod
     def _nipy_glm(x, y):
@@ -153,29 +146,68 @@ class VBMAnalyzer(object):
 
     @property
     def n_groups(self):
-        return len(self._label_values)
+        return len(self._labels)
 
-    def _create_group_contrasts(self):
+    def _create_group_contrasts(self, test_type='t'):
         """
+
+        :param test_type: str
+        Choices: 't' or 'F'
 
         :return: list arrays
         dict with of contrasts for group comparison
         """
+        if test_type == 't':
+            return self._create_ttest_contrast()
+        elif test_type == 'F':
+            return self._create_Ftest_contrast()
+        else:
+            log.error('test_type not understood. Got {0}.'.format(test_type))
+            raise NotImplementedError
+
+    def _create_Ftest_contrast(self):
+        """
+
+        :return:
+        """
         #create a list of arrays with [1, -1]
         #varying where the -1 is, for each group
-        n_groups = self.n_groups
+        if self.n_groups == 2:
+            contrasts = [ 1, -1]
+
+        #if there are 3 groups we have to
+        # do permutations of [-1, 0, 1]
+        elif self.n_groups == 3:
+            contrasts = [-1, 0, 1]
+
+        else:
+            log.error('Too many groups for contrasts: '
+                      '{0}.'.format(self.n_groups))
+            raise NotImplementedError
+
+        return contrasts
+
+    def _create_ttest_contrast(self):
+        """
+
+        :return:
+        """
+        #create a list of arrays with [1, -1]
+        #varying where the -1 is, for each group
         contrasts = []
-        if n_groups == 2:
+        if self.n_groups == 2:
             contrasts.append([ 1, -1])
             contrasts.append([-1,  1])
 
         #if there are 3 groups we have to
         # do permutations of [-1, 0, 1]
-        elif n_groups == 3:
+        elif self.n_groups == 3:
             for p in permutations([-1, 0, 1]):
                 contrasts.append(p)
 
         else:
+            log.error('Too many groups for contrasts: '
+                      '{0}.'.format(self.n_groups))
             raise NotImplementedError
 
         return contrasts
@@ -229,18 +261,41 @@ class VBMAnalyzer(object):
 
         #apply GLM
         # define contrasts
-        contrasts = self._create_group_contrasts()
+        contrasts = self._create_group_contrasts(contrast_type)
 
         #http://nbviewer.ipython.org/gist/mwaskom/6263977
         #http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/0XX-random-fields.ipynb
         #http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/Functional-Connectivity-Nitime.ipynb
 
-        contrast1 = self._nipy_glm.contrast(contrasts[0], contrast_type='t')
-        contrast2 = self._nipy_glm.contrast(contrasts[1], contrast_type='t')
+        self._contrasts = []
+        for contrast_vector in contrasts:
+            self._contrasts.append(self._nipy_glm.contrast(contrast_vector,
+                                                           contrast_type=contrast_type))
+
+        if correction_type == 'bonferroni':
+            self.bonferroni_correct()
+        elif correction_type == 'fwe':
+            self.grf_correct()
+        elif correction_type == 'fdr':
+            self.randomise_correct()
+        else:
+            log.error('Could not understand given correction_type: '
+                      '{0}.'.format(correction_type))
+            raise NotImplementedError
+
+
+        #TODO
+        pval_volumes = [reshape_volume_vector(corrp, self._mask_indices,
+                                                    self._mask_shape) for corrp in self._corrected_pvalues]
+
+        return self._corrected_pvalues
+
+        #contrast1 = self._nipy_glm.contrast(contrasts[0], contrast_type='t')
+        #contrast2 = self._nipy_glm.contrast(contrasts[1], contrast_type='t')
         #
         # # compute the t-stat
-        ttest1 = contrast1.stat()
-        ttest2 = contrast2.stat()
+        #ttest1 = contrast1.stat()
+        #ttest2 = contrast2.stat()
         #
         # # compute the p-value
         # p1 = contrast1.p_value()
@@ -250,9 +305,14 @@ class VBMAnalyzer(object):
         # pvalue005_c1=contrast1.p_value(0.005)
         # pvalue005_c2=contrast2.p_value(0.005)
 
-    def bonferroni_correct(self):
-        pass
-        #TODO
+    def bonferroni_correct(self, threshold=0.05):
+        """
+        :param threshold
+        """
+        self._corrected_pvalues = []
+        for contraster in self._contrasts:
+            self._corrected_pvalues.append(contraster.p_value(threshold))
+
 
     def grf_correct(self):
         pass
