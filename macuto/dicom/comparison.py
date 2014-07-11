@@ -32,9 +32,27 @@ class DicomFileDistance(DistanceMeasure):
         self.dcmf1 = None
         self.dcmf2 = None
 
-    def fit(self, file_path1, file_path2):
-        self.dcmf1 = DicomFile(file_path1)
-        self.dcmf2 = DicomFile(file_path2)
+    def fit(self, dcm_file1, dcm_file2):
+        """
+
+        :param dcm_file1: str (path to file) or DicomFile or namedtuple
+
+        :param dcm_file2: str (path to file) or DicomFile or namedtuple
+        :return:
+        """
+        self.dcmf1 = self._read_dcmfile(dcm_file1)
+        self.dcmf2 = self._read_dcmfile(dcm_file2)
+
+    def _read_dcmfile(self, dcm_file):
+        """
+
+        :param dcm_file:
+        :return:
+        """
+        if isinstance(dcm_file, str):
+            return DicomFile(dcm_file)
+        else:
+            return dcm_file
 
     def fit_transform(self, file_path1, file_path2):
         self.fit(file_path1, file_path2)
@@ -168,10 +186,13 @@ if __name__ == '__main__':
 
         from macuto.config import DICOM_FIELD_WEIGHTS
 
-        datadir = '/media/alexandre/cobre/santiago'
+        datadir = '/media/alexandre/cobre/santiago/test'
+        #datadir = '/media/alexandre/cobre/santiago/raw'
         header_fields = tuple(DICOM_FIELD_WEIGHTS.keys())
 
         dcmclusters = DicomFilesClustering(folders=datadir,
                                            store_metadata=True,
                                            header_fields=header_fields)
+
+        dcmclusters._calculate_file_distances()
         #TODO

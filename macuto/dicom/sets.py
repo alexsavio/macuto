@@ -47,7 +47,7 @@ class DicomsGenericSet(ItemSet):
         :return:
         """
         if isinstance(folders, list):
-                self.from_list(folders)
+            self.from_list(folders)
         elif isinstance(folders, str):
             self.add_folder(folders)
         else:
