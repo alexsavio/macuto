@@ -5,8 +5,9 @@ from itertools import permutations
 
 from nipy.modalities.fmri.glm import GeneralLinearModel
 
+from .nifti.read import vector_to_volume
 from .nifti.sets import NiftiSubjectsSet
-
+from .nifti.storage import save_niigz
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +26,6 @@ class VBMAnalyzer(object):
 
         self._subj_files = None
         self._mask_file = None
-        self._label_values = []
         self._labels = []
         self._smooth_mm = None
         self._smooth_mask = False
@@ -34,6 +34,8 @@ class VBMAnalyzer(object):
         self._mask_shape = None
         self._x = None
         self._y = None
+
+        self._corrected_pvalues = []
 
     @staticmethod
     def _create_group_regressors(labels):
@@ -284,11 +286,19 @@ class VBMAnalyzer(object):
             raise NotImplementedError
 
 
-        #TODO
-        pval_volumes = [reshape_volume_vector(corrp, self._mask_indices,
-                                                    self._mask_shape) for corrp in self._corrected_pvalues]
+        pval_volumes = [vector_to_volume(corrp, self._mask_indices,
+                                         self._mask_shape)
+                        for corrp in self._corrected_pvalues]
 
-        return self._corrected_pvalues
+        return pval_volumes
+
+    def bonferroni_correct(self, threshold=0.05):
+        """
+        :param threshold
+        """
+        self._corrected_pvalues = []
+        for contraster in self._contrasts:
+            self._corrected_pvalues.append(contraster.p_value(threshold))
 
         #contrast1 = self._nipy_glm.contrast(contrasts[0], contrast_type='t')
         #contrast2 = self._nipy_glm.contrast(contrasts[1], contrast_type='t')
@@ -305,15 +315,6 @@ class VBMAnalyzer(object):
         # pvalue005_c1=contrast1.p_value(0.005)
         # pvalue005_c2=contrast2.p_value(0.005)
 
-    def bonferroni_correct(self, threshold=0.05):
-        """
-        :param threshold
-        """
-        self._corrected_pvalues = []
-        for contraster in self._contrasts:
-            self._corrected_pvalues.append(contraster.p_value(threshold))
-
-
     def grf_correct(self):
         pass
         #TODO
@@ -325,7 +326,11 @@ class VBMAnalyzer(object):
     def save_result(self, file_path):
         """
         """
-        pass
+        if self._corrected_pvalues is None:
+            log.error('The results list is empty. So not saving anything.')
+
+        raise NotImplementedError
+
         #TODO
         # hay que añadir FWE correction como es SPM
         #

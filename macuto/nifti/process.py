@@ -124,11 +124,10 @@ def smooth_volume(nifti_file, smoothmm):
     try:
         img = load_image(nifti_file)
     except Exception as exc:
-        log.error(str(exc))
-        return None
+        log.exception('Error reading file {0}.'.format(nifti_file))
 
-    if smoothmm > 0:
-        filter = LinearFilter(img.coordmap, img.shape)
-        return filter.smooth(img)
-    else:
-        return load_image(nifti_file)
+    if smoothmm <= 0:
+        return img
+
+    filter = LinearFilter(img.coordmap, img.shape)
+    return filter.smooth(img)

@@ -88,7 +88,8 @@ def get_masked_nii_data(nii_file, mask_file):
 
 def vector_to_volume(vector, mask_indices, mask_shape, dtype=None):
     """
-    Transform a given vector to
+    Transform a given vector to a volume. This is a reshape function for
+    3D flattened and maybe masked vectors.
 
     :param vector: np.array
 
