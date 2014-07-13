@@ -41,13 +41,13 @@ class SelectDistanceMeasure(_BaseFilter, Printable):
 
         :param threshold: Threshold method
         """
-        super(SelectDistanceMeasure, self).__init__(score_func)
+        _BaseFilter.__init__(self, score_func)
         self.threshold = threshold
 
     def _check_params(self, X, y):
-        if not 0 <= self.threshold <= 1:
+        if not 0 <= self.threshold._value <= 1:
             raise ValueError("threhold should be >=0, <=1; got %r"
-                             % self.threshold)
+                             % self.threshold._value)
 
     def _get_support_mask(self):
         # Cater for NaNs
@@ -82,8 +82,9 @@ class PearsonCorrelationDistance(SelectDistanceMeasure):
     Size: n_features
     """
 
-    def __init__(self):
-        super(PearsonCorrelationDistance, self).__init__(scipy_dist.pearsonr)
+    def __init__(self, threshold):
+        super(PearsonCorrelationDistance, self).__init__(scipy_dist.pearsonr,
+                                                         threshold)
 
 
 class WelchTestDistance(SelectDistanceMeasure):
@@ -101,8 +102,8 @@ class WelchTestDistance(SelectDistanceMeasure):
 
     """
 
-    def __init__(self):
-        super(WelchTestDistance, self).__init__(self, welch_ttest)
+    def __init__(self, threshold):
+        super(WelchTestDistance, self).__init__(self, welch_ttest, threshold)
 
 
 class BhatacharyyaGaussianDistance(SelectDistanceMeasure):
@@ -120,9 +121,10 @@ class BhatacharyyaGaussianDistance(SelectDistanceMeasure):
     Size: n_features
     """
 
-    def __init__(self):
+    def __init__(self, threshold):
         super(BhatacharyyaGaussianDistance, self).__init__(self,
-                                                           bhattacharyya_dist)
+                                                           bhattacharyya_dist,
+                                                           threshold)
 
 
 def pearson_correlation(x, y):

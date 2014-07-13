@@ -52,21 +52,37 @@ from sklearn.feature_selection import RFE
 #pipelining
 from sklearn.pipeline import Pipeline, FeatureUnion
 
+from .features import (PearsonCorrelationDistance,
+                       BhatacharyyaGaussianDistance,
+                       WelchTestDistance)
+
+from ..threshold import Threshold
 from ..strings import append_to_keys
 
 log = logging.getLogger(__name__)
 
 
-def get_clfmethod (clfmethod, n_feats):
+def get_clfmethod(clfmethod, n_feats):
     """
-    @param clfmethod: string
-    clfmethod choices: 'cart', 'rf', 'gmm', 'rbfsvm', 'polysvm', 'linsvm', 'sgd', 'percep'
 
-    @param n_feats: int
-    Number of features in the dataset to adjust feature selection adjust grid_search parameters.
+    :param clfmethod:
+    :param n_feats:
+    :return:
+    """
+    classifier = get_classification_algorithm(clfmethod)
 
-    @return:
-    classifiers[clfmethod], clgrid[clfmethod]
+    param_grid = get_classifier_parameter_grid(clfmethod, n_feats)
+
+    return classifier, param_grid
+
+
+def get_classification_algorithm(clfmethod):
+    """
+    :param clfmethod: str
+    clfmethod choices: 'cart', 'rf', 'gmm', 'rbfsvm', 'polysvm', 'linsvm',
+                       'sgd', 'percep'
+
+    :return:
     """
 
     #classifiers
@@ -95,6 +111,21 @@ def get_clfmethod (clfmethod, n_feats):
                     'percep' : Perceptron (class_weight='auto'),
     }
 
+    return classifiers[clfmethod]
+
+
+def get_classifier_parameter_grid (clfmethod, n_feats):
+    """
+    @param clfmethod: string
+    clfmethod choices: 'cart', 'rf', 'gmm', 'rbfsvm', 'polysvm', 'linsvm',
+                       'sgd', 'percep'
+
+    @param n_feats: int
+    Number of features in the dataset to adjust feature selection adjust grid_search parameters.
+
+    @return:
+    classifiers[clfmethod], clgrid[clfmethod]
+    """
     #Classifiers parameter values for grid search
     if n_feats < 10:
         max_feats = list(range(1, n_feats, 2))
@@ -102,52 +133,61 @@ def get_clfmethod (clfmethod, n_feats):
         max_feats = list(range(1, 30, 4))
     max_feats.extend([None, 'auto', 'sqrt', 'log2'])
 
-    clgrid =      { 'cart'   : dict(criterion=['gini', 'entropy'],
-                                    max_depth=[None, 10, 20, 30]),
+    clgrid = { 'cart'   : dict(criterion=['gini', 'entropy'],
+                               max_depth=[None, 10, 20, 30]),
 
-                    'rf'     : dict(n_estimators=[3, 5, 10, 30, 50, 100],
-                                    max_features=max_feats),
+               'rf'     : dict(n_estimators=[3, 5, 10, 30, 50, 100],
+                               max_features=max_feats),
 
-                    'gmm'    : dict(n_components=[2, 3, 4, 5],
-                                    covariance_type=['spherical', 'tied',
-                                                     'diag'],
-                                    thresh=[True, False]),
+               'gmm'    : dict(n_components=[2, 3, 4, 5],
+                               covariance_type=['spherical', 'tied',
+                                                'diag'],
+                               thresh=[True, False]),
 
-                    #'svm'  : dict(kernel = ['rbf', 'linear', 'poly'], C = np.logspace(-3, 3, num=7, base=10), gamma = np.logspace(-3, 3, num=7, base=10), coef0 = np.logspace(-3, 3, num=7, base=10)),
-                    #'svm'    : dict(kernel = ['rbf', 'poly'], C = np.logspace(-3, 3, num=7, base=10), gamma = np.logspace(-3, 3, num=7, base=10), coef0=np.logspace(-3, 3, num=7, base=10)),
+               #'svm'  : dict(kernel = ['rbf', 'linear', 'poly'], C = np.logspace(-3, 3, num=7, base=10), gamma = np.logspace(-3, 3, num=7, base=10), coef0 = np.logspace(-3, 3, num=7, base=10)),
+               #'svm'    : dict(kernel = ['rbf', 'poly'], C = np.logspace(-3, 3, num=7, base=10), gamma = np.logspace(-3, 3, num=7, base=10), coef0=np.logspace(-3, 3, num=7, base=10)),
 
-                    'rbfsvm' : dict(kernel=['rbf'],
-                                    C=np.logspace(-3, 3, num=7, base=10),
-                                    gamma=np.logspace(-3, 3, num=7, base=10)),
+               'rbfsvm' : dict(kernel=['rbf'],
+                               C=np.logspace(-3, 3, num=7, base=10),
+                               gamma=np.logspace(-3, 3, num=7, base=10)),
 
-                    'polysvm': dict(kernel=['poly'],
-                                    C=np.logspace(-3, 3, num=7, base=10),
-                                    degree=np.logspace(-3, 3, num=7, base=10)),
+               'polysvm': dict(kernel=['poly'],
+                               C=np.logspace(-3, 3, num=7, base=10),
+                               degree=np.logspace(-3, 3, num=7, base=10)),
 
-                    'linsvm' : dict(C=np.logspace(-3, 3, num=7, base=10)),
+               'linsvm' : dict(C=np.logspace(-3, 3, num=7, base=10)),
 
-                    'sgd'    : dict(loss=['hinge', 'modified_huber', 'log'],
-                                    penalty=["l1","l2","elasticnet"],
-                                    alpha=np.logspace(-6, -1, num=6, base=10)),
+               'sgd'    : dict(loss=['hinge', 'modified_huber', 'log'],
+                               penalty=["l1","l2","elasticnet"],
+                               alpha=np.logspace(-6, -1, num=6, base=10)),
 
-                    'percep' : dict(penalty=[None, 'l2', 'l1', 'elasticnet'],
-                                    alpha=np.logspace(-3, 3, num=7, base=10)),
+               'percep' : dict(penalty=[None, 'l2', 'l1', 'elasticnet'],
+                               alpha=np.logspace(-3, 3, num=7, base=10)),
     }
 
-    return classifiers[clfmethod], clgrid[clfmethod]
+    return clgrid[clfmethod]
 
 
 #-------------------------------------------------------------------------------
-def get_fsmethod(fsmethod, n_feats, n_jobs=1):
+def get_fsmethod(fsmethod, n_feats, n_jobs=1, **kwargs):
     """
     @param fsmethod: string
         fsmethod choices: 'rfe', 'rfecv', 'univariate', 'fpr', 'fdr',
-                      'extratrees', 'pca', 'rpca', 'lda', 'anova'
+                      'extratrees', 'pca', 'rpca', 'lda', 'anova',
+                      'pearson', 'bhattacharyya', 'welchtest'
 
     @param n_feats: int
-    Number of features in the dataset to adjust feature selection adjust grid_search parameters.
+    Number of features in the dataset to adjust feature selection
+     grid_search parameters.
 
     @param n_jobs: int
+
+    @params kwargs:
+        @keyword rfe_ste
+        @keyword pca_n_comps
+        @keyword feats_to_sel
+        @keyword threshold_method: see macuto.threshold.Threshold
+        @keyword threshold_value_grid
 
     @return:
     fsmethods[fsmethod], fsgrid[fsmethod]
@@ -157,6 +197,11 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
         rfe_step = 1
     else:
         rfe_step = 0.05
+
+    rfe_step = kwargs.get('rfe_step', rfe_step)
+    threshold_method = kwargs.get('threshold_method', 'robust')
+    threshold_value_grid = kwargs.get('threshold_value_grid', [0.90, 0.95, 0.99])
+    thresholds = [Threshold(threshold_method, thr_value) for thr_value in threshold_value_grid ]
 
     #Feature selection procedures
                                 #http://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html
@@ -187,7 +232,9 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
                   'lda'       : LDA(),
                                 #http://scikit-learn.org/dev/auto_examples/feature_selection_pipeline.html
                   'anova'     : SelectKBest(f_regression, k=n_feats),
-                  'pearson'   :
+                  'pearson'   : PearsonCorrelationDistance(thresholds[0]),
+                  'bhattacharyya': BhatacharyyaGaussianDistance(thresholds[0]),
+                  'welchtest' : WelchTestDistance(thresholds[0])
     }
 
     #feature selection parameter values for grid search
@@ -218,6 +265,10 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
                                   whiten=[True, False]),
                'lda'       : dict(n_components=n_comps),
                'anova'     : dict(k=n_comps),
+
+               'pearson'   : dict(threshold=thresholds),
+               'bhattacharyya': dict(threshold=thresholds),
+               'welchtest' : dict(threshold=thresholds),
     }
 
     return fsmethods[fsmethod], fsgrid[fsmethod]

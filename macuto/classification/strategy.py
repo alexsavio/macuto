@@ -113,6 +113,7 @@ class ClassificationPipeline(Printable):
         best_pars  = {}
         importance = {}
         fc = 0
+
         for train, test in self._cv:
             log.info('Processing fold ' + str(fc))
 
@@ -142,57 +143,44 @@ class ClassificationPipeline(Printable):
                 X_train = scaler.fit_transform(X_train)
                 X_test  = scaler.transform    (X_test)
 
-            #PRE feature selection
-            if self.prefsmethod != 'none':
-                presels[fc] = pre_featsel(X_train, y_train,
-                                          prefsmethod, prefsthr, thrmethod)
-                if not presels[fc].any():
-                    log.info('No feature survived the {0} '
-                             '({1}: {2}) feature selection.'.format(prefsmethod,
-                                                                    thrmethod,
-                                                                    prefsthr))
-                    continue
 
-                X_train = X_train[:, presels[fc] > 0]
-                X_test  = X_test [:, presels[fc] > 0]
+            pipe, params = get_pipeline(fsmethod1, fsmethod2,
+                                        clfmethod, n_feats, n_cpus)
 
-        pipe, params = get_pipeline(fsmethod1, fsmethod2,
-                                    clfmethod, n_feats, n_cpus)
+            #creating grid search
+            gs = GridSearchCV(pipe, params, n_jobs=n_cpus, verbose=0,
+                              scoring=gs_scoring)
 
-        #creating grid search
-        gs = GridSearchCV(pipe, params, n_jobs=n_cpus, verbose=0,
-                          scoring=gs_scoring)
+            #do it
+            log.info('Running grid search')
+            gs.fit(X_train, y_train)
 
-        #do it
-        log.info('Running grid search')
-        gs.fit(X_train, y_train)
+            log.info('Predicting on test set')
 
-        log.info('Predicting on test set')
+            #predictions, feature importances and best parameters
+            preds     [fc] = gs.predict(X_test)
+            truth     [fc] = y_test
+            best_pars [fc] = gs.best_params_
 
-        #predictions, feature importances and best parameters
-        preds     [fc] = gs.predict(X_test)
-        truth     [fc] = y_test
-        best_pars [fc] = gs.best_params_
+            if hasattr(gs.best_estimator_, 'support_vectors_'):
+                importance[fc] = gs.best_estimator_.support_vectors_
+            elif hasattr(gs.best_estimator_, 'feature_importances_'):
+                importance[fc] = gs.best_estimator_.feature_importances_
 
-        if hasattr(gs.best_estimator_, 'support_vectors_'):
-            importance[fc] = gs.best_estimator_.support_vectors_
-        elif hasattr(gs.best_estimator_, 'feature_importances_'):
-            importance[fc] = gs.best_estimator_.feature_importances_
+            if hasattr(gs.estimator, 'predict_proba'):
+                try:
+                    probs[fc] = gs.predict_proba(X_test)
+                except:
+                    probs[fc] = []
 
-        if hasattr(gs.estimator, 'predict_proba'):
-            try:
-                probs[fc] = gs.predict_proba(X_test)
-            except:
-                probs[fc] = []
+            log.info('Result: {0} classifies as {1}.'.format(y_test, preds[fc]))
 
-        log.info('Result: {0} classifies as {1}.'.format(y_test, preds[fc]))
+            fc += 1
 
-        fc += 1
+        self._results = Classification_Result(preds, probs, best_pars, presels, cv,
+                                              importance, y, truth)
 
-    self._results = Classification_Result(preds, probs, best_pars, presels, cv, 
-                                          importance, y, truth)
-
-    return self._results
+        return self._results
 
     def get_result_metrics(self):
         """
