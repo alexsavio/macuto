@@ -82,6 +82,7 @@ class DicomsGenericSet(ItemSet):
 
             return dicoms
 
+        log.info('Listing the DICOM files within {0}.'.format(folder))
         if not self.store_metadata:
             build_dcm = lambda fpath, flds: fpath
         else:

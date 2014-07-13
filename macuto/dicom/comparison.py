@@ -38,10 +38,21 @@ class DicomFileDistance(DistanceMeasure):
         :param dcm_file1: str (path to file) or DicomFile or namedtuple
 
         :param dcm_file2: str (path to file) or DicomFile or namedtuple
-        :return:
         """
-        self.dcmf1 = self._read_dcmfile(dcm_file1)
-        self.dcmf2 = self._read_dcmfile(dcm_file2)
+        self.set_dicom_file1(dcm_file1)
+        self.set_dicom_file2(dcm_file2)
+
+    def set_dicom_file1(self, dcm_file):
+        """
+        :param dcm_file: str (path to file) or DicomFile or namedtuple
+        """
+        self.dcmf1 = self._read_dcmfile(dcm_file)
+
+    def set_dicom_file2(self, dcm_file):
+        """
+        :param dcm_file: str (path to file) or DicomFile or namedtuple
+        """
+        self.dcmf2 = self._read_dcmfile(dcm_file)
 
     def _read_dcmfile(self, dcm_file):
         """
@@ -128,7 +139,8 @@ class DicomFilesClustering(object):
         #self._reorder_file_list()
 
     def _calculate_file_distances(self):
-
+        """
+        """
         log.info('Calculating distance between DICOM files.')
         n_files = len(self._dicoms)
 
@@ -137,13 +149,28 @@ class DicomFilesClustering(object):
         self._file_dists = np.zeros((n_files, n_files))
 
         for idxi in range(n_files):
-            dist_method.dcmf1 = DicomFile(self._dicoms[idxi])
+            dist_method.set_dicom_file1(self._dicoms[idxi])
 
             for idxj in range(idxi+1, n_files):
-                dist_method.dcmf2 = DicomFile(self._dicoms[idxj])
+                dist_method.set_dicom_file2(self._dicoms[idxj])
 
                 if idxi != idxj:
                     self._file_dists[idxi, idxj] = dist_method.transform()
+
+    def plot_file_distances(self):
+        if self._file_dists is None:
+            log.error('File distances have not been calculated.')
+
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        ax.matshow(self._file_dists, interpolation='nearest',
+                    cmap=plt.cm.get_cmap('PuBu'))
+
+        all_patients = np.unique([header.PatientName for header in self._dicoms])
+        ax.set_yticks(list(range(len(all_patients))))
+        ax.set_yticklabels(all_patients)
 
     def from_dicom_set(self, dicom_set):
         self._dicoms = dicom_set
