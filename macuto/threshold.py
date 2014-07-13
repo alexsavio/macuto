@@ -21,8 +21,17 @@ from .utils import Printable
 
 class Threshold(Printable):
 
-    def __init__(self, threshold_value=95):
-        self._threshold_value = threshold_value
+    def __init__(self, threshold_value=95, threshold_method='robust'):
+        """
+
+        :param threshold_value: float from 0 to 1
+
+        :param threshold_method: str
+         Choices: {'robust', 'rank', 'percentile'}
+        :return:
+        """
+        self._value = threshold_value
+        self._method = threshold_method
 
     def fit_transform(self, x):
         """
@@ -31,8 +40,8 @@ class Threshold(Printable):
         :return: numpy array
         Thresholded array
         """
-        return apply_threshold(x, self._threshold_value,
-                               self._threshold_method)
+        return apply_threshold(x, self._value,
+                               self._method)
 
 
 class RobustThreshold(Threshold):
@@ -42,8 +51,7 @@ class RobustThreshold(Threshold):
     See: macuto.theshold.find_thresholds
     """
     def __init__(self, threshold_value=95):
-        Threshold.__init__(self, threshold_value)
-        self._threshold_method = 'robust'
+        Threshold.__init__(self, threshold_value, 'robust')
 
 
 class RankThreshold(Threshold):
@@ -52,8 +60,7 @@ class RankThreshold(Threshold):
     just above the percentile.
     """
     def __init__(self, threshold_value=95):
-        Threshold.__init__(self, threshold_value)
-        self._threshold_method = 'rank'
+        Threshold.__init__(self, threshold_value, 'rank')
 
 
 class PercentileThreshold(Threshold):
@@ -61,8 +68,7 @@ class PercentileThreshold(Threshold):
     Zeroes anything lower than the percentile relative to the data.
     """
     def __init__(self, threshold_value=95):
-        Threshold.__init__(self, threshold_value)
-        self._threshold_method = 'percentile'
+        Threshold.__init__(self, threshold_value, 'percentile')
 
 
 def binarise(data, lower_bound, upper_bound, inclusive=True):

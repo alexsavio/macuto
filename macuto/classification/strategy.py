@@ -95,9 +95,9 @@ class ClassificationPipeline(Printable):
         self._gs = GridSearchCV(self._pipe, self._params, n_jobs=self.n_cpus,
                                 verbose=0, scoring=self.gs_scoring)
 
-        self._prefs = None
-        if self._prefsmethod is not None:
-            self._prefs = get_prefsmethod(self.prefsthr)
+        #self._prefs = None
+        #if self._prefsmethod is not None:
+        #    self._prefs = get_prefsmethod(self.prefsthr)
 
     def cross_validation(self, X, y):
         """

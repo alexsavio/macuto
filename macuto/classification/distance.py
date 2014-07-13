@@ -35,7 +35,12 @@ class SelectDistanceMeasure(_BaseFilter, Printable):
     https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/feature_selection/univariate_selection.py
     """
 
-    def __init__(self, score_func, threshold=0.95):
+    def __init__(self, score_func, threshold):
+        """
+        :param score_func:
+
+        :param threshold: Threshold method
+        """
         super(SelectDistanceMeasure, self).__init__(score_func)
         self.threshold = threshold
 
@@ -53,10 +58,10 @@ class SelectDistanceMeasure(_BaseFilter, Printable):
 
         scores = _clean_nans(self.scores_)
 
-        mask = scores > self.threshold
-        ties = np.where(scores == self.threshold)[0]
+        mask = self.threshold.fit_transform(scores)
+        ties = np.where(scores == self.threshold._value)[0]
         if len(ties):
-            max_feats = len(scores) * self.threshold
+            max_feats = len(scores) * self.threshold._value
             kept_ties = ties[:max_feats - mask.sum()]
             mask[kept_ties] = True
         return mask
