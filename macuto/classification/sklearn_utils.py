@@ -187,6 +187,7 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1):
                   'lda'       : LDA(),
                                 #http://scikit-learn.org/dev/auto_examples/feature_selection_pipeline.html
                   'anova'     : SelectKBest(f_regression, k=n_feats),
+                  'pearson'   :
     }
 
     #feature selection parameter values for grid search

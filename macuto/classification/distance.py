@@ -17,130 +17,107 @@
 import numpy as np
 import scipy.spatial.distance as scipy_dist
 
+from sklearn.feature_selection.univariate_selection import (_BaseFilter,
+                                                            _clean_nans)
+
 from ..utils import Printable
 
-class DistanceMeasure(Printable): pass
-    #def fit_transform(self):
-    #    raise NotImplementedError
 
-
-class ScipyDistance(DistanceMeasure):
+class SelectDistanceMeasure(_BaseFilter, Printable):
     """
-    This is a wrapper class for scipy distance measures.
+    This is a wrapper class for distance measures base selectors.
+
+    I'm using scikit-learn _BaseFilter as base class in order to be able
+    to mix my own filters with other filters in a Pipeline.
+
+    For more info:
+    https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/base.py
+    https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/feature_selection/univariate_selection.py
     """
 
-    def __init__(self, dist_function):
-        self._set_dist_function(dist_function)
+    def __init__(self, score_func, threshold=0.95):
+        super(SelectDistanceMeasure, self).__init__(score_func)
+        self.threshold = threshold
 
-    def _set_dist_function(self, dist_function):
-        """
-        :param dist_function: function
-        distance function
+    def _check_params(self, X, y):
+        if not 0 <= self.threshold <= 1:
+            raise ValueError("threhold should be >=0, <=1; got %r"
+                             % self.threshold)
 
-        :return:
-        """
-        if not hasattr(dist_function, '__call__'):
-            raise ValueError('dist_function must be a function')
+    def _get_support_mask(self):
+        # Cater for NaNs
+        if self.threshold == 1:
+            return np.ones(len(self.scores_), dtype=np.bool)
+        elif self.threshold == 0:
+            return np.zeros(len(self.scores_), dtype=np.bool)
 
-        if not hasattr(scipy_dist, dist_function.__name__):
-            raise ValueError('dist_function must be a scipy.spatial.distance '
-                             'function.')
+        scores = _clean_nans(self.scores_)
 
-        self._dist_function = dist_function
-
-    def fit_transform(self, x, y):
-        """
-        Apply any given 1-D distance function to x and y.
-        Have a look at:
-        http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
-
-        :param x: numpy array
-        Shape: n_samples x n_features
-
-        :param y: numpy array or list
-        Size: n_samples
-
-        :return: numpy array
-        Size: n_features
-        """
-        return distance_computation(x, y, self._dist_function)
+        mask = scores > self.threshold
+        ties = np.where(scores == self.threshold)[0]
+        if len(ties):
+            max_feats = len(scores) * self.threshold
+            kept_ties = ties[:max_feats - mask.sum()]
+            mask[kept_ties] = True
+        return mask
 
 
-class PearsonCorrelationDistance(ScipyDistance):
+class PearsonCorrelationDistance(SelectDistanceMeasure):
     """
     The absolute Pearson's correlation between each feature in X and the
     class labels in y.
+
+    :param x: numpy array
+    Shape: n_samples x n_features
+
+    :param y: numpy array or list
+    Size: n_samples
+
+    :return: numpy array
+    Size: n_features
     """
 
     def __init__(self):
-        ScipyDistance.__init__(self, scipy_dist.pearsonr)
-
-    def fit_transform(self, x, y):
-        """
-        Calculates for each feature in X the
-        pearson correlation with y.
-
-        :param x: numpy array
-        Shape: n_samples x n_features
-
-        :param y: numpy array or list
-        Size: n_samples
-
-        :return: numpy array
-        Size: n_features
-        """
-        return np.abs(ScipyDistance.fit_transform(self, x, y))
+        super(PearsonCorrelationDistance, self).__init__(scipy_dist.pearsonr)
 
 
-class WelchTestDistance(DistanceMeasure):
+class WelchTestDistance(SelectDistanceMeasure):
     """
     Welch's t-test between the groups in X, labeled by y.
+
+    :param x: numpy array
+    Shape: n_samples x n_features
+
+    :param y: numpy array or list
+    Size: n_samples
+
+    :return:numpy array
+    Size: n_features
+
     """
 
     def __init__(self):
-        pass
-
-    def fit_transform(self, x, y):
-        """
-        Welch's t-test between the groups in X, labeled by y.
-
-        :param x: numpy array
-        Shape: n_samples x n_features
-
-        :param y: numpy array or list
-        Size: n_samples
-
-        :return:numpy array
-        Size: n_features
-        """
-
-        return welch_ttest(x, y)
+        super(WelchTestDistance, self).__init__(self, welch_ttest)
 
 
-class BhatacharyyaGaussianDistance(DistanceMeasure):
+class BhatacharyyaGaussianDistance(SelectDistanceMeasure):
     """
     Univariate Gaussian Bhattacharyya distance
     between the groups in X, labeled by y.
+
+    :param x: numpy array
+    Shape: n_samples x n_features
+
+    :param y: numpy array or list
+    Size: n_samples
+
+    :return: numpy array
+    Size: n_features
     """
 
     def __init__(self):
-        pass
-
-    def fit_transform(self, x, y):
-        """
-        Univariate Gaussian Bhattacharyya distance
-        between the groups in X, labeled by y.
-
-        :param x: numpy array
-        Shape: n_samples x n_features
-
-        :param y: numpy array or list
-        Size: n_samples
-
-        :return: numpy array
-        Size: n_features
-        """
-        return bhattacharyya_dist(x, y)
+        super(BhatacharyyaGaussianDistance, self).__init__(self,
+                                                           bhattacharyya_dist)
 
 
 def pearson_correlation(x, y):

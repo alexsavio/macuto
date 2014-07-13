@@ -16,6 +16,7 @@
 
 
 import logging
+import collections
 
 import numpy as np
 from scipy import stats
@@ -31,14 +32,37 @@ from .sklearn_utils import (get_pipeline,
 
 log = logging.getLogger(__name__)
 
+#Classification results namedtuple
+classif_results_varnames = ['preds', 'probs', 'best_pars', 'presels', 'cv',
+                            'importance', 'y', 'truth']
 
+class Classification_Result(collections.namedtuple('Classification_Result',
+                                                   classif_results_varnames)):
+    """
+    Namedtuple to store classification results.
+    """
+    pass
+
+#Classification metrics namedtuple
+classif_metrics_varnames = ['accuracy', 'sensitivity', 'specificity',
+                            'precision', 'f1_score', 'area_under_curve']
+
+class Classification_Metrics(collections.namedtuple('Classification_Metrics',
+                                                    classif_metrics_varnames)):
+    """
+    Namedtuple to store classifcation CV results metrics.
+    """
+    pass
+
+
+#Classification Pipeline
 class ClassificationPipeline(Printable):
     """
 
     """
 
-    def __init__(self, n_feats, fsmethod, clfmethod,
-                 prefsmethod=None, prefsthr=None,
+    def __init__(self, n_feats, fsmethod1, fsmethod2, clfmethod,
+                 fsmethod1_kwargs=None, fsmethod2_kwargs=None, clfmethod_kwargs=None,
                  cvmethod='10', stratified=True, stddize=True,
                  thrmethod='robust', n_cpus=1, gs_scoring='accuracy'):
         """
@@ -46,10 +70,14 @@ class ClassificationPipeline(Printable):
         Printable.__init__(self)
 
         self.n_feats = n_feats
-        self.prefsmethod = prefsmethod
-        self.prefsthr = prefsthr
-        self.fsmethod = fsmethod
+        self.fsmethod1 = fsmethod1
+        self.fsmethod2 = fsmethod2
         self.clfmethod = clfmethod
+
+        self._fsmethod1_kwargs = fsmethod1_kwargs
+        self._fsmethod2_kwargs = fsmethod2_kwargs
+        self._clfmethod_kwargs = clfmethod_kwargs
+
         self.cvmethod = cvmethod
         self.stratified = stratified
         self.stddize = stddize
@@ -57,9 +85,10 @@ class ClassificationPipeline(Printable):
         self.n_cpus = n_cpus
         self.gs_scoring = gs_scoring
 
-
     def reset(self):
-        self._pipe, self._params = get_pipeline(self.fsmethod, 'none',
+        """
+        """
+        self._pipe, self._params = get_pipeline(self.fsmethod1, self.fsmethod2,
                                                 self.clfmethod, self.n_feats,
                                                 self.n_cpus)
         #creating grid search
@@ -70,13 +99,12 @@ class ClassificationPipeline(Printable):
         if self._prefsmethod is not None:
             self._prefs = get_prefsmethod(self.prefsthr)
 
-
     def cross_validation(self, X, y):
-
+        """
+        """
         self._cv = get_cv_method(y, self.cvmethod, self.stratified)
 
         n_feats    = X.shape[1]
-
 
         presels    = {}
         preds      = {}
@@ -161,6 +189,19 @@ class ClassificationPipeline(Printable):
 
         fc += 1
 
-    return preds, probs, best_pars, presels, cv, importance, y, truth
+    self._results = Classification_Result(preds, probs, best_pars, presels, cv, 
+                                          importance, y, truth)
 
-    def get_results(self):
+    return self._results
+
+    def get_result_metrics(self):
+        """
+        """
+        if not self._results:
+            log.error('Results have not been calculated.')
+            return None
+
+        self._results.
+
+
+

@@ -36,12 +36,20 @@ from ..exceptions import LoggedValueError
 log = logging.getLogger(__name__)
 
 
-class FeatureSelection(Printable): pass
+class FeatureSelection(Printable):
+    """
+    Base class for Feature Selection methods
+    """
+    pass
 #    def select_from(self, X):
 #        raise NotImplementedError
 
 
-class SupervisedFeatureSelection(FeatureSelection): pass
+class SupervisedFeatureSelection(FeatureSelection):
+    """
+    Base class for Supervised Feature Selection methods
+    """
+    pass
 #    def select_from(self, X, y):
 #        raise NotImplementedError
 
