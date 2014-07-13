@@ -146,7 +146,11 @@ class DicomFilesClustering(object):
 
         dist_method = DicomFileDistance()
 
-        self._file_dists = np.zeros((n_files, n_files))
+        try:
+            self._file_dists = np.zeros((n_files, n_files))
+        except MemoryError as mee:
+            import scipy.sparse
+            self._file_dists = scipy.sparse.lil_matrix((n_files, n_files))
 
         for idxi in range(n_files):
             dist_method.set_dicom_file1(self._dicoms[idxi])
@@ -157,20 +161,21 @@ class DicomFilesClustering(object):
                 if idxi != idxj:
                     self._file_dists[idxi, idxj] = dist_method.transform()
 
-    def plot_file_distances(self):
-        if self._file_dists is None:
+    @staticmethod
+    def plot_file_distances(dist_matrix):
+        if dist_matrix is None:
             log.error('File distances have not been calculated.')
 
         import matplotlib.pyplot as plt
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-        ax.matshow(self._file_dists, interpolation='nearest',
-                    cmap=plt.cm.get_cmap('PuBu'))
+        ax.matshow(dist_matrix, interpolation='nearest',
+                   cmap=plt.cm.get_cmap('PuBu'))
 
-        all_patients = np.unique([header.PatientName for header in self._dicoms])
-        ax.set_yticks(list(range(len(all_patients))))
-        ax.set_yticklabels(all_patients)
+        #all_patients = np.unique([header.PatientName for header in self._dicoms])
+        #ax.set_yticks(list(range(len(all_patients))))
+        #ax.set_yticklabels(all_patients)
 
     def from_dicom_set(self, dicom_set):
         self._dicoms = dicom_set
@@ -213,8 +218,8 @@ if __name__ == '__main__':
 
         from macuto.config import DICOM_FIELD_WEIGHTS
 
-        datadir = '/media/alexandre/cobre/santiago/test'
-        #datadir = '/media/alexandre/cobre/santiago/raw'
+        #datadir = '/media/alexandre/cobre/santiago/test'
+        datadir = '/media/alexandre/cobre/santiago/raw'
         header_fields = tuple(DICOM_FIELD_WEIGHTS.keys())
 
         dcmclusters = DicomFilesClustering(folders=datadir,
@@ -222,4 +227,7 @@ if __name__ == '__main__':
                                            header_fields=header_fields)
 
         dcmclusters._calculate_file_distances()
+
+        dm = dcmclusters._file_dists
+        dcmclusters.plot_file_distances(dm.take(dm <= dm.mean()))
         #TODO

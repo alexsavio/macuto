@@ -13,8 +13,7 @@ DICOM_FILE_EXTENSIONS.extend([x.lower() for x in DICOM_FILE_EXTENSIONS])
 OUTPUT_DICOM_EXTENSION = '.dcm'
 
 #DICOM field weights for dicom.comparison
-DICOM_FIELD_WEIGHTS = OrderedDict([('file_path', 0.25),
-                                   ('PatientID', 1),
+DICOM_FIELD_WEIGHTS = OrderedDict([('PatientID', 1),
                                    ('PatientName', 1),
                                    ('PatientAddress', 0.5),
                                    ('PatientSex', 0.2),
