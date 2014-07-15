@@ -9,7 +9,7 @@
 #Use this at your own risk!
 #-------------------------------------------------------------------------------
 
-from .logging import setup_logging
+from .logger import setup_logging
 
 setup_logging()
 
