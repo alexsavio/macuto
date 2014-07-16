@@ -189,7 +189,7 @@ def remove_from_string(string, values):
 
 
 def to_numbers(values, ntype=float, regex=r"[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?",
-               fill_value=np.NaN, remove_symbols=['<', '>', '=']):
+               fill_value=np.NaN, remove_symbols=['<', '>', '='], comma_to_dot=True):
     """
     Extracts all numbers in a string, join them and
     transform the result to ntype.
@@ -213,6 +213,9 @@ def to_numbers(values, ntype=float, regex=r"[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?"
      before conversion. If None or empty, no filtering
      will be performed.
 
+    :param comma_to_dot: bool
+     Whether to replace any comma in the strings to a dot.
+
     :return:
     list of ntypes
     """
@@ -221,6 +224,10 @@ def to_numbers(values, ntype=float, regex=r"[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?"
     for v in values:
         try:
             if isinstance(v, str):
+
+		if comma_to_dot:
+			v = v.replace(',', '.')
+
                 if remove_symbols is not None:
                     v = remove_from_string(v, remove_symbols)
 
