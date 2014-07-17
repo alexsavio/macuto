@@ -131,3 +131,33 @@ def smooth_volume(nifti_file, smoothmm):
 
     filter = LinearFilter(img.coordmap, img.shape)
     return filter.smooth(img)
+
+
+def create_mask_file(filepath, outpath, threshold=0):
+    """
+
+    :param filepath: str
+    Path of the nifti input file
+
+    :param threshold: float
+
+    :param outpath: str
+     Path to the nifti output file
+
+    """
+    from .storage import save_niigz
+
+    try:
+        nibf = nib.load(filepath)
+        vol = nibf.get_data() > threshold
+
+        #vol, filepath, affine=None, header=None
+        save_niigz(vol, outpath, nibf.get_affine(), nibf.get_header())
+
+    except Exception as exc:
+        log.exception('Error creating mask from file {0}.'.format(filepath))
+
+
+
+
+
