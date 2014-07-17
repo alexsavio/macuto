@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
 import os
-import baker
 import logging
+
+import baker
 from path import path
+
 from macuto.files.search import recursive_find_match
 from macuto.scriptutils import whoami
+
 
 #logging config
 logging.basicConfig(level=logging.DEBUG, filename='sliceit.log',
@@ -62,7 +65,7 @@ def vols(inputdir='', outdir='', regex1='', regex2='',
 
     assert(os.path.isdir(inputdir))
 
-    from macuto.render import (slicesdir_oneset,
+    from viz.render import (slicesdir_oneset,
                                slicesdir_paired_overlays)
     from macuto.files.search import (recursive_find_match)
 
