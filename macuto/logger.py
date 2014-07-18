@@ -1,6 +1,5 @@
 
 import os
-import sys
 import yaml
 import logging.config
 
@@ -25,4 +24,5 @@ def setup_logging(default_path=os.path.join(os.path.dirname(__file__),
         print('Started logging from config file {0}.'.format(path))
     else:
         logging.basicConfig(level=default_level)
-        print('Started default logging.')
+        print('Started default logging. Could not find config file '
+              'in {0}.'.format(path))

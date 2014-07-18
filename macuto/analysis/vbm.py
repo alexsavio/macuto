@@ -47,6 +47,8 @@ class VBMAnalyzer(object):
         np.ndarray of zeros and ones with as many columns
         as unique values in labels.
         """
+        labels = np.array(labels)
+
         label_values = np.unique(labels)
         n_subjs = len(labels)
         group_regressors = np.zeros((n_subjs, len(label_values)))
@@ -147,7 +149,7 @@ class VBMAnalyzer(object):
 
     @property
     def n_groups(self):
-        return len(self._labels)
+        return len(np.unique(self._labels))
 
     def _create_group_contrasts(self, test_type='t'):
         """
@@ -246,7 +248,7 @@ class VBMAnalyzer(object):
             log.exception('Error creating the data for the GLM.')
             raise
 
-    def transform(self, contrast_type='t', correction_type='fwe'):
+    def transform(self, contrast_type='t', correction_type='bonferroni'):
         """
         Apply GLM constrast comparing each group one vs. all.
 
@@ -255,7 +257,7 @@ class VBMAnalyzer(object):
         choices = {'t', 'F'}
 
         :param correction_type: string
-        choices = {'bonferroni', 'fwe', 'fdr'}
+        choices = {'bonferroni', 'grf', 'fdr'}
 
         :return:
         """
@@ -275,7 +277,7 @@ class VBMAnalyzer(object):
 
         if correction_type == 'bonferroni':
             self.bonferroni_correct()
-        elif correction_type == 'fwe':
+        elif correction_type == 'grf':
             self.grf_correct()
         elif correction_type == 'fdr':
             self.randomise_correct()
@@ -315,6 +317,10 @@ class VBMAnalyzer(object):
         # pvalue005_c2=contrast2.p_value(0.005)
 
     def grf_correct(self):
+        print('For Gaussian Random Fields correction, please see:'
+              'http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/0XX-random-fields.ipynb'
+              'and'
+              'http://imaging.mrc-cbu.cam.ac.uk/imaging/PrinciplesRandomFields')
         pass
         #TODO
 
@@ -467,6 +473,16 @@ if __name__ == '__main__':
             root = '/home/alexandre/Dropbox/Data/santiago'
             gm_folder = os.path.join(root, 'data3D')
             maskfolder = os.path.join(os.environ['FSLDIR'], 'data', 'standard')
+
+        #define group comparisons
+        group_comparisons = OrderedDict([('Control vs. AD',     ('crl', 'ea')),
+                                         ('Control vs. MCI',    ('crl', 'dcl')),
+                                         ('Control vs. BD',     ('crl', 'tb')),
+                                         ('Control vs. AD+MCI', ('crl', ['ea', 'dcl'])),
+                                         ('BD vs. AD',          ('tb',  'ea')),
+                                         ('BD vs. MCI',         ('tb',  'dcl'))])
+
+        comparison = group_comparisons['BD vs. AD']
     else:
         # from nilearn import datasets
         # n_subjects = 20
@@ -488,22 +504,17 @@ if __name__ == '__main__':
     mask_file = os.path.join(maskfolder, 'MNI152_T1_2mm_brain_mask.nii.gz')
     smooth_mm = 4
 
-    #define group comparisons
-    group_comparisons = OrderedDict([('Control vs. AD',     ('crl', 'ea')),
-                                     ('Control vs. MCI',    ('crl', 'dcl')),
-                                     ('Control vs. BD',     ('crl', 'tb')),
-                                     ('Control vs. AD+MCI', ('crl', ['ea', 'dcl'])),
-                                     ('BD vs. AD',          ('tb',  'ea')),
-                                     ('BD vs. MCI',         ('tb',  'dcl'))])
-
-    comparison = group_comparisons['BD vs. AD']
-
     #get list of volume files
     file_dict, labels = get_files_for_comparison(gm_folder, comparison[1])
 
     from macuto.analysis.vbm import VBMAnalyzer
     vbm = VBMAnalyzer()
     vbm._extract_data(file_dict, mask_file, smooth_mm)
+    vbm._x = vbm._create_design_matrix()
+    vbm.glm_model = vbm._nipy_glm(vbm._x, vbm._y)
+
+    contrast_type = 't'
+    contrasts = vbm._create_group_contrasts(contrast_type)
 
     #vbm = VBMAnalyzer().fit(file_dict, smooth_mm=smooth_mm, mask_file=mask_file,
     #                        regressors=None)
