@@ -1,13 +1,12 @@
-
 import logging
-import numpy as np
 from itertools import permutations
 
+import numpy as np
 from nipy.modalities.fmri.glm import GeneralLinearModel
 
-from .nifti.read import vector_to_volume
-from .nifti.sets import NiftiSubjectsSet
-from .nifti.storage import save_niigz
+from ..nifti.read import vector_to_volume
+from ..nifti.sets import NiftiSubjectsSet
+
 
 log = logging.getLogger(__name__)
 
@@ -356,7 +355,6 @@ class VBMAnalyzer2(VBMAnalyzer):
 
     """
     #TODO
-    from scipy.stats import t
 
     # http://nbviewer.ipython.org/github/practical-neuroimaging/pna-notebooks/blob/master/GLM_t_F.ipynb
     @staticmethod
@@ -431,34 +429,54 @@ if __name__ == '__main__':
         :param group_sets:
         :return:
         """
-        dirfiles = os.listdir(dirpath)
+
+        def get_files_that_contain_str(dir_path, name_substrs):
+            dirfiles = os.listdir(dir_path)
+            if isinstance(name_substrs, str):
+                file_lst = [os.path.join(dirpath, fname) for fname in
+                            dirfiles if name_substrs in fname]
+            else:
+                file_lst = []
+                for substr in name_substrs:
+                    file_lst.extend([os.path.join(dirpath, fname) for fname in
+                                     dirfiles if substr in fname])
+            return file_lst
+
+
         file_dict = OrderedDict()
         labels = []
         for idx, gs in enumerate(group_sets):
-            group_files = []
-            for g in gs:
-                file_lst = [os.path.join(dirpath, fname) for fname in dirfiles if g in fname]
-                #group_files = get_file_list(dirpath, g)
-                group_files.extend(file_lst)
-                labels.extend([idx] * len(group_files))
+            group_files = get_files_that_contain_str(dirpath, gs)
+            labels.extend([idx] * len(group_files))
 
             file_dict[str(gs)] = group_files
 
         return file_dict, labels
 
-
-    import socket
-    hn = socket.gethostname()
-    if hn == 'darya':
-        infolder="/home/darya/Documents/santiago/vbm/GM_VBM/data4D"
-        GMfolder="/home/darya/Documents/santiago/vbm/GM_VBM/vbm_crl_ea_python/data"#"/home/darya/Documents/santiago/vbm/GM_VBM/data3D"
-        maskfolder="/home/darya/Documents/santiago/vbm/GM_VBM/mask"
-        outfolder="/home/darya/Documents/santiago/vbm/GM_VBM/vbm_crl_ea_python/vbm_out"
-        #WMfolder="/home/darya/Documents/santiago/vbm/WM"
-    elif hn == 'buccaneer' or hn == 'finn' or hn == 'corsair':
-        root = '/home/alexandre/Dropbox/Data/santiago'
-        GMfolder = os.path.join(root, 'data3D')
+    fetch_oasis_subjects = True
+    if not fetch_oasis_subjects:
+        import socket
+        hn = socket.gethostname()
+        if hn == 'darya':
+            infolder="/home/darya/Documents/santiago/vbm/GM_VBM/data4D"
+            gm_folder="/home/darya/Documents/santiago/vbm/GM_VBM/vbm_crl_ea_python/data"#"/home/darya/Documents/santiago/vbm/GM_VBM/data3D"
+            maskfolder="/home/darya/Documents/santiago/vbm/GM_VBM/mask"
+            outfolder="/home/darya/Documents/santiago/vbm/GM_VBM/vbm_crl_ea_python/vbm_out"
+            #WMfolder="/home/darya/Documents/santiago/vbm/WM"
+        elif hn == 'buccaneer' or hn == 'finn' or hn == 'corsair':
+            root = '/home/alexandre/Dropbox/Data/santiago'
+            gm_folder = os.path.join(root, 'data3D')
+            maskfolder = os.path.join(os.environ['FSLDIR'], 'data', 'standard')
+    else:
+        # from nilearn import datasets
+        # n_subjects = 20
+        # dataset_files = datasets.fetch_oasis_vbm(n_subjects=n_subjects,
+        #                                          dartel_version=True,
+        #                                          resume=True)
+        # age = dataset_files.ext_vars['age'].astype(float)
+        gm_folder = os.path.expanduser('~/Dropbox/Data/oasis')
         maskfolder = os.path.join(os.environ['FSLDIR'], 'data', 'standard')
+        comparison = ('Control vs. AD', ({'control'}, {'patient'}))
 
     #outfolder="" -
     # elif hn == 'finn':
@@ -467,24 +485,28 @@ if __name__ == '__main__':
     #     dataset_files = datasets.fetch_oasis_vbm(n_subjects=n_subjects)
     #     age = dataset_files.ext_vars['age'].astype(float)
 
-    maskfile = os.path.join(maskfolder, 'MNI152_T1_2mm_brain_mask.nii.gz')
+    mask_file = os.path.join(maskfolder, 'MNI152_T1_2mm_brain_mask.nii.gz')
+    smooth_mm = 4
 
     #define group comparisons
-    group_comparisons = OrderedDict([('Control vs. AD',     ({'crl'}, {'ea'})),
-                                     ('Control vs. MCI',    ({'crl'}, {'dcl'})),
-                                     ('Control vs. BD',     ({'crl'}, {'tb'})),
-                                     ('Control vs. AD+MCI', ({'crl'}, {'ea', 'dcl'})),
-                                     ('BD vs. AD',          ({'tb'},  {'ea'})),
-                                     ('BD vs. AD+MCI',      ({'tb'},  {'ea', 'dcl'}))])
+    group_comparisons = OrderedDict([('Control vs. AD',     ('crl', 'ea')),
+                                     ('Control vs. MCI',    ('crl', 'dcl')),
+                                     ('Control vs. BD',     ('crl', 'tb')),
+                                     ('Control vs. AD+MCI', ('crl', ['ea', 'dcl'])),
+                                     ('BD vs. AD',          ('tb',  'ea')),
+                                     ('BD vs. MCI',         ('tb',  'dcl'))])
 
     comparison = group_comparisons['BD vs. AD']
 
     #get list of volume files
-    file_dict, labels = get_files_for_comparison(GMfolder, comparison)
+    file_dict, labels = get_files_for_comparison(gm_folder, comparison[1])
 
-    from macuto.vbm import VBMAnalyzer
-    vbm = VBMAnalyzer().fit(file_dict, smooth_mm=4, mask_file=maskfile,
-                            regressors=None)
+    from macuto.analysis.vbm import VBMAnalyzer
+    vbm = VBMAnalyzer()
+    vbm._extract_data(file_dict, mask_file, smooth_mm)
+
+    #vbm = VBMAnalyzer().fit(file_dict, smooth_mm=smooth_mm, mask_file=mask_file,
+    #                        regressors=None)
 
     #create image data matrix
     #y, mask_indices, mask_shape = niftilist_mask_to_array(file_lst, maskfile)

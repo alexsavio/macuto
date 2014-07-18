@@ -104,7 +104,7 @@ class NiftiSubjectsSet(ItemSet):
                 self.items.extend([self._load_image(get_abspath(imgf))
                                    for imgf in group_files])
 
-                self.labels.append(group_label)
+                self.labels.extend([group_label]*len(group_files))
 
             except Exception as exc:
                 log.exception('Error while reading files from '

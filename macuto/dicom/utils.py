@@ -54,7 +54,8 @@ class DicomFile(FileDataset):
         """
         try:
             attrs = [getattr(self, attr, default) for attr in attributes]
-        except Exception as exc:
+        except Exception as exc:ss
+
             log.exception('Error reading fields.')
 
         return tuple(attrs)
