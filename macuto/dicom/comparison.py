@@ -141,8 +141,9 @@ class DicomFilesClustering(object):
     def _calculate_file_distances(self):
         """
         """
-        log.info('Calculating distance between DICOM files.')
         n_files = len(self._dicoms)
+        log.info('Calculating distance between {0} DICOM '
+                 'files.'.format(n_files))
 
         dist_dtype = np.float16
 
