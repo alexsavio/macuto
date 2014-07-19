@@ -144,13 +144,16 @@ class DicomFilesClustering(object):
         log.info('Calculating distance between DICOM files.')
         n_files = len(self._dicoms)
 
+        dist_dtype = np.float16
+
         dist_method = DicomFileDistance()
 
         try:
-            self._file_dists = np.zeros((n_files, n_files))
+            self._file_dists = np.zeros((n_files, n_files), dtype=dist_dtype)
         except MemoryError as mee:
             import scipy.sparse
-            self._file_dists = scipy.sparse.lil_matrix((n_files, n_files))
+            self._file_dists = scipy.sparse.lil_matrix((n_files, n_files),
+                                                       dtype=dist_dtype)
 
         for idxi in range(n_files):
             dist_method.set_dicom_file1(self._dicoms[idxi])
