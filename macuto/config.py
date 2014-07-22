@@ -1,4 +1,5 @@
 
+import sys
 import logging
 from collections import OrderedDict
 
@@ -11,6 +12,9 @@ LOG_LEVEL = logging.DEBUG
 DICOM_FILE_EXTENSIONS = ['.IMA', '.DICOM', '.DCM']
 DICOM_FILE_EXTENSIONS.extend([x.lower() for x in DICOM_FILE_EXTENSIONS])
 OUTPUT_DICOM_EXTENSION = '.dcm'
+
+#MACUTO-DATA PATH
+TESTDATA_PATH = os.path.join(os.path.dirname(__file__), '..', 'macuto-data')
 
 #DICOM field weights for dicom.comparison
 DICOM_FIELD_WEIGHTS = OrderedDict([('PatientID', 1),

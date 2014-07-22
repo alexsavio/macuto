@@ -321,6 +321,14 @@ class VBMAnalyzer(object):
               'http://nbviewer.ipython.org/github/jbpoline/bayfmri/blob/master/notebooks/0XX-random-fields.ipynb'
               'and'
               'http://imaging.mrc-cbu.cam.ac.uk/imaging/PrinciplesRandomFields')
+
+        self._corrected_pvalues = []
+        for contraster in self._contrasts:
+            pvals = contraster.stat()
+
+
+            self._corrected_pvalues.append(pvals)
+
         pass
         #TODO
 
