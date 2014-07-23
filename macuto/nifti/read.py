@@ -15,6 +15,8 @@ import numpy as np
 import nibabel as nib
 import logging
 
+from ..exceptions import FileNotFound
+
 log = logging.getLogger(__name__)
 
 
@@ -24,6 +26,9 @@ def get_nii_info(nii_file):
     @return:
     hdr, aff
     """
+    if not os.path.exists(nii_file):
+        raise FileNotFound(nii_file)
+
     try:
         nibf = nib.load(nii_file)
         aff = nibf.get_affine()
@@ -40,6 +45,9 @@ def get_nii_data(nii_file):
     @param nii_file: string
     @return:
     """
+    if not os.path.exists(nii_file):
+        raise FileNotFound(nii_file)
+
     try:
         nibf = nib.load(nii_file)
         vol = nibf.get_data()
@@ -57,7 +65,7 @@ def load_nipy_img(nii_file):
     :return: nipy.Image
     """
     if not os.path.exists(nii_file):
-        raise FileNotFoundError(log, nii_file)
+        raise FileNotFound(nii_file)
 
     try:
         return nipy.load_image(nii_file)
@@ -72,6 +80,9 @@ def get_masked_nii_data(nii_file, mask_file):
     @return:
     vol[mask_indices], mask_indices, mask.shape
     """
+    if not os.path.exists(nii_file):
+       raise FileNotFound(nii_file)
+
     try:
         nibf = nib.load(nii_file)
         vol = nibf.get_data()
