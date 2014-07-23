@@ -86,8 +86,12 @@ class DicomFileDistance(DistanceMeasure):
                 if not str1 or not str2:
                     continue
 
+                if str1 == str2:
+                   simil = 1
+                else:
+                   simil = self.similarity_measure(str1, str2)
+
                 weight = self.field_weights[field_name]
-                simil = self.similarity_measure(str1, str2)
 
                 if simil > 0:
                     dist += (1/simil) * weight

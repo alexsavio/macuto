@@ -43,11 +43,9 @@ def get_nii_data(nii_file):
     try:
         nibf = nib.load(nii_file)
         vol = nibf.get_data()
-
+        return vol
     except Exception as exc:
         log.exception('Error on reading file {0}.'.format(nii_file))
-
-    return vol
 
 
 def load_nipy_img(nii_file):
@@ -80,10 +78,10 @@ def get_masked_nii_data(nii_file, mask_file):
 
         mask = get_nii_data(mask_file)
         mask_indices = np.where(mask > 0)
+        return vol[mask_indices], mask_indices, mask.shape
+
     except Exception:
         log.exception('Reading file {0}.'.format(nii_file))
-
-    return vol[mask_indices], mask_indices, mask.shape
 
 
 def vector_to_volume(vector, mask_indices, mask_shape, dtype=None):
