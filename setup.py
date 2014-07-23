@@ -51,7 +51,7 @@ setup_dict = dict(
                'macuto/scripts/sliceit.py',
                'macuto/scripts/atlasquer.py'],
 
-    platforms='any',
+    platforms='Linux/MacOSX',
 
     #https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers = [
