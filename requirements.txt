@@ -19,3 +19,5 @@ numexpr
 pandas
 python-Levenshtein
 pyaml
+pytest
+pytest-cov
