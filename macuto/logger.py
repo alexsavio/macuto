@@ -7,7 +7,7 @@ from .config import LOG_LEVEL
 
 
 def setup_logging(default_path=os.path.join(os.path.dirname(__file__),
-                                            'logging.yaml'),
+                                            'logger.yaml'),
                   default_level=LOG_LEVEL,
                   env_key='MACUTO_LOG_CFG'):
     """Setup logging configuration
