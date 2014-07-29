@@ -225,8 +225,8 @@ def to_numbers(values, ntype=float, regex=r"[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?"
         try:
             if isinstance(v, str):
 
-		if comma_to_dot:
-			v = v.replace(',', '.')
+                if comma_to_dot:
+                    v = v.replace(',', '.')
 
                 if remove_symbols is not None:
                     v = remove_from_string(v, remove_symbols)
