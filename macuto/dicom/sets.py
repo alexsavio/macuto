@@ -121,7 +121,15 @@ class DicomsGenericSet(ItemSet):
     def to_list(self):
         return list(self.items)
 
-    def to_folder(self, output_path):
+    def save_to_file(self, out_path):
+        import pickle
+
+        with open(out_path, 'w') as f:
+            pickle.dump(self.items, f)
+            pickle.dump(self.header_fields, f)
+            pickle.dump(self.store_metadata, f)
+
+    def to_subject_folders(self, output_path):
         """
 
         :param output_path:
