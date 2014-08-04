@@ -189,7 +189,7 @@ def remove_from_string(string, values):
 
 
 def to_numbers(values, ntype=float, regex=r"[+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?",
-               fill_value=np.NaN, remove_symbols=['<', '>', '='], comma_to_dot=True):
+               fill_value=np.NaN, remove_symbols=('<', '>', '='), comma_to_dot=True):
     """
     Extracts all numbers in a string, join them and
     transform the result to ntype.
