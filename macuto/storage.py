@@ -25,6 +25,8 @@ log = logging.getLogger(__name__)
 
 def sav_to_pandas_rpy2(inputfile):
     """
+    SPSS .sav files to Pandas DataFrame through Rpy2
+
     :param inputfile: string
 
     :return:
@@ -37,6 +39,7 @@ def sav_to_pandas_rpy2(inputfile):
 
 def sav_to_pandas_savreader(inputfile):
     """
+    SPSS .sav files to Pandas DataFrame through savreader module
 
     :param inputfile: string
 
