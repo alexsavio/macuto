@@ -53,7 +53,6 @@ class DicomsGenericSet(ItemSet):
         else:
             log.exceptions('Could not recognize folders argument value.')
 
-
     def add_folder(self, folder):
         """
 

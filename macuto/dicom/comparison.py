@@ -102,6 +102,101 @@ class DicomFileDistance(DistanceMeasure):
             log.exception('Error calculating DICOM file distance.')
 
 
+class SimpleDicomFileDistance(DicomFileDistance):
+
+    field_weights = DICOM_FIELD_WEIGHTS
+
+    def transform(self):
+        """
+        Checks the field values in self.dcmf1 and self.dcmf2 and returns True
+        if all the field values are the same, False otherwise.
+
+        :return: bool
+        """
+        if self.dcmf1 is None or self.dcmf2 is None:
+            return np.inf
+
+        try:
+            for field_name in self.field_weights:
+                if (str(getattr(self.dcmf1, field_name, '')) != str(getattr(self.dcmf2, field_name, ''))):
+                    return False
+
+            return True
+
+        except Exception as exc:
+            log.exception('Error calculating DICOM file distance.')
+
+
+def group_files_borja(path_list):
+    """
+    Gets a list of DICOM file absolute paths and returns a list of lists of DICOM
+    file paths. Each group contains a set of DICOM files that have
+    exactly the same headers.
+
+    :param file_list: list of file paths
+
+    """
+    dist = SimpleDicomFileDistance()
+
+    path_groups = DefaultOrderedDict(list)
+    while len(path_list)>0:
+        file_path1 = path_list.pop()
+        file_subgroup = [file_path1]
+
+        dist.set_dicom_file1(file_path1)
+        j = len(path_list)-1
+        while j > 0:
+            file_path2 = path_list[j]
+            dist.set_dicom_file2(file_path2)
+
+            if dist.transform():
+                file_subgroup.append(file_path2)
+                path_list.pop(j)
+
+            j-=1
+
+        path_groups[file_path1] = file_subgroup
+
+#    groups_leaders = []
+#    for i in range(len(list_of_lists)):
+#        groups_leaders.append(list_of_lists[i][0])
+
+    return path_groups
+
+
+def group_files_alex(dcm_files):
+    """
+    Gets a list of DICOM file absolute paths and returns a list of lists of DICOM
+    file paths. Each group contains a set of DICOM files that have
+    exactly the same headers.
+
+    :param file_list: list of file paths
+    """
+
+    dist = SimpleDicomFileDistance()
+
+    remainers = copy(dcm_files)
+
+    dcm_groups = DefaultOrderedDict(set)
+    while len(remainers) > 0:
+        dcmf1 = remainers.pop()
+        dcm_groups[dcmf1].add(dcmf1)
+
+        j = len(remainers)-1
+        dist.set_dicom_file1(dcmf1)
+        while j > 0:
+            dcmf2 = dcm_files[j]
+            dist.set_dicom_file2(dcmf2)
+
+            if dist.transform():
+                dcm_groups[dcmf1].add(dcmf2)
+                remainers.pop(j)
+
+            j -= 1
+
+    return dcm_groups
+
+
 class DicomFilesClustering(object):
     """A self-organizing set of DICOM files.
     It uses macuto.dicom.comparison.DicomDistanceMeasure to compare
@@ -201,6 +296,43 @@ class DicomFilesClustering(object):
         #print mylist
 
 
+def fast_group_dicom_files(path_list):
+    """
+    Gets a list of DICOM file absolute paths and returns a list of lists of DICOM
+    file paths. Each group contains a set of DICOM files that have
+    exactly the same headers.
+
+    :param file_list: list of file paths
+
+    """
+    dist = SimpleDicomFileDistance()
+
+    path_groups = DefaultOrderedDict(list)
+    while len(path_list) > 0:
+        file_path1 = path_list.pop()
+        file_subgroup = [file_path1]
+
+        dist.set_dicom_file1(file_path1)
+        j = len(path_list)-1
+        while j > 0:
+            file_path2 = path_list[j]
+            dist.set_dicom_file2(file_path2)
+
+            if dist.transform():
+                file_subgroup.append(file_path2)
+                path_list.pop(j)
+
+            j -= 1
+
+        path_groups[file_path1] = file_subgroup
+
+#    groups_leaders = []
+#    for i in range(len(list_of_lists)):
+#        groups_leaders.append(list_of_lists[i][0])
+
+    return path_groups
+
+
 if __name__ == '__main__':
 
     def test_DicomFileDistance():
@@ -233,6 +365,8 @@ if __name__ == '__main__':
         dcmclusters = DicomFilesClustering(folders=datadir,
                                            store_metadata=True,
                                            header_fields=header_fields)
+
+        dcmclusters.
 
         dcmclusters._calculate_file_distances()
 
