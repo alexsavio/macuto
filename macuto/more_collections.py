@@ -24,6 +24,11 @@ class ItemSet(object):
     def __len__(self):
         return len(self.items)
 
+    def save_to_file(self, out_path):
+        import pickle
+        with open(out_path, 'w') as f:
+            for member in vars(self):
+                pickle.dump(member, f)
 
 class DefaultOrderedDict(OrderedDict):
     """An defauldict and OrderedDict.
