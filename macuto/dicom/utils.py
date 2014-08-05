@@ -5,6 +5,8 @@ import subprocess
 from collections import defaultdict
 from dicom.dataset import FileDataset
 
+import macuto.files.search as fs
+
 log = logging.getLogger(__name__)
 
 
@@ -60,16 +62,36 @@ class DicomFile(FileDataset):
         return tuple(attrs)
 
 
-def get_dicom_file_paths(dirpath):
-    return [os.path.join(dp, f) for dp, dn, filenames in os.walk(dirpath)
-            for f in filenames if is_dicom_file(os.path.join(dp, f))]
-
-
 def get_dicom_files(dirpath):
     return [DicomFile(os.path.join(dp, f))
             for dp, dn, filenames in os.walk(dirpath)
             for f in filenames if is_dicom_file(os.path.join(dp, f))]
 
+
+def find_all_dicom_files(root_path):
+    """
+    Returns a list of the dicom files within root_path
+
+    Parameters
+    ----------
+    root_path: str
+    Path to the directory to be recursively searched for DICOM files.
+
+    Returns
+    -------
+    dicoms: set
+    Set of DICOM absolute file paths
+    """
+    dicoms = set()
+    f = None
+    try:
+        for fpath in fs.get_all_files(root_path):
+            if is_dicom_file(fpath):
+                dicoms.add(fpath)
+    except Exception as exc:
+        log.exceptions('Error reading file {0}.'.format(fpath))
+
+    return dicoms
 
 def is_dicom_file(filepath):
     """
