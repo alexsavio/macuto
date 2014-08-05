@@ -20,4 +20,6 @@ pandas
 python-Levenshtein
 pyaml
 pytest
+pylint
 pytest-cov
+pip
