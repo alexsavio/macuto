@@ -92,7 +92,7 @@ def is_dicom_file(filepath):
     try:
         _ = dicom.read_file(filepath)
     except Exception as exc:
-        log.error('Checking if {0} was a DICOM, but returned '
+        log.debug('Checking if {0} was a DICOM, but returned '
                   'False.'.format(filepath))
         return False
 
