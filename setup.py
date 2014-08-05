@@ -24,37 +24,37 @@ install_reqs = parse_requirements('requirements.txt')
 LICENSE = 'new BSD'
 
 setup_dict = dict(
-    name = 'macuto',
-    version = '0.3.0',
-    description = 'MRI Analysis and Classification Tools',
+    name='macuto',
+    version='0.3.0',
+    description='MRI Analysis and Classification Tools',
 
-    license = 'BSD 3-Clause',
-    author = 'Alexandre M. Savio',
-    author_email = 'alexsavio@gmail.com',
-    maintainer = 'Alexandre M. Savio',
-    maintainer_email = 'alexsavio@gmail.com',
+    license='BSD 3-Clause',
+    author='Alexandre M. Savio',
+    author_email='alexsavio@gmail.com',
+    maintainer='Alexandre M. Savio',
+    maintainer_email='alexsavio@gmail.com',
 
     #packages = ['macuto', 'macuto.nifti',
     #            'macuto.classification', 'macuto.timeseries',
     #            'macuto.atlas']
-    packages = find_packages(),
+    packages=find_packages(),
 
     #install_requires = ['numpy', 'scipy', 'scikit-learn', 'matplotlib', 
     #                    'nibabel', 'h5py', 'nitime']
-    install_requires = [str(ir.req) for ir in install_reqs],
+    install_requires=[str(ir.req) for ir in install_reqs],
 
-    extra_files = ['CHANGES.rst', 'LICENSE', 'README.rst'],
+    extra_files=['CHANGES.rst', 'LICENSE', 'README.rst'],
 
-    scripts = ['macuto/scripts/dcm_anonymize.py',
-               'macuto/scripts/convert.py',
-               'macuto/scripts/filetree.py',
-               'macuto/scripts/sliceit.py',
-               'macuto/scripts/atlasquer.py'],
+    scripts=['macuto/scripts/dcm_anonymize.py',
+             'macuto/scripts/convert.py',
+             'macuto/scripts/filetree.py',
+             'macuto/scripts/sliceit.py',
+             'macuto/scripts/atlasquer.py'],
 
     platforms='Linux/MacOSX',
 
     #https://pypi.python.org/pypi?%3Aaction=list_classifiers
-    classifiers = [
+    classifiers=[
         'Programming Language :: Python',
         'Development Status :: 3 - Alpha',
         'Natural Language :: English',
@@ -65,7 +65,7 @@ setup_dict = dict(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
         'Topic :: Scientific/Engineering :: Information Analysis',
-        ],
+    ],
 
     extras_require={
         'testing': ['pytest'],
@@ -84,7 +84,7 @@ def read(*filenames, **kwargs):
     return sep.join(buf)
 
 
-setup_dict.update(dict(long_description = read('README.rst', 'CHANGES.rst')))
+setup_dict.update(dict(long_description=read('README.rst', 'CHANGES.rst')))
 
 
 #Python3 support keywords
@@ -95,6 +95,7 @@ if sys.version_info >= (3,):
 
 
 class PyTest(TestCommand):
+
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
@@ -110,41 +111,41 @@ setup_dict.update(dict(tests_require=['pytest'],
                        cmdclass={'test': PyTest}))
 
 
-class run_audit(Command):
-    """Audits source code using PyFlakes for following issues:
-- Names which are used but not defined or used before they are defined.
-- Names which are redefined without having been used.
-"""
-    description = "Audit source code with PyFlakes"
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import os
-        import sys
-        try:
-            import pyflakes.scripts.pyflakes as flakes
-        except ImportError:
-            print("Audit requires PyFlakes installed in your system.")
-            sys.exit(-1)
-
-        warns = 0
-        # Define top-level directories
-        dirs = ('macuto')
-        for dir in dirs:
-            for root, _, files in os.walk(dir):
-                for file in files:
-                    if file != '__init__.py' and file.endswith('.py'):
-                        warns += flakes.checkPath(os.path.join(root, file))
-        if warns > 0:
-            print("Audit finished with total %d warnings." % warns)
-        else:
-            print("No problems found in sourcecode.")
+# class run_audit(Command):
+#     """Audits source code using PyFlakes for following issues:
+# - Names which are used but not defined or used before they are defined.
+# - Names which are redefined without having been used.
+# """
+#     description = "Audit source code with PyFlakes"
+#     user_options = []
+#
+#     def initialize_options(self):
+#         pass
+#
+#     def finalize_options(self):
+#         pass
+#
+#     def run(self):
+#         import os
+#         import sys
+#         try:
+#             import pyflakes.scripts.pyflakes as flakes
+#         except ImportError:
+#             print("Audit requires PyFlakes installed in your system.")
+#             sys.exit(-1)
+#
+#         warns = 0
+#         # Define top-level directories
+#         dirs = ('macuto')
+#         for dir in dirs:
+#             for root, _, files in os.walk(dir):
+#                 for file in files:
+#                     if file != '__init__.py' and file.endswith('.py'):
+#                         warns += flakes.checkPath(os.path.join(root, file))
+#         if warns > 0:
+#             print("Audit finished with total %d warnings." % warns)
+#         else:
+#             print("No problems found in sourcecode.")
 
 
 if __name__ == '__main__':
