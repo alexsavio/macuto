@@ -21,7 +21,7 @@ def setup_logging(default_path=os.path.join(os.path.dirname(__file__),
         with open(path, 'rt') as f:
             config = yaml.load(f)
         logging.config.dictConfig(config)
-        print('Started logging from config file {0}.'.format(path))
+        print('Started logging using config file {0}.'.format(path))
     else:
         logging.basicConfig(level=default_level)
         print('Started default logging. Could not find config file '
