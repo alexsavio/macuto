@@ -32,32 +32,37 @@ def get_abspath(folderpath):
     return os.path.abspath(folderpath)
 
 
-def get_files(dirpath):
+def get_files(folderpath):
     return [os.path.join(dp, f) for dp, dn, filenames in
-            os.walk(dirpath) for f in filenames]
+            os.walk(folderpath) for f in filenames]
 
 
-def get_extension(fpath, check_if_exists=False):
-    """
-    @param fpath: string
+def get_extension(filepath, check_if_exists=False):
+    """Return the extension of fpath.
+
+    Parameters
+    ----------
+    fpath: string
     File name or path
 
-    @param check_if_exists: bool
+    check_if_exists: bool
 
-    @return: string
+    Returns
+    -------
+    str
     The extension of the file name or path
     """
     if check_if_exists:
-        if not os.path.exists(fpath):
-            err = 'File not found: ' + fpath
+        if not os.path.exists(filepath):
+            err = 'File not found: ' + filepath
             log.error(err)
             raise IOError(err)
 
     try:
-        rest, ext = os.path.splitext(fpath)
+        rest, ext = os.path.splitext(filepath)
         if ext in ALLOWED_EXTS:
             alloweds = ALLOWED_EXTS[ext]
-            _, ext2 = os.path.splitext(rest)
+            _, ext2 = os.path.splitext(filepath)
             if ext2 in alloweds:
                 ext = ext2 + ext
 
@@ -68,50 +73,62 @@ def get_extension(fpath, check_if_exists=False):
         raise
 
 
-def add_extension_if_needed(fpath, ext, check_if_exists=False):
-    """
-    @param fpath: string
+def add_extension_if_needed(filepath, ext, check_if_exists=False):
+    """Add the extension ext to fpath if it doesn't have it.
+
+    Parameters
+    ----------
+    filepath: str
     File name or path
 
-    @param ext: string
+    ext: str
     File extension
 
-    @param check_if_exists: bool
+    check_if_exists: bool
 
-    @return:
+    Returns
+    -------
     File name or path with extension added, if needed.
     """
-    if not fpath.endswith(ext):
-        fpath += ext
+    if not filepath.endswith(ext):
+        filepath += ext
 
     if check_if_exists:
-        if not os.path.exists(fpath):
-            err = 'File not found: ' + fpath
+        if not os.path.exists(filepath):
+            err = 'File not found: ' + filepath
             log.error(err)
             raise IOError(err)
 
-    return fpath
+    return filepath
 
 
-def remove_ext(fname):
-    """
-    @param fname: string
+def remove_ext(filepath):
+    """Removes the extension of the file.
+
+    Parameters
+    ----------
+    filepath: str
     File path or name
 
-    @return: string
+    Returns
+    -------
+    str
     File path or name without extension
     """
-    return fname[:fname.rindex(get_extension(fname))]
+    return filepath[:filepath.rindex(get_extension(filepath))]
 
 
-def write_lines(fname, lines):
-    """
-    @param fname:
-    @param lines:
-    @return:
+def write_lines(filepath, lines):
+    """Write the given lines to the file in filepath
+
+    Parameters
+    ----------
+    filepath: str
+
+    lines: list of str
     """
     try:
-        f = open(fname, 'w')
+        f = open(filepath, 'w')
         f.writelines(lines)
         f.close()
     except IOError as err:
@@ -123,37 +140,49 @@ def write_lines(fname, lines):
 
 
 def grep_one(srch_str, filepath):
-    """
-    @param srch_str: string
-    @param filepath: string
-    @return:
-    Returns the first line in file defined by filepath
+    """Return the first line in file defined by filepath
     that contains srch_str
+
+    Parameters
+    ----------
+    srch_str: str
+
+    filepath: str
+
+    Returns
+    ----------
+    str
     """
     for line in open(filepath):
         if srch_str in line:
             return line
+    return None
 
 
-def parse_subjects_list(fname, datadir='', split=':', labelsf=None):
-    """
-    @param fname: string
+def parse_subjects_list(filepath, datadir='', split=':', labelsf=None):
+    """Parses a file with a list of: <subject_file>:<subject_class_label>.
+
+    Parameters
+    ----------
+    filepath: str
     Path to file with a list of: <subject_file>:<subject_class_label>.
     Where ':' can be any split character
 
-    @param datadir: string
-    String to be path prefix of each line in fname file,
+    datadir: str
+    String to be path prefix of each line of the fname content,
     only in case the lines are relative file paths.
 
-    @param split: string
+    split: str
     Split character for each line
 
-    @param labelsf: string
+    labelsf: str
     Path to file with a list of the labels if it is not included in
     fname. It will overwrite the labels from fname.
 
-    @return:
-    [labels, subjs]
+    Returns
+    -------
+    [labels, subjs] where labels is a list of labels and subjs a list of
+    filepaths
     """
     labels = []
     subjs  = []
@@ -162,20 +191,19 @@ def parse_subjects_list(fname, datadir='', split=':', labelsf=None):
         datadir += os.path.sep
 
     try:
-        f = open(fname, 'r')
-        for s in f:
-            line = s.strip().split(split)
-            if len(line) == 2:
-                labels.append(np.float(line[1]))
-                subjf = line[0].strip()
-            else:
-                subjf = line.strip()
+        with open(filepath, 'r') as f:
+            for s in f:
+                line = s.strip().split(split)
+                if len(line) == 2:
+                    labels.append(np.float(line[1]))
+                    subjf = line[0].strip()
+                else:
+                    subjf = line.strip()
 
-            if not os.path.isabs(subjf):
-                subjs.append(datadir + subjf)
-            else:
-                subjs.append(subjf)
-        f.close()
+                if not os.path.isabs(subjf):
+                    subjs.append(datadir + subjf)
+                else:
+                    subjs.append(subjf)
 
     except:
         log.error("Unexpected error: ", sys.exc_info()[0])
@@ -187,13 +215,23 @@ def parse_subjects_list(fname, datadir='', split=':', labelsf=None):
     return [labels, subjs]
 
 
-def create_subjects_file(filelist, labels, output, split=':'):
-    """
-    @param filelist:
-    @param labels:
-    @param output:
-    @param split:
-    @return:
+def create_subjects_file(filelist, labels, output_file, split=':'):
+    """Creates a file where each line is <subject_file>:<subject_class_label>.
+
+    Parameters
+    ----------
+    filelist: list of str
+    List of filepaths
+
+    labels: list of int, str or labels that can be transformed with str()
+    List of labels
+
+    output_file: str
+    Output file path
+
+    split: str
+    Split character for each line
+
     """
     lines = []
     for s in range(len(filelist)):
@@ -203,23 +241,35 @@ def create_subjects_file(filelist, labels, output, split=':'):
         lines.append(line)
 
     lines = np.array(lines)
-    np.savetxt(output, lines, fmt='%s')
+    np.savetxt(output_file, lines, fmt='%s')
 
 
 def join_path_to_filelist(path, filelist):
-    """
-    @param path: string
-    @param filelist: list of strings
-    @return:
+    """Joins path to each line in filelist
+
+    Parameters
+    ----------
+    path: str
+
+    filelist: list of str
+
+    Returns
+    -------
+    list of filepaths
     """
     return [os.path.join(path, str(item)) for item in filelist]
 
 
 def remove_all(filelist, folder=''):
-    """
-    @param filelist: list of strings
-    @param folder: string
-    @return:
+    """Deletes all files in filelist
+
+    Parameters
+    ----------
+    filelist: list of str
+    List of the file paths to be removed
+
+    folder: str
+    Path to be used as common directory for all file paths in filelist
     """
     if folder:
         try:
@@ -237,12 +287,39 @@ def remove_all(filelist, folder=''):
             pass
 
 
-def get_temp_file(dir=None, suffix='.nii.gz'):
+def get_folder_subpath(path, folder_depth):
+    """
+    Returns a folder path of path with depth given by folder_dept:
+
+    Parameters
+    ----------
+    path: str
+
+    folder_depth: int > 0
+
+    Returns
+    -------
+    A folder path
+
+    Example
+    -------
+    >>> get_folder_subpath('/home/user/mydoc/work/notes.txt', 3)
+    >>> '/home/user/mydoc'
+    """
+    if path[0] == os.path.sep:
+        folder_depth += 1
+
+    return '/'.join(path.split('/')[0:folder_depth])
+
+
+def get_temp_file(dirpath=None, suffix='.nii.gz'):
     """
     Uses tempfile to create a NamedTemporaryFile using
     the default arguments.
 
-    @param dir: string
+    Parameters
+    ----------
+    dirpath: str
     Directory where it must be created.
     If dir is specified, the file will be created
     in that directory, otherwise, a default directory is used.
@@ -251,26 +328,34 @@ def get_temp_file(dir=None, suffix='.nii.gz'):
     directory location by setting the TMPDIR, TEMP or TMP
     environment variables.
 
-    @param suffix: string
+    suffix: str
     File name suffix.
     It does not put a dot between the file name and the
     suffix; if you need one, put it at the beginning of suffix.
 
-    @return: file object
+    Returns
+    -------
+    file object
 
-    @note:
-    Close it once you have used the file.
+    Note
+    ----
+    Please, close it once you have used the file.
     """
-    return tempfile.NamedTemporaryFile(dir=dir, suffix=suffix)
+    return tempfile.NamedTemporaryFile(dir=dirpath, suffix=suffix)
 
 
-def ux_file_len(fname):
+def ux_file_len(filepath):
+    """Returns the length of the file using the 'wc' GNU command
+
+    Parameters
+    ----------
+    filepath: str
+
+    Returns
+    -------
+    float
     """
-
-    @param fname: string
-    @return:
-    """
-    p = subprocess.Popen(['wc', '-l', fname], stdout=subprocess.PIPE,
+    p = subprocess.Popen(['wc', '-l', filepath], stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     result, err = p.communicate()
 
@@ -283,30 +368,45 @@ def ux_file_len(fname):
     return l
 
 
-def count_lines(fname):
-    """
+def count_lines(filepath):
+    """Return the number of lines in file in filepath
 
-    @param fname: string
-    @return:
+    Parameters
+    ----------
+    filepath: str
+
+    Returns
+    -------
+    int
     """
-    statinfo = os.stat(fname)
+    statinfo = os.stat(filepath)
     return statinfo.st_size
 
 
-def file_size(fname):
-    """
+def file_size(filepath):
+    """Returns the length of the file
 
-    @param fname: string
-    @return:
+    Parameters
+    ----------
+    filepath: str
+
+    Returns
+    -------
+    float
     """
-    return os.path.getsize(fname)
+    return os.path.getsize(filepath)
 
 
 def fileobj_size(file_obj):
-    """
+    """Returns the length of the size of the file
 
-    @param file_obj: file-like object
-    @return:
+    Parameters
+    ----------
+    file_obj: file-like object
+
+    Returns
+    -------
+    float
     """
     file_obj.seek(0, os.SEEK_END)
     return file_obj.tell()
