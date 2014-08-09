@@ -1,5 +1,22 @@
 
 
+class FilesNotCompatible(Exception):
+    file_types = 'files'
+
+    def __init__(self, file_path1, file_path2, message=None):
+        msg = '{} {} and {} are not compatible.'.format(self.file_types.capitalize(),
+                                                        file_path1,
+                                                        file_path2)
+        if message is not None:
+            msg += '. ' + message
+
+        Exception.__init__(self, msg)
+
+
+class NiftiFilesNotCompatible(FilesNotCompatible):
+    file_types = 'nifti files'
+
+
 class PathNotFoundError(Exception):
     path_type = 'path'
 
