@@ -124,7 +124,7 @@ def smooth_volume(nifti_file, smoothmm):
     try:
         img = load_image(nifti_file)
     except Exception as exc:
-        log.exception('Error reading file {0}.'.format(nifti_file))
+        log.error('Error reading file {0}.'.format(nifti_file), exc_info=True)
 
     if smoothmm <= 0:
         return img
