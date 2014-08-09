@@ -23,21 +23,22 @@ log = logging.getLogger(__name__)
 
 
 def save_niigz(vol, filepath, affine=None, header=None):
-    """
-    Saves a volume into a Nifti (.nii.gz) file.
+    """Saves a volume into a Nifti (.nii.gz) file.
 
     Parameters
-    ===========
-    @param vol: Numpy 3D or 4D array
+    ----------
+    vol: Numpy 3D or 4D array
         Volume with the data to be saved.
-    @param filepath: string
+    filepath: string
         Output file name path
-    @param affine: 4x4 Numpy array
+    affine: 4x4 Numpy array
         Array with the affine transform of the file.
-    @param header: nibabel.nifti1.Nifti1Header, optional
+    header: nibabel.nifti1.Nifti1Header, optional
         Header for the file, optional but recommended.
 
-    @note: affine and header only work for numpy volumes.
+    Note
+    ----
+        affine and header only work for numpy volumes.
 
     """
     if isinstance(vol, np.ndarray):
@@ -55,20 +56,21 @@ def save_niigz(vol, filepath, affine=None, header=None):
 
 
 def spatialimg_to_hdfgroup(h5group, spatial_img):
-    """
-    Saves a Nifti1Image into an HDF5 group.
+    """Saves a Nifti1Image into an HDF5 group.
 
-    @param h5group: h5py Group
-    Output HDF5 file path
+    Parameters
+    ----------
+    h5group: h5py Group
+        Output HDF5 file path
 
-    @param spatial_img: nibabel SpatialImage
-    Image to be saved
+    spatial_img: nibabel SpatialImage
+        Image to be saved
 
-    @param h5path: string
-    HDF5 group path where the image data will be saved.
-    Datasets will be created inside the given group path:
-    'data', 'extra', 'affine', the header information will
-    be set as attributes of the 'data' dataset.
+    h5path: str
+        HDF5 group path where the image data will be saved.
+        Datasets will be created inside the given group path:
+        'data', 'extra', 'affine', the header information will
+        be set as attributes of the 'data' dataset.
 
     """
     try:
@@ -88,27 +90,29 @@ def spatialimg_to_hdfgroup(h5group, spatial_img):
         raise
 
 def spatialimg_to_hdfpath(fname, spatial_img, h5path=None, append=True):
-    """
-    Saves a Nifti1Image into an HDF5 file.
+    """Saves a Nifti1Image into an HDF5 file.
 
-    @param fname: string
-    Output HDF5 file path
+    Parameters
+    ----------
+    fname: string
+        Output HDF5 file path
 
-    @param spatial_img: nibabel SpatialImage
-    Image to be saved
+    spatial_img: nibabel SpatialImage
+        Image to be saved
 
-    @param h5path: string
-    HDF5 group path where the image data will be saved.
-    Datasets will be created inside the given group path:
-    'data', 'extra', 'affine', the header information will
-    be set as attributes of the 'data' dataset.
-    Default: '/img'
+    h5path: string
+        HDF5 group path where the image data will be saved.
+        Datasets will be created inside the given group path:
+        'data', 'extra', 'affine', the header information will
+        be set as attributes of the 'data' dataset.
+        Default: '/img'
 
-    @param append: bool
-    True if you don't want to erase the content of the file
-    if it already exists, False otherwise.
+    append: bool
+        True if you don't want to erase the content of the file
+        if it already exists, False otherwise.
 
-    @note:
+    Note
+    ----
     HDF5 open modes
     >>> 'r' Readonly, file must exist
     >>> 'r+' Read/write, file must exist
@@ -137,29 +141,35 @@ def spatialimg_to_hdfpath(fname, spatial_img, h5path=None, append=True):
 
 
 def hdfpath_to_nifti1image(fname, h5path):
-    """
-    Returns a nibabel Nifti1Image from a HDF5 group datasets
+    """Returns a nibabel Nifti1Image from a HDF5 group datasets
 
-    @param fname: string
-    HDF5 file path
+    Parameters
+    ----------
+    fname: string
+        HDF5 file path
 
-    @param h5path:
-    HDF5 group path in fname
+    h5path:
+        HDF5 group path in fname
 
-    @return: nibabel Nifti1Image
+    Returns
+    -------
+        nibabel Nifti1Image
     """
     with h5py.File(fname, 'r') as f: 
         return hdfgroup_to_nifti1image(f[h5path])
 
 
 def hdfgroup_to_nifti1image(h5group):
-    """
-    Returns a nibabel Nifti1Image from a HDF5 group datasets
+    """Returns a nibabel Nifti1Image from a HDF5 group datasets
 
-    @param h5group: h5py.Group
-    HDF5 group
+    Parameters
+    ----------
+    h5group: h5py.Group
+        HDF5 group
 
-    @return: nibabel Nifti1Image
+    Returns
+    -------
+    nibabel Nifti1Image
     """
     try:
         data   = h5group['data'][:]
@@ -182,14 +192,17 @@ def hdfgroup_to_nifti1image(h5group):
 
 
 def get_nifti1hdr_from_h5attrs(h5attrs):
-    """
-    Transforms an H5py Attributes set to a dict.
+    """Transforms an H5py Attributes set to a dict.
     Converts unicode string keys into standard strings
     and each value into a numpy array.
 
-    @param h5attrs: H5py Attributes
+    Parameters
+    ----------
+    h5attrs: H5py Attributes
 
-    @return: dict
+    Returns
+    --------
+    dict
     """
     hdr = nib.Nifti1Header()
     for k in list(h5attrs.keys()):
@@ -199,13 +212,16 @@ def get_nifti1hdr_from_h5attrs(h5attrs):
 
 
 def all_childnodes_to_nifti1img(h5group):
-    """
-    Returns in a list all images found under h5group.
+    """Returns in a list all images found under h5group.
 
-    @param h5group: h5py.Group
-    HDF group
+    Parameters
+    ----------
+    h5group: h5py.Group
+        HDF group
 
-    @return: list of nifti1Image
+    Returns
+    -------
+    list of nifti1Image
     """
     child_nodes = []
     def append_parent_if_dataset(name, obj):
@@ -223,38 +239,41 @@ def all_childnodes_to_nifti1img(h5group):
 
 def insert_volumes_in_one_dataset(fname, h5path, file_list, newshape=None,
                                   concat_axis=0, dtype=None, append=True):
-    """
-    Inserts all given nifti files from file_list into
-    one dataset in fname.
-
+    """Inserts all given nifti files from file_list into one dataset in fname.
     This will not check if the dimensionality of all files match.
 
-    @param fname: string
-    HDF5 file path
+    Parameters
+    ----------
+    fname: string
+        HDF5 file path
 
-    @param h5path: string
+    h5path: string
 
-    @param file_list: list of strings
+    file_list: list of strings
 
-    @param newshape: tuple or lambda function
-    If None, it will not reshape the images.
-    If a lambda function, this lambda will receive only the shape array.
-    e.g., newshape = lambda x: (np.prod(x[0:3]), x[3])
-    If a tuple, it will try to reshape all the images with the same shape.
-    It must work for all the images in file_list.
+    newshape: tuple or lambda function
+        If None, it will not reshape the images.
+        If a lambda function, this lambda will receive only the shape array.
+        e.g., newshape = lambda x: (np.prod(x[0:3]), x[3])
+        If a tuple, it will try to reshape all the images with the same shape.
+        It must work for all the images in file_list.
 
-    @param concat_axis: int
-    Axis of concatenation after reshaping
+    concat_axis: int
+        Axis of concatenation after reshaping
 
-    @param dtype: data type
+    dtype: data type
     Dataset data type
     If not set, will use the type of the first file.
 
-    @param append: bool
+    append: bool
 
-    @raise: ValueError if concat_axis is bigger than data dimensionality.
+    Raises
+    ------
+    ValueError if concat_axis is bigger than data dimensionality.
 
-    @note: For now, this only works if the dataset ends up being a 2D matrix.
+    Note
+    ----
+    For now, this only works if the dataset ends up being a 2D matrix.
     I haven't tested for multi-dimensionality concatenations.
     """
 
