@@ -15,15 +15,22 @@ import numpy as np
 import nibabel as nib
 import logging
 
-from ..exceptions import FileNotFound
+from .process import are_compatible_imgs
+from ..exceptions import FileNotFound, NiftiFilesNotCompatible
 
 log = logging.getLogger(__name__)
 
 
 def get_nii_info(nii_file):
-    """
-    @param nii_file: string
-    @return:
+    """Return the header and affine matrix from a Nifti file.
+
+    Parameters
+    ----------
+    param nii_file: str
+        Nifti file path
+
+    Returns
+    -------
     hdr, aff
     """
     if not os.path.exists(nii_file):
@@ -31,19 +38,23 @@ def get_nii_info(nii_file):
 
     try:
         nibf = nib.load(nii_file)
-        aff = nibf.get_affine()
-        hdr = nibf.get_header()
 
+        return nibf.get_header(), nibf.get_affine()
     except Exception as exc:
         log.exception('Error reading file {0}.'.format(nii_file))
 
-    return hdr, aff
-
 
 def get_nii_data(nii_file):
-    """
-    @param nii_file: string
-    @return:
+    """Return the voxel matrix of the Nifti file
+
+    Parameters
+    ----------
+    param nii_file: str
+        Nifti file path
+
+    Returns
+    -------
+    array_like
     """
     if not os.path.exists(nii_file):
         raise FileNotFound(nii_file)
@@ -57,12 +68,16 @@ def get_nii_data(nii_file):
 
 
 def load_nipy_img(nii_file):
-    """
+    """Read a Nifti file and return as nipy.Image
 
-    :param nii_file: str
-     Path to the nifti file
+    Parameters
+    ----------
+    param nii_file: str
+        Nifti file path
 
-    :return: nipy.Image
+    Returns
+    -------
+    nipy.Image
     """
     if not os.path.exists(nii_file):
         raise FileNotFound(nii_file)
@@ -74,14 +89,38 @@ def load_nipy_img(nii_file):
 
 
 def get_masked_nii_data(nii_file, mask_file):
-    """
-    @param nii_file: string
-    @param mask_file: string
-    @return:
+    """Read a Nifti file nii_file and a mask Nifti file.
+    Returns the voxels in nii_file that are within the mask, the mask indices
+    and the mask shape.
+
+    Parameters
+    ----------
+    param nii_file: str
+        Nifti file path
+
+    param mask_file: str
+        Nifti mask file path
+
+    Returns
+    -------
     vol[mask_indices], mask_indices, mask.shape
+
+    Note
+    ----
+    nii_file and mask_file must have the same shape.
+
+    Raises
+    ------
+    FileNotFound, NiftiFilesNotCompatible
     """
     if not os.path.exists(nii_file):
-       raise FileNotFound(nii_file)
+        raise FileNotFound(nii_file)
+
+    if not os.path.exists(mask_file):
+        raise FileNotFound(mask_file)
+
+    if not are_compatible_imgs(nii_file, mask_file):
+        raise NiftiFilesNotCompatible(nii_file, mask_file)
 
     try:
         nibf = nib.load(nii_file)
@@ -96,22 +135,24 @@ def get_masked_nii_data(nii_file, mask_file):
 
 
 def vector_to_volume(vector, mask_indices, mask_shape, dtype=None):
-    """
-    Transform a given vector to a volume. This is a reshape function for
+    """Transform a given vector to a volume. This is a reshape function for
     3D flattened and maybe masked vectors.
 
-    :param vector: np.array
+    Parameters
+    ----------
+    vector: np.array
 
-    :param mask_indices: np.array
-    mask_indices = np.where(mask > 0)
+    mask_indices: tuple of ndarrays
+        mask_indices = np.where(mask > 0)
 
-    :param mask_shape: tuple
+    mask_shape: tuple
 
-    :param dtype: return type
-    If None, will get the type from vector
+    dtype: return type
+        If None, will get the type from vector
 
-    :return:
-    np.array
+    Returns
+    -------
+    np.ndarray
     """
     if dtype is None:
         dtype = vector.dtype
@@ -129,24 +170,24 @@ def niftilist_to_array(nii_filelist, outdtype=None):
     From the list of absolute paths to nifti files, creates a Numpy array
     with the data.
 
-    Arguments:
+    Parameters
     ----------
-    nii_filelist:  list of strings
-    List of absolute file paths to nifti files. All nifti files must have the
-    same shape.
+    nii_filelist:  list of str
+        List of absolute file paths to nifti files. All nifti files must have
+        the same shape.
 
     smoothmm: int
-    Integer indicating the size of the FWHM Gaussian smoothing kernel you would
-    like for smoothing the volume before flattening it.
-    Need FSL and nipype.
-    See smooth_volume() source code.
+        Integer indicating the size of the FWHM Gaussian smoothing kernel you 
+        would like for smoothing the volume before flattening it.
+        Need FSL and nipype.
+        See smooth_volume() source code.
 
     outdtype: dtype
-    Type of the elements of the array, if not set will obtain the dtype from
-    the first nifti file.
+        Type of the elements of the array, if not set will obtain the dtype from
+        the first nifti file.
 
-    Returns:
-    --------
+    Returns
+    -------
     outmat: Numpy array with shape N x prod(vol.shape)
             containing the N files as flat vectors.
 
@@ -174,35 +215,35 @@ def niftilist_to_array(nii_filelist, outdtype=None):
 
 
 def niftilist_mask_to_array(nii_filelist, mask_file=None, outdtype=None):
-    """
-    From the list of absolute paths to nifti files, creates a Numpy array
+    """From the list of absolute paths to nifti files, creates a Numpy array
     with the masked data.
 
-    Arguments:
+    Parameters
     ----------
-    @param nii_filelist: list of strings
-    List of absolute file paths to nifti files. All nifti files must have the
-    same shape.
+    nii_filelist: list of str
+        List of absolute file paths to nifti files. All nifti files must have 
+        the same shape.
 
-    @param mask_file: string
-    Path to a Nifti mask file.
-    Should be the same shape as the files in nii_filelist.
+    mask_file: str
+        Path to a Nifti mask file.
+        Should be the same shape as the files in nii_filelist.
 
-    @param outdtype: dtype
-    Type of the elements of the array, if not set will obtain the dtype from
-    the first nifti file.
+    outdtype: dtype
+        Type of the elements of the array, if not set will obtain the dtype from
+        the first nifti file.
 
-    Returns:
-    --------
-    @return
-    outmat: Numpy array with shape N x mask_voxels
-            containing the N files as flat vectors with the data within
-            the mask file.
+    Returns
+    -------
+    outmat: 
+        Numpy array with shape N x mask_voxels containing the N files as flat 
+        vectors with the data within the mask file.
 
-    mask_indices: Tuple with the 3D spatial indices of the masking voxels, for
-    reshaping with vol_shape and remapping.
+    mask_indices: 
+        Tuple with the 3D spatial indices of the masking voxels, for reshaping 
+        with vol_shape and remapping.
 
-    vol_shape: Tuple with shape of the volumes, for reshaping.
+    vol_shape: 
+        Tuple with shape of the volumes, for reshaping.
 
     """
     vol = get_nii_data(nii_filelist[0])
