@@ -32,7 +32,6 @@ from .distance import (welch_ttest, bhattacharyya_dist,
 from ..threshold import (RobustThreshold, RankThreshold, PercentileThreshold)
 from ..utils.printable import Printable
 from ..storage import ExportData
-from ..exceptions import LoggedValueError
 
 
 log = logging.getLogger(__name__)
@@ -179,9 +178,9 @@ def feature_selection(samples, targets, method, thr=95, dist_function=None,
             #http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
             distance = DistanceMeasure(dist_function)
         else:
-            raise LoggedValueError('Not valid argument input values.')
+            raise ValueError('Not valid argument input values.')
 
-    dists = distance.fit_transform(samples, targets)
+    dists = distance.fit(samples, targets)
 
     #if all distance values are 0
     if not dists.any():
@@ -214,7 +213,7 @@ def calculate_stats(data):
     """
     n_subjs = data.shape[0]
 
-    feats  = np.zeros((n_subjs, 7))
+    feats = np.zeros((n_subjs, 7))
 
     feats[:, 0] = data.max(axis=1)
     feats[:, 1] = data.min(axis=1)
@@ -247,36 +246,37 @@ def calculate_hist3d(data, bins):
     return feats
 
 
-def create_feature_sets(fsmethod, data, msk, y, outdir, outbasename,
+def create_feature_sets(fsmethod, samples, mask, targets, outdir, outbasename,
                         otype='.h5'):
-    """
-    @param fsmethod:
+    """Calculates and saves a feature set in a file.
 
-    @param fsgrid:
+    Parameters
+    ----------
+    fsmethod:
 
-    @param data: numpy array
-    Shape: n_samples x n_features
+    fsgrid:
 
-    @param msk:
+    data: array_like
+        Shape: n_samples x n_features
 
-    @param y:
+    msk: array_like
 
-    @param outdir:
+    targets:
 
-    @param outbasename:
+    outdir:
 
-    @param otype: string
+    outbasename:
+
+    otype: string
     Valid values '.pyshelf', '.mat', '.hdf5' or '.h5'
-
-    @return:
     """
-    np.savetxt(os.path.join(outdir, outbasename + '_labels.txt'), y,
+    np.savetxt(os.path.join(outdir, outbasename + '_labels.txt'), targets,
                fmt="%.2f")
 
     outfname = os.path.join(outdir, outbasename)
     log.info('Creating ' + outfname)
 
-    fs = data[:, msk > 0]
+    fs = samples[:, mask > 0]
 
     if fsmethod == 'stats':
         feats = calculate_stats(fs)
