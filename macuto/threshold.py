@@ -16,105 +16,137 @@
 
 import numpy as np
 
-from .utils import Printable
+from .utils.printable import Printable
 
 
 class Threshold(Printable):
+    """Base class for percentile thresholding a set of values.
 
-    def __init__(self, threshold_value=95):
-        self._threshold_value = threshold_value
+    Parameters
+    ----------
+    threshold_value: float
+        From 0 to 1
+
+    threshold_method: str
+        Choices: {'robust', 'rank', 'percentile'}
+    """
+
+    def __init__(self, threshold_value=95, threshold_method='robust'):
+        self.value = threshold_value
+        self.method = threshold_method
 
     def fit_transform(self, x):
-        """
-        :param values: numpy array
+        """Perform the threshold of x.
 
-        :return: numpy array
-        Thresholded array
+        Parameters
+        ----------
+        x: array_like
+
+        Returns
+        -------
+        array_like
+            Thresholded array
         """
-        return apply_threshold(x, self._threshold_value,
-                               self._threshold_method)
+        return apply_threshold(x, self.value,
+                               self.method)
+
+    def __str__(self):
+        return '{} at {} percentile.'.format(self.__class__.__name__,
+                                             self.value)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class RobustThreshold(Threshold):
-    """
-    Zeroes anything lower than the smaller value in the percentile bin after
+    """Zeroes anything lower than the smaller value in the percentile bin after
     doing a histogram of the data.
     See: macuto.theshold.find_thresholds
     """
     def __init__(self, threshold_value=95):
-        Threshold.__init__(self, threshold_value)
-        self._threshold_method = 'robust'
+        Threshold.__init__(self, threshold_value, 'robust')
 
 
 class RankThreshold(Threshold):
-    """
-    Zeroes anything lower than the value of the data that is
-    just above the percentile.
+    """Zeroes anything lower than the value of the data that is just above the
+    percentile.
     """
     def __init__(self, threshold_value=95):
-        Threshold.__init__(self, threshold_value)
-        self._threshold_method = 'rank'
+        Threshold.__init__(self, threshold_value, 'rank')
 
 
 class PercentileThreshold(Threshold):
-    """
-    Zeroes anything lower than the percentile relative to the data.
+    """Zeroes anything lower than the percentile relative to the data.
     """
     def __init__(self, threshold_value=95):
-        Threshold.__init__(self, threshold_value)
-        self._threshold_method = 'percentile'
+        Threshold.__init__(self, threshold_value, 'percentile')
 
 
 def binarise(data, lower_bound, upper_bound, inclusive=True):
-    """
+    """Binarise a dataset within a range of values.
 
-    @param data:
-    @param lower_bound:
-    @param upper_bound:
-    @param inclusive:
-    @return:
+    Parameters
+    ----------
+    data: array_like
+
+    lower_bound: float
+    upper_bound: float
+    inclusive: bool
+
+    Returns
+    -------
+    Binarised data: array_like
     """
     if inclusive:
         lowers = data >= lower_bound
         uppers = data <= upper_bound
     else:
-        lowers = data >  lower_bound
-        uppers = data <  upper_bound
+        lowers = data > lower_bound
+        uppers = data < upper_bound
 
     return lowers.astype(int) * uppers.astype(int)
 
 
 def apply_threshold(values, thr, method='robust'):
     """
-    @param values: numpy array
+    Parameters
+    ----------
+    values: array_like
 
-    @param thr: float
-    between 0 and 100
+    thr: float
+        Between 0 and 100
 
-    @param method: string
-    Valid choices: 'robust', 'rank', 'percentile'
+    method: str
+        Valid choices: 'robust', 'rank', 'percentile'
 
-    @return: numpy array
+    Returns
+    -------
+    numpy array
     Thresholded array
     """
-    if   method == 'robust':     return robust_range_threshold(values, thr)
-    elif method == 'rank':       return rank_threshold        (values, thr)
-    elif method == 'percentile': return percentile_threshold  (values, thr)
+    if method == 'robust':
+        return robust_range_threshold(values, thr)
+    elif method == 'rank':
+        return rank_threshold(values, thr)
+    elif method == 'percentile':
+        return percentile_threshold(values, thr)
 
 
 def find_histogram(vol, hist, mini, maxi, mask=None):
-    """
-    For robust limits calculation
+    """For robust limits calculation
 
-    @param vol: ndarray
+    Parameters
+    ----------
+    vol: ndarray
 
-    @param hist:
-    @param mini:
-    @param maxi:
-    @param mask:
-    @param use_mask:
-    @return:
-    hist,validsize
+    hist:
+    mini:
+    maxi:
+    mask:
+
+    Returns
+    -------
+    hist, validsize
     """
     validsize = 0
     hist = np.zeros(hist.size, dtype=int)
@@ -129,7 +161,7 @@ def find_histogram(vol, hist, mini, maxi, mask=None):
     else:
         a = vol[mask > 0.5].flatten()
 
-    a = (a*fA + fB).astype(int)
+    a = a.astype(int) * fA + fB
     h = hist.size - 1
 
     for i in np.arange(a.size):
@@ -140,31 +172,51 @@ def find_histogram(vol, hist, mini, maxi, mask=None):
 
 
 def is_symmetric(mat):
-    """
-    Returns true if mat is symmetric
-    @param mat: numpy array
-    @return:
+    """Returns true if mat is symmetric
+    Parameters
+    ----------
+    mat: array_like
+
+    Returns
+    -------
+    bool
     """
     return np.allclose(mat.T, mat)
 
 
 def rank_threshold(distances, thr=95):
+    """Performs a threshold to ranked distances using thr
+
+    Parameters
+    ----------
+    distances: array_like
+
+    thr: float
+        From [0, 100]
+
+    Returns
+    -------
+    Thresholded distances
     """
-    @param distances:
-    @param thr:
-    @return:
-    """
-    sorte     = distances.flatten().argsort()
-    limit     = len(sorte) * thr/100
-    distances[sorte[:limit-1]] = 0
+    sort_idx = distances.flatten().argsort()
+    limit = len(sort_idx) * thr/100
+    distances[sort_idx[:limit-1]] = 0
     return distances
 
 
 def percentile_threshold(distances, thr=95):
-    """
-    @param distances:
-    @param thr:
-    @return:
+    """Perform a threshold zeroing everything below the percentile given by thr
+
+    Parameters
+    ----------
+    distances: array_like
+
+    thr: float
+        From [0, 100]
+
+    Returns
+    -------
+    Thresholded distances
     """
     sels = np.select([distances >= np.percentile(distances, thr)], [distances])
     sels[np.isnan(sels)] = 0
@@ -172,12 +224,17 @@ def percentile_threshold(distances, thr=95):
 
 
 def find_thresholds(vol, mask=None):
-    """
-    For robust limits calculation
-    @param vol:
-    @param mask:
-    @param use_mask:
-    @return: minval, maxval
+    """For robust limits calculation
+
+    Parameters
+    ----------
+    vol: array_like
+
+    mask: array_like
+
+    Returns
+    -------
+    minval, maxval
     """
     hist_bins   = 1000
     hist        = np.zeros(hist_bins, dtype=int)
@@ -203,11 +260,11 @@ def find_thresholds(vol, mask=None):
     while jump == 1 or ((float(thresh98) - thresh2) < (maxi - mini)/10.):
         if jump > 1:
             bottom_bin = max(bottom_bin-1, 0)
-            top_bin    = min(top_bin   +1, hist_bins-1)
+            top_bin = min(top_bin + 1, hist_bins - 1)
 
             tmpmin = mini + (float(bottom_bin)/float(hist_bins)) * (maxi-mini)
-            maxi   = mini + (float(top_bin+1) /float(hist_bins)) * (maxi-mini)
-            mini   = tmpmin
+            maxi = mini + (float(top_bin + 1)/float(hist_bins)) * (maxi-mini)
+            mini = tmpmin
 
         if jump == max_jumps or mini == maxi:
             if mask is None:
@@ -220,38 +277,38 @@ def find_thresholds(vol, mask=None):
         hist, validsize = find_histogram(vol, hist, mini, maxi, mask)
 
         if validsize < 1:
-            thresh2  = mini
-            minval   = mini
+            thresh2 = mini
             thresh98 = maxi
-            maxval   = maxi
+            minval = mini
+            maxval = maxi
             return minval, maxval
 
         if jump == max_jumps:
-            validsize   -= np.round(hist[lowest_bin]) + np.round(hist[highest_bin])
-            lowest_bin  += 1
+            validsize -= np.round(hist[lowest_bin]) + np.round(hist[highest_bin])
+            lowest_bin += 1
             highest_bin -= 1
 
         if validsize < 0:
-            thresh2  = mini
+            thresh2 = mini
             thresh98 = mini
 
         fA = (maxi-mini)/float(hist_bins)
 
-        count      = 0
+        count = 0
         bottom_bin = lowest_bin
         while count < float(validsize)/50:
-            count      += np.round(hist[bottom_bin])
+            count += np.round(hist[bottom_bin])
             bottom_bin += 1
         bottom_bin -= 1
-        thresh2     = mini + float(bottom_bin) * fA
+        thresh2 = mini + float(bottom_bin) * fA
 
-        count   = 0
+        count = 0
         top_bin = highest_bin
         while count < float(validsize)/50:
-            count   += np.round(hist[top_bin])
+            count += np.round(hist[top_bin])
             top_bin -= 1
-        top_bin  += 1
-        thresh98  = mini + (float(top_bin) + 1) * fA
+        top_bin += 1
+        thresh98 = mini + (float(top_bin) + 1) * fA
 
         if jump == max_jumps:
             break
@@ -264,47 +321,74 @@ def find_thresholds(vol, mask=None):
 
 
 def robust_min(vol, mask=None):
-    """
+    """Estimates the robust minimum of vol
 
-    @param vol:
-    @param mask:
-    @return:
+    Parameters
+    ----------
+    vol: array_like
+
+    mask: array_like
+
+    Returns
+    -------
+    minval
     """
     return find_thresholds(vol, mask)[0]
 
 
-def robust_max (vol, mask=None):
-    """
+def robust_max(vol, mask=None):
+    """Estimates the robust maximum of vol
 
-    @param vol:
-    @param mask:
-    @return:
+    Parameters
+    ----------
+    vol: array_like
+
+    mask: array_like
+
+    Returns
+    -------
+    maxval
     """
     return find_thresholds(vol, mask)[1]
 
 
-def threshold (data, lower_bound, upper_bound, inclusive=True):
-    """
-    @param data:
-    @param lower_bound:
-    @param upper_bound:
-    @param inclusive:
-    @return:
+def threshold(data, lower_bound, upper_bound, inclusive=True):
+    """Performs a band filtering to data.
+    Parameters
+    ----------
+    data: array_like
+
+    lower_bound: float
+
+    upper_bound: float
+
+    inclusive: bool
+
+    Returns
+    -------
+    thresholded data
     """
     mask = binarise(data, lower_bound, upper_bound, inclusive)
     return data * mask
 
 
-def robust_range_threshold(vol, thrP):
-    """
+def robust_range_threshold(vol, thrP=0.95):
+    """Perform a robust range threshold to vol.
 
-    @param vol:
-    @param thrP:
-     thrP should go within [0, 100]
-    @return:
+    Parameters
+    ----------
+    vol: array_like
+
+    thrP: float
+    Threshold value
+    thrP should go within [0, 100]
+
+    Returns
+    -------
+    Thresholded vol
     """
-    mask       = binarise(vol, 0, vol.max()+1, False)
-    limits     = find_thresholds(vol, mask)
+    mask = binarise(vol, 0, vol.max()+1, False)
+    limits = find_thresholds(vol, mask)
     lowerlimit = limits[0] + float(thrP)/100*(limits[1]-limits[0])
-    out        = threshold(vol, lowerlimit, vol.max()+1, True)
+    out = threshold(vol, lowerlimit, vol.max()+1, True)
     return out #out.astype(vol.dtype)
