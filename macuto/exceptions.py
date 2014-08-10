@@ -1,5 +1,4 @@
 
-
 class FilesNotCompatible(Exception):
     file_types = 'files'
 

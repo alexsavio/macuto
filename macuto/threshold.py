@@ -1,15 +1,68 @@
-# coding=utf-8
-#-------------------------------------------------------------------------------
+# -*- coding: utf-8 -*-
 
-#Author: Alexandre Manhaes Savio <alexsavio@gmail.com>
-#Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
-#Universidad del Pais Vasco UPV/EHU
+#------------------------------------------------------------------------------
+#Authors:
+# Alexandre Manhaes Savio <alexsavio@gmail.com>
+# Darya Chyzhyk <darya.chyzhyk@gmail.com>
+# Borja Ayerdi <ayerdi.borja@gmail.com>
+# Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
+# Neurita S.L.
 #
-#2013, Alexandre Manhaes Savio
-#Use this at your own risk!
-#-------------------------------------------------------------------------------
+# BSD 3-Clause License
+#
+# 2014, Alexandre Manhaes Savio
+# Use this at your own risk!
+#------------------------------------------------------------------------------
 
 import numpy as np
+
+from .utils import Printable
+
+
+class Threshold(Printable):
+
+    def __init__(self, threshold_value=95):
+        self._threshold_value = threshold_value
+
+    def fit_transform(self, x):
+        """
+        :param values: numpy array
+
+        :return: numpy array
+        Thresholded array
+        """
+        return apply_threshold(x, self._threshold_value,
+                               self._threshold_method)
+
+
+class RobustThreshold(Threshold):
+    """
+    Zeroes anything lower than the smaller value in the percentile bin after
+    doing a histogram of the data.
+    See: macuto.theshold.find_thresholds
+    """
+    def __init__(self, threshold_value=95):
+        Threshold.__init__(self, threshold_value)
+        self._threshold_method = 'robust'
+
+
+class RankThreshold(Threshold):
+    """
+    Zeroes anything lower than the value of the data that is
+    just above the percentile.
+    """
+    def __init__(self, threshold_value=95):
+        Threshold.__init__(self, threshold_value)
+        self._threshold_method = 'rank'
+
+
+class PercentileThreshold(Threshold):
+    """
+    Zeroes anything lower than the percentile relative to the data.
+    """
+    def __init__(self, threshold_value=95):
+        Threshold.__init__(self, threshold_value)
+        self._threshold_method = 'percentile'
 
 
 def binarise(data, lower_bound, upper_bound, inclusive=True):
