@@ -16,6 +16,7 @@ import logging
 import numpy as np
 import nibabel as nib
 from sklearn.preprocessing import LabelEncoder
+from sklearn.datasets import load_svmlight_file
 
 from ..files.names import parse_subjects_list
 from ..files.names import grep_one
