@@ -134,7 +134,7 @@ class BhatacharyyaGaussianDistance(DistanceMeasure):
     Size: n_features
     """
 
-    def __init__(self, threshold):
+    def __init__(self):
         super(BhatacharyyaGaussianDistance, self).__init__(self,
                                                            bhattacharyya_dist)
 
