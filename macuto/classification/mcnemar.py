@@ -1,7 +1,7 @@
 
 import numpy as np
-from scipy import stats
 from math import sqrt
+from scipy import stats
 
 
 class ClassifiersMcNemarTest(object):
@@ -10,8 +10,6 @@ class ClassifiersMcNemarTest(object):
     """
 
     def __init__(self):
-        """
-        """
         self._a, self._b, self._c, self._d = None, None, None, None
 
     def fit_transform(self, targets, c1_predictions, c2_predictions, alpha=0.1,

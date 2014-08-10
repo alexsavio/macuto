@@ -22,11 +22,11 @@ from scipy import stats
 from sklearn.grid_search import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
-from ..utils import Printable
+from ..utils.printable import Printable
 from .sklearn_utils import (get_pipeline,
                             get_cv_method)
 
-from .results import (Classification_Result, Classification_Metrics,
+from .results import (ClassificationResult, ClassificationMetrics,
                       classification_metrics, get_cv_classification_metrics,
                       enlist_cv_results)
 
@@ -184,6 +184,7 @@ class ClassificationPipeline(Printable):
             nan_train = np.isnan(x_train)
             nan_test = np.isnan(x_test)
 
+            #remove Nan values
             x_test[nan_test] = 0
             x_test = x_test + nan_test*nan_mean
 
@@ -206,16 +207,18 @@ class ClassificationPipeline(Printable):
 
             log.info('Predicting on test set')
 
-            #predictions, feature importances and best parameters
+            #predictions
             preds[fold_count] = self._gs.predict(x_test)
             truth[fold_count] = y_test
             best_pars[fold_count] = self._gs.best_params_
 
+            #features importances
             if hasattr(self._gs.best_estimator_, 'support_vectors_'):
                 importance[fold_count] = self._gs.best_estimator_.support_vectors_
             elif hasattr(self._gs.best_estimator_, 'feature_importances_'):
                 importance[fold_count] = self._gs.best_estimator_.feature_importances_
 
+            #best grid-search parameters
             try:
                 probs[fold_count] = self._gs.predict_proba(x_test)
             except Exception as exc:
@@ -226,9 +229,11 @@ class ClassificationPipeline(Printable):
 
             fold_count += 1
 
-        self._results = Classification_Result(preds, probs, truth, best_pars,
-                                              self._cv, importance, targets)
+        #summarize results
+        self._results = ClassificationResult(preds, probs, truth, best_pars,
+                                             self._cv, importance, targets)
 
+        #calculate performance metrics
         self._metrics = self.result_metrics()
 
         return self._results, self._metrics
@@ -268,7 +273,7 @@ class ClassificationPipeline(Printable):
             prec, f1, auc = classification_metrics(targets, preds, probs,
                                                    labels)
 
-            return Classification_Metrics(acc, sens, spec, prec, f1, auc)
+            return ClassificationMetrics(acc, sens, spec, prec, f1, auc)
 
         else:
             metrics = get_cv_classification_metrics(cr.cv_targets,
@@ -278,8 +283,8 @@ class ClassificationPipeline(Printable):
             avg_metrics = metrics.mean(axis=0)
             std_metrics = metrics.std(axis=0)
 
-            avgs = Classification_Metrics(**tuple(avg_metrics))
-            stds = Classification_Metrics(**tuple(std_metrics))
+            avgs = ClassificationMetrics(**tuple(avg_metrics))
+            stds = ClassificationMetrics(**tuple(std_metrics))
 
             return avgs, stds
 

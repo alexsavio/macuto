@@ -50,9 +50,9 @@ from sklearn.feature_selection import RFE
 #pipelining
 from sklearn.pipeline import Pipeline, FeatureUnion
 
-from .features import (PearsonCorrelationDistance,
-                       BhatacharyyaGaussianDistance,
-                       WelchTestDistance)
+from .features import (PearsonCorrelationSelection,
+                       BhatacharyyaGaussianSelection,
+                       WelchTestSelection)
 
 from ..threshold import Threshold
 from ..strings import append_to_keys
@@ -269,9 +269,9 @@ def get_fsmethod(fsmethod, n_feats, n_jobs=1, **kwargs):
 
                   #http://scikit-learn.org/dev/auto_examples/feature_selection_pipeline.html
                  'anova': SelectKBest(f_regression, k=n_feats),
-                 'pearson': PearsonCorrelationDistance(thresholds[0]),
-                 'bhattacharyya': BhatacharyyaGaussianDistance(thresholds[0]),
-                 'welchtest': WelchTestDistance(thresholds[0]),
+                 'pearson': PearsonCorrelationSelection(thresholds[0]),
+                 'bhattacharyya': BhatacharyyaGaussianSelection(thresholds[0]),
+                 'welchtest': WelchTestSelection(thresholds[0]),
                  }
 
     #feature selection parameter values for grid search

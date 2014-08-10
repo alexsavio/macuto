@@ -15,59 +15,62 @@
 #------------------------------------------------------------------------------
 
 import numpy as np
-import scipy.spatial.distance as scipy_dist
+import scipy.stats as stats
 
-from sklearn.feature_selection.univariate_selection import (_BaseFilter,
-                                                            _clean_nans)
-
-from ..utils import Printable
+from ..utils.validation import check_X_y
+from ..utils.printable import Printable
 
 
-class SelectDistanceMeasure(_BaseFilter, Printable):
-    """
-    This is a wrapper class for distance measures base selectors.
+class DistanceMeasure(object):
+    """Base adapter class to measure distances between groups in
+    labeled datasets
 
-    I'm using scikit-learn _BaseFilter as base class in order to be able
-    to mix my own filters with other filters in a Pipeline.
-
-    For more info:
-    https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/base.py
-    https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/feature_selection/univariate_selection.py
+    Parameters
+    ----------
+    score_func : callable
+        Function taking two arrays x and y, and returning one array of
+        distance scores
     """
 
-    def __init__(self, score_func, threshold):
+    def __init__(self, score_func):
+        self.score_func = score_func
+        self.scores_ = None
+
+    def fit(self, samples, targets):
         """
-        :param score_func:
 
-        :param threshold: Threshold method
+        Parameters
+        ----------
+        samples: array-like, shape = [n_samples, n_features]
+            The training input samples.
+
+
+        targets: array-like, shape = [n_samples]
+            The target values (class labels in classification, real numbers in
+            regression).
+
+        Returns
+        -------
+        self : object
+            Returns self.
         """
-        _BaseFilter.__init__(self, score_func)
-        self.threshold = threshold
+        samples, targets = check_X_y(samples, targets, ['csr', 'csc', 'coo'])
 
-    def _check_params(self, x, y):
-        if not 0 <= self.threshold._value <= 1:
-            raise ValueError("threhold should be >=0, <=1; got %r"
-                             % self.threshold._value)
+        if not callable(self.score_func):
+            raise TypeError("The score function should be a callable, %s (%s) "
+                            "was passed."
+                            % (self.score_func, type(self.score_func)))
 
-    def _get_support_mask(self):
-        # Cater for NaNs
-        if self.threshold == 1:
-            return np.ones(len(self.scores_), dtype=np.bool)
-        elif self.threshold == 0:
-            return np.zeros(len(self.scores_), dtype=np.bool)
+        self._check_params(samples, targets)
+        self.scores_ = np.asarray(self.score_func(samples, targets))
 
-        scores = _clean_nans(self.scores_)
+        return self
 
-        mask = self.threshold.fit_transform(scores)
-        ties = np.where(scores == self.threshold._value)[0]
-        if len(ties):
-            max_feats = len(scores) * self.threshold._value
-            kept_ties = ties[:max_feats - mask.sum()]
-            mask[kept_ties] = True
-        return mask
+    def _check_params(self, samples, targets):
+        pass
 
 
-class PearsonCorrelationDistance(SelectDistanceMeasure):
+class PearsonCorrelationDistance(DistanceMeasure):
     """
     The absolute Pearson's correlation between each feature in X and the
     class labels in y.
@@ -86,12 +89,11 @@ class PearsonCorrelationDistance(SelectDistanceMeasure):
     Size: n_features
     """
 
-    def __init__(self, threshold):
-        super(PearsonCorrelationDistance, self).__init__(scipy_dist.pearsonr,
-                                                         threshold)
+    def __init__(self):
+        super(PearsonCorrelationDistance, self).__init__(stats.pearsonr)
 
 
-class WelchTestDistance(SelectDistanceMeasure):
+class WelchTestDistance(DistanceMeasure):
     """
     Welch's t-test between the groups in X, labeled by y.
 
@@ -110,10 +112,10 @@ class WelchTestDistance(SelectDistanceMeasure):
     """
 
     def __init__(self, threshold):
-        super(WelchTestDistance, self).__init__(self, welch_ttest, threshold)
+        super(WelchTestDistance, self).__init__(self, welch_ttest)
 
 
-class BhatacharyyaGaussianDistance(SelectDistanceMeasure):
+class BhatacharyyaGaussianDistance(DistanceMeasure):
     """
     Univariate Gaussian Bhattacharyya distance
     between the groups in X, labeled by y.
@@ -134,8 +136,7 @@ class BhatacharyyaGaussianDistance(SelectDistanceMeasure):
 
     def __init__(self, threshold):
         super(BhatacharyyaGaussianDistance, self).__init__(self,
-                                                           bhattacharyya_dist,
-                                                           threshold)
+                                                           bhattacharyya_dist)
 
 
 def pearson_correlation(x, y):
@@ -156,10 +157,9 @@ def pearson_correlation(x, y):
     array_like
     Size: n_features
     """
-    return distance_computation(x, y, scipy_dist.pearsonr)
+    return distance_computation(x, y, stats.pearsonr)
 
 
-#------------------------------------------------------------------------------
 def distance_computation(x, y, dist_function):
     """
     Calculates for each feature in X the
@@ -303,4 +303,7 @@ def welch_ttest(x, y):
                 b = np.maximum(b, t)
 
     return b
+
+if __name__ == '__main__':
+    from sklearn.datasets import make_classification
 

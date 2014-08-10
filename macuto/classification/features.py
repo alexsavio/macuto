@@ -19,16 +19,18 @@ import numpy as np
 import scipy.stats as stats
 import logging
 
-from .distance import (DistanceMeasure,
+from sklearn.feature_selection.base import SelectorMixin
+from sklearn.feature_selection.univariate_selection import (_BaseFilter,
+                                                            _clean_nans)
+
+from .distance import (welch_ttest, bhattacharyya_dist,
+                       DistanceMeasure,
                        PearsonCorrelationDistance,
-                       WelchTestDistance,
-                       BhatacharyyaGaussianDistance)
+                       BhatacharyyaGaussianDistance,
+                       WelchTestDistance)
 
-from ..threshold import (RobustThreshold,
-                         RankThreshold,
-                         PercentileThreshold)
-
-from ..utils import Printable
+from ..threshold import (RobustThreshold, RankThreshold, PercentileThreshold)
+from ..utils.printable import Printable
 from ..storage import ExportData
 from ..exceptions import LoggedValueError
 
@@ -45,7 +47,7 @@ class FeatureSelection(Printable):
 #        raise NotImplementedError
 
 
-class SupervisedFeatureSelection(FeatureSelection):
+class SupervisedSelection(FeatureSelection):
     """
     Base class for Supervised Feature Selection methods
     """
@@ -54,53 +56,104 @@ class SupervisedFeatureSelection(FeatureSelection):
 #        raise NotImplementedError
 
 
-class DistanceBasedFeatureSelection(SupervisedFeatureSelection):
+class DistanceBasedSelection(_BaseFilter, SelectorMixin):
+    """This is a wrapper class for distance measures base selectors.
+
+    I'm using scikit-learn _BaseFilter as base class in order to be able
+    to mix my own filters with other filters in a Pipeline.
+
+    For more info:
+    https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/base.py
+    https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/feature_selection/univariate_selection.py
     """
 
+    def __init__(self, score_func, threshold):
+        """
+        :param score_func:
+
+        :param threshold: Threshold method
+        """
+        _BaseFilter.__init__(self, score_func)
+        self.threshold = threshold
+
+    def _check_params(self, x, y):
+        if not 0 <= self.threshold.value <= 1:
+            raise ValueError("threhold should be >=0, <=1; got %r"
+                             % self.threshold.value)
+
+    def _get_support_mask(self):
+        # Cater for NaNs
+        if self.threshold == 1:
+            return np.ones(len(self.scores_), dtype=np.bool)
+        elif self.threshold == 0:
+            return np.zeros(len(self.scores_), dtype=np.bool)
+
+        scores = _clean_nans(self.scores_)
+
+        mask = self.threshold.fit_transform(scores)
+        ties = np.where(scores == self.threshold.value)[0]
+        if len(ties):
+            max_feats = len(scores) * self.threshold.value
+            kept_ties = ties[:max_feats - mask.sum()]
+            mask[kept_ties] = True
+        return mask
+
+
+class PearsonCorrelationSelection(DistanceBasedSelection):
+    """Feature selection method based on Pearson's correlation between the
+    groups in X, labeled by y.
+    """
+    def __init__(self, threshold):
+        super(PearsonCorrelationSelection, self).__init__(stats.pearsonr,
+                                                          threshold)
+
+
+class WelchTestSelection(DistanceBasedSelection):
+    """Feature selection method based on Welch's t-test between the groups
+    in X, labeled by y.
+    """
+    def __init__(self, threshold):
+        super(WelchTestSelection, self).__init__(welch_ttest, threshold)
+
+
+class BhatacharyyaGaussianSelection(DistanceBasedSelection):
+    """Feature selection method based on Univariate Gaussian Bhattacharyya
+    distance between the groups in X, labeled by y.
     """
 
-    def __init__(self, distance_measure, threshold_method):
-        """
-
-        :param distance_measure: macuto.classification.distance.DistanceMeasure
-        :param threshold_method: macuto.threshold.Threshold
-        """
-        self._distance_measure = distance_measure
-        self._threshold_method = threshold_method
-
-    def fit_transform(self, x, y):
-        """
-
-        :param X: np.ndarray
-         n_samps x n_feats
-
-        :param y: vector
-         n_samps class labels
-
-        :return: thresholded distance measures
-        """
-
-        self._distances = self._distance_measure.fit_transform(x, y)
-        self._thresholded = self._threshold_method.fit_transform(x)
-
-        return self._thresholded
+    def __init__(self, threshold):
+        super(BhatacharyyaGaussianSelection, self).__init__(bhattacharyya_dist,
+                                                            threshold)
 
 
-def feature_selection(X, y, method, thr=95, dist_function=None,
+def feature_selection(samples, targets, method, thr=95, dist_function=None,
                       thr_method='robust'):
     """
-    INPUT
-    X             : data ([n_samps x n_feats] matrix)
-    y             : class labels
-    method        : distance measure: 'pearson', 'bhattacharyya', 'welcht', ''
-                    if method == '' or None, will try to use dist_function
-    thr           : percentile distance threshold
-    dist_function :
-    thr_method    : method for thresholding: None, 'robust', 'ranking',
-                                             'percentile'
+    Parameters
+    ----------
+    samples:
+        data ([n_samps x n_feats] matrix)
+    targets:
+        class labels
 
-    OUTPUT
-    m          : distance measure (thresholded or not)
+    method: str
+        distance measure: 'pearson', 'bhattacharyya', 'welcht', ''
+        if method == '' or None, will try to use dist_function
+
+    thr: float
+        percentile distance threshold from [0, 100]
+
+    dist_function: distance function
+        e.g.: any from
+        http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
+
+    thr_method: str
+        method for thresholding: None, 'robust', 'ranking', 'percentile'
+
+    Returns
+    -------
+    m:
+        distance measure (thresholded or not)
     """
 
     #pre feature selection, measuring distances
@@ -117,18 +170,18 @@ def feature_selection(X, y, method, thr=95, dist_function=None,
     #Welch's t-test
     elif method == 'welcht':
         log.info("Calculating Welch's t-test")
-        distance = WelchTestDistance()
+        distance = WelchTestDistance(thr)
 
     else:
         if dist_function is not None:
-            log.info ("Calculating {0} distance between data and "
-                      "class labels".format(dist_function.__name__))
+            log.info("Calculating {0} distance between data and "
+                     "class labels".format(dist_function.__name__))
             #http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
             distance = DistanceMeasure(dist_function)
         else:
             raise LoggedValueError('Not valid argument input values.')
 
-    dists = distance.fit_transform(X, y)
+    dists = distance.fit_transform(samples, targets)
 
     #if all distance values are 0
     if not dists.any():
@@ -163,13 +216,13 @@ def calculate_stats(data):
 
     feats  = np.zeros((n_subjs, 7))
 
-    feats[:, 0] = data.max (axis=1)
-    feats[:, 1] = data.min (axis=1)
+    feats[:, 0] = data.max(axis=1)
+    feats[:, 1] = data.min(axis=1)
     feats[:, 2] = data.mean(axis=1)
-    feats[:, 3] = data.var (axis=1)
-    feats[:, 4] = np.median      (data, axis=1)
-    feats[:, 5] = stats.kurtosis (data, axis=1)
-    feats[:, 6] = stats.skew     (data, axis=1)
+    feats[:, 3] = data.var(axis=1)
+    feats[:, 4] = np.median(data, axis=1)
+    feats[:, 5] = stats.kurtosis(data, axis=1)
+    feats[:, 6] = stats.skew(data, axis=1)
 
     return feats
 

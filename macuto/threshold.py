@@ -16,24 +16,22 @@
 
 import numpy as np
 
-from .utils import Printable
+from .utils.printable import Printable
 
 
 class Threshold(Printable):
     """Base class for percentile thresholding a set of values.
+
+    Parameters
+    ----------
+    threshold_value: float
+        From 0 to 1
+
+    threshold_method: str
+        Choices: {'robust', 'rank', 'percentile'}
     """
 
     def __init__(self, threshold_value=95, threshold_method='robust'):
-        """
-
-        Parameters
-        ----------
-        threshold_value: float
-            From 0 to 1
-
-        threshold_method: str
-            Choices: {'robust', 'rank', 'percentile'}
-        """
         self.value = threshold_value
         self.method = threshold_method
 
