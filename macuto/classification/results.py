@@ -25,20 +25,53 @@ from sklearn.metrics import f1_score
 log = logging.getLogger(__name__)
 
 
-class Result(collections.namedtuple('Result', ['metrics', 'cl', 'prefs_thr',
-                                               'subjsf', 'presels', 'prefs',
-                                               'fs1', 'fs2',
-                                               'y_true', 'y_pred'])):
+#Classification results namedtuple
+classif_results_varnames = ['predictions', 'probabilities', 'cv_targets',
+                            'best_parameters', 'cv_folds',
+                            'features_importance', 'targets']
+
+
+class ClassificationResult(collections.namedtuple('Classification_Result',
+                                                  classif_results_varnames)):
+    """
+    Namedtuple to store classification results.
+    """
     pass
 
 
-def classification_metrics(targets, preds, probs=None, labels=None):
+#Classification metrics namedtuple
+classif_metrics_varnames = ['accuracy', 'sensitivity', 'specificity',
+                            'precision', 'f1_score', 'area_under_curve']
+
+
+class ClassificationMetrics(collections.namedtuple('Classification_Metrics',
+                                                   classif_metrics_varnames)):
     """
-    @param targets:
-    @param preds:
-    @param probs:
-    @param labels:
-    @return:
+    Namedtuple to store classifcation CV results metrics.
+    """
+    pass
+
+
+# class Result(collections.namedtuple('Result', ['metrics', 'cl', 'prefs_thr',
+#                                               'subjsf', 'presels', 'prefs',
+#                                               'fs1', 'fs2',
+#                                               'y_true', 'y_pred'])):
+#    pass
+
+
+def classification_metrics(targets, preds, probs=None, labels=None):
+    """Calculate Accuracy, Sensitivity, Specificity, Precision, F1-Score
+    and Area-under-ROC of given classification results.
+
+    Parameters
+    ----------
+    targets:
+    preds:
+    probs:
+    labels:
+
+    Returns
+    -------
     (acc, sens, spec, prec, f1, auc)
     """
 
@@ -79,58 +112,69 @@ def classification_metrics(targets, preds, probs=None, labels=None):
 
 def enlist_cv_results(cv_targets, cv_preds, cv_probs=None):
     """
-    @param cv_targets:
-    @param cv_preds:
-    @param cv_probs:
-    @return:
+
+    Parameters
+    ----------
+    cv_targets:
+    cv_preds:
+    cv_probs:
+
+    Returns
+    -------
     targets, preds, probs, labels
     """
     targets = []
     preds   = []
     probs   = []
 
-    if (isinstance(cv_targets, dict)):
+    if isinstance(cv_targets, dict):
         c = 0
         for i in list(cv_targets.keys()):
             try:
                 targets.append(cv_targets[i])
-                preds.append  (cv_preds  [i])
+                preds.append(cv_preds[i])
 
-                if cv_probs != None:
+                if cv_probs is not None:
                     if len(cv_probs) > 0:
-                        probs.append(cv_probs  [i])
+                        probs.append(cv_probs[i])
             except:
-                log.error("Error joining CV results.")
-                log.error(sys.exc_info())
+                log.exception("Error joining CV results.")
                 raise
 
             c += 1
 
     else:
         for i in np.arange(cv_targets.shape[0]):
-            targets.append(cv_targets[i,:])
-            preds.append  (cv_preds  [i,:])
+            targets.append(cv_targets[i, :])
+            preds.append(cv_preds[i, :])
 
-            if cv_probs != None:
-                probs.append(cv_probs[i,:,:])
+            if cv_probs is not None:
+                probs.append(cv_probs[i, :, :])
 
-    if   cv_probs == None  : probs = None
-    elif len(cv_probs) == 0: probs = None
+    if cv_probs is None:
+        probs = None
+    elif len(cv_probs) == 0:
+        probs = None
 
     labels = np.unique(targets[0])
 
     return targets, preds, probs, labels
 
 
-def get_cv_classification_metrics (cv_targets, cv_preds, cv_probs=None):
+def get_cv_classification_metrics(cv_targets, cv_preds, cv_probs=None):
     """
     Returns a matrix of size [n_folds x 6],
     where 6 are: acc, sens, spec, prec, f1, roc_auc
 
-    @param cv_targets:
-    @param cv_preds:
-    @param cv_probs:
-    @return:
+    Parameters
+    ----------
+    cv_targets:
+    cv_preds:
+    cv_probs:
+
+    Returns
+    -------
+    array_like: metrics
     """
 
     targets, preds, probs, labels = enlist_cv_results(cv_targets,
@@ -141,14 +185,15 @@ def get_cv_classification_metrics (cv_targets, cv_preds, cv_probs=None):
 
     for i in range(len(targets)):
         y_true = targets[i]
-        y_pred = preds  [i]
+        y_pred = preds[i]
 
         y_prob = None
-        if probs != None:
+        if probs is not None:
             y_prob = probs[i]
 
         acc, sens, spec, prec, \
-        f1, roc_auc = classification_metrics (y_true, y_pred, y_prob, labels)
+        f1, roc_auc = classification_metrics(y_true, y_pred, y_prob, labels)
+
         metrics[i, :] = np.array([acc, sens, spec, prec, f1, roc_auc])
 
     return metrics
@@ -161,19 +206,21 @@ def get_cv_significance(cv_targets, cv_preds):
 
     Parameters
     ----------
-    @param cv_targets:
-    @param cv_preds:
+    cv_targets:
+
+    cv_preds:
 
     Returns
     -------
     p_value : float
-        P-value, the probability of obtaining a distribution at least as extreme
-        as the one that was actually observed, assuming that the null hypothesis
-        is true.
+        P-value, the probability of obtaining a distribution at least as
+        extreme as the one that was actually observed, assuming that the null
+        hypothesis is true.
 
     Notes
     -----
-    I doubt this is a good method of measuring the significance of a classification.
+    I doubt this is a good method of measuring the significance of a
+    classification.
 
     See a better test here:
     http://scikit-learn.org/stable/auto_examples/plot_permutation_test_for_classification.html
@@ -196,13 +243,12 @@ def get_confusion_matrix_fisher_significance(table, alternative='two-sided'):
     """
     Returns the value of fisher_exact test on table.
 
-
     Parameters
     ----------
-    @param table : array_like of ints
+    table : array_like of ints
         A 2x2 contingency table. Elements should be non-negative integers.
 
-    @param alternative : {'two-sided', 'less', 'greater'}, optional
+    alternative : {'two-sided', 'less', 'greater'}, optional
         Which alternative hypothesis to the null hypothesis the test uses.
         Default is 'two-sided'.
 

@@ -44,7 +44,7 @@ class SelectDistanceMeasure(_BaseFilter, Printable):
         _BaseFilter.__init__(self, score_func)
         self.threshold = threshold
 
-    def _check_params(self, X, y):
+    def _check_params(self, x, y):
         if not 0 <= self.threshold._value <= 1:
             raise ValueError("threhold should be >=0, <=1; got %r"
                              % self.threshold._value)
@@ -72,13 +72,17 @@ class PearsonCorrelationDistance(SelectDistanceMeasure):
     The absolute Pearson's correlation between each feature in X and the
     class labels in y.
 
-    :param x: numpy array
-    Shape: n_samples x n_features
+    Parameters
+    ----------
+    x: numpy array
+        Shape: n_samples x n_features
 
-    :param y: numpy array or list
-    Size: n_samples
+    y: numpy array or list
+        Size: n_samples
 
-    :return: numpy array
+    Returns
+    -------
+    array_like
     Size: n_features
     """
 
@@ -91,15 +95,18 @@ class WelchTestDistance(SelectDistanceMeasure):
     """
     Welch's t-test between the groups in X, labeled by y.
 
-    :param x: numpy array
-    Shape: n_samples x n_features
+    Parameters
+    ----------
+    x: numpy array
+        Shape: n_samples x n_features
 
-    :param y: numpy array or list
-    Size: n_samples
+    y: numpy array or list
+        Size: n_samples
 
-    :return:numpy array
+    Returns
+    -------
+    array_like
     Size: n_features
-
     """
 
     def __init__(self, threshold):
@@ -111,13 +118,17 @@ class BhatacharyyaGaussianDistance(SelectDistanceMeasure):
     Univariate Gaussian Bhattacharyya distance
     between the groups in X, labeled by y.
 
-    :param x: numpy array
-    Shape: n_samples x n_features
+    Parameters
+    ----------
+    x: numpy array
+        Shape: n_samples x n_features
 
-    :param y: numpy array or list
-    Size: n_samples
+    y: numpy array or list
+        Size: n_samples
 
-    :return: numpy array
+    Returns
+    -------
+    array_like
     Size: n_features
     """
 
@@ -132,13 +143,17 @@ def pearson_correlation(x, y):
     Calculates for each feature in X the
     pearson correlation with y.
 
-    @param x: numpy array
-    Shape: n_samples x n_features
+    Parameters
+    ----------
+    x: numpy array
+        Shape: n_samples x n_features
 
-    @param y: numpy array or list
-    Size: n_samples
+    y: numpy array or list
+        Size: n_samples
 
-    @return: numpy array
+    Returns
+    -------
+    array_like
     Size: n_features
     """
     return distance_computation(x, y, scipy_dist.pearsonr)
@@ -150,19 +165,24 @@ def distance_computation(x, y, dist_function):
     Calculates for each feature in X the
     given dist_function with y.
 
-    @param x: numpy array
-    Shape: n_samples x n_features
+    Parameters
+    ----------
+    x: numpy array
+        Shape: n_samples x n_features
 
-    @param y: numpy array or list
-    Size: n_samples
+    y: numpy array or list
+        Size: n_samples
 
-    @param dist_function: function
-    distance function
+    dist_function: function
+        distance function
 
-    @return: numpy array
+    Returns
+    -------
+    array_like
     Size: n_features
 
-    @note:
+    Note
+    ----
     Apply any given 1-D distance function to X and y.
     Have a look at:
     http://docs.scipy.org/doc/scipy/reference/spatial.distance.html
@@ -187,13 +207,21 @@ def bhattacharyya_dist(x, y):
     Univariate Gaussian Bhattacharyya distance
     between the groups in X, labeled by y.
 
-    @param x: numpy array
-    Shape: n_samples x n_features
+    Parameters
+    ----------
+    x: numpy array
+        Shape: n_samples x n_features
 
-    @param y: numpy array or list
-    Size: n_samples
+    y: numpy array or list
+        Size: n_samples
 
-    @return:
+    dist_function: function
+        distance function
+
+    Returns
+    -------
+    array_like
+    Size: n_features
     """
     classes = np.unique(y)
     n_class = len(classes)
@@ -229,13 +257,21 @@ def welch_ttest(x, y):
     """
     Welch's t-test between the groups in X, labeled by y.
 
-    @param x: numpy array
-    Shape: n_samples x n_features
+    Parameters
+    ----------
+    x: numpy array
+        Shape: n_samples x n_features
 
-    @param y: numpy array or list
-    Size: n_samples
+    y: numpy array or list
+        Size: n_samples
 
-    @return:
+    dist_function: function
+        distance function
+
+    Returns
+    -------
+    array_like
+    Size: n_features
     """
     classes = np.unique(y)
     n_class = len(classes)
