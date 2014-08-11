@@ -105,8 +105,7 @@ def get_classification_algorithm(clfmethod, **clf_kwargs):
                                                 random_state=None,
                                                 **clf_kwargs),
 
-                   'extratrees': ExtraTreesClassifier(compute_importances=True,
-                                                      oob_score=True),
+                   'extratrees': ExtraTreesClassifier(),
 
                    'gmm': GMM(init_params='wc', n_iter=20, **clf_kwargs),
 
@@ -147,9 +146,13 @@ def get_classifier_parameter_grid(clfmethod, n_feats):
     """
     #Classifiers parameter values for grid search
     if n_feats < 10:
-        max_feats = list(range(1, n_feats, 2))
+        n_feats_step = 2
+    elif n_feats < 100:
+        n_feats_step = 5
     else:
-        max_feats = list(range(1, 30, 4))
+        n_feats_step = 20
+
+    max_feats = list(range(1, n_feats, n_feats_step))
     max_feats.extend([None, 'auto', 'sqrt', 'log2'])
 
     clgrid = {'cart': dict(criterion=['gini', 'entropy'],
