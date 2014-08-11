@@ -19,6 +19,7 @@ import logging
 
 import numpy as np
 from scipy import stats
+from collections import OrderedDict
 from sklearn.grid_search import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
@@ -28,7 +29,7 @@ from .sklearn_utils import (get_pipeline,
 
 from .results import (ClassificationResult, ClassificationMetrics,
                       classification_metrics, get_cv_classification_metrics,
-                      enlist_cv_results)
+                      enlist_cv_results_from_dict)
 
 log = logging.getLogger(__name__)
 
@@ -43,55 +44,53 @@ class ClassificationPipeline(Printable):
     This class uses all functions that are in .sklearn_utils.py and
     .results.py. If you need more details on what choices you can use for
     each pipeline parameter, please have a look there.
+
+    Parameters
+    ----------
+
+    clfmethod: str
+        See get_classification_algorithm for possible choices
+
+    n_feats: int
+        Number of features of the input dataset. This is useful for
+        adjusting the feature selection and classification grid search
+        parameters.
+
+    fsmethod1: str, optional
+        See get_fsmethod for possible choices
+
+    fsmethod2: str, optional
+        See get_fsmethod for possible choices
+
+    fsmethod1_kwargs:
+        See get_fsmethod for possible choices
+
+    fsmethod2_kwargs:
+        See get_fsmethod for possible choices
+
+    scaler: sklearn scaler object
+
+    clfmethod_kwargs:
+        See get_classification_algorithm for possible choices
+
+    cvmethod  : string or int
+        String with a number or number for K, for a K-fold method.
+        'loo' for LeaveOneOut
+
+    stratified: bool
+        Indicates whether to use a Stratified K-fold approach
+
+    n_cpus: int
+        Number of CPUS to be used in the Grid Search
+
+    gs_scoring: str
+        Grid search scoring objective function.
     """
 
-    def __init__(self, n_feats, fsmethod1, fsmethod2, clfmethod,
-                 fsmethod1_kwargs={}, fsmethod2_kwargs={},
-                 clfmethod_kwargs={}, scaler=StandardScaler(), cvmethod='10',
-                 stratified=True, n_cpus=1, gs_scoring='accuracy'):
-        """Configures the classification pipeline
-
-        Parameters
-        ----------
-        n_feats: int
-            Number of features of the input dataset. This is useful for
-            adjusting the feature selection and classification grid search
-            parameters.
-
-        fsmethod1: str
-            See get_fsmethod for possible choices
-
-        fsmethod2: str
-            See get_fsmethod for possible choices
-
-        clfmethod: str
-            See get_classification_algorithm for possible choices
-
-        fsmethod1_kwargs:
-            See get_fsmethod for possible choices
-
-        fsmethod2_kwargs:
-            See get_fsmethod for possible choices
-
-        scaler: sklearn scaler object
-
-        clfmethod_kwargs:
-            See get_classification_algorithm for possible choices
-
-        cvmethod  : string or int
-            String with a number or number for K, for a K-fold method.
-            'loo' for LeaveOneOut
-
-        stratified: bool
-            Indicates whether to use a Stratified K-fold approach
-
-        n_cpus: int
-            Number of CPUS to be used in the Grid Search
-
-        gs_scoring: str
-            Grid search scoring objective function.
-        """
-        Printable.__init__(self)
+    def __init__(self, clfmethod, n_feats, fsmethod1=None, fsmethod2=None,
+                 fsmethod1_kwargs={}, fsmethod2_kwargs={}, clfmethod_kwargs={},
+                 scaler=StandardScaler(), cvmethod='10', stratified=True,
+                 n_cpus=1, gs_scoring='accuracy'):
 
         self.n_feats = n_feats
         self.fsmethod1 = fsmethod1
@@ -164,11 +163,15 @@ class ClassificationPipeline(Printable):
 
         self.n_feats = samples.shape[1]
 
-        preds      = {}
-        probs      = {}
-        truth      = {}
-        best_pars  = {}
-        importance = {}
+        #We use dictionaries to save each fold classification result
+        #because we will need to identify all sets of results to one fold.
+        #If we used lists, we would loose track of folds if something went
+        #wrong.
+        preds      = OrderedDict()
+        probs      = OrderedDict()
+        truth      = OrderedDict()
+        best_pars  = OrderedDict()
+        importance = OrderedDict()
 
         fold_count = 0
         for train, test in self._cv:
@@ -214,15 +217,19 @@ class ClassificationPipeline(Printable):
 
             #features importances
             if hasattr(self._gs.best_estimator_, 'support_vectors_'):
-                importance[fold_count] = self._gs.best_estimator_.support_vectors_
+                imp = self._gs.best_estimator_.support_vectors_
             elif hasattr(self._gs.best_estimator_, 'feature_importances_'):
-                importance[fold_count] = self._gs.best_estimator_.feature_importances_
+                imp = self._gs.best_estimator_.feature_importances_
+            else:
+                imp = None
+
+            importance[fold_count] = imp
 
             #best grid-search parameters
             try:
                 probs[fold_count] = self._gs.predict_proba(x_test)
             except Exception as exc:
-                probs[fold_count] = []
+                probs[fold_count] = None
 
             log.info('Result: {} classifies as {}.'.format(y_test,
                                                            preds[fold_count]))
@@ -266,8 +273,9 @@ class ClassificationPipeline(Printable):
 
         if self.cvmethod == 'loo':
             targets, preds, \
-            probs, labels = enlist_cv_results(cr.cv_targets, cr.predictions,
-                                              cr.probabilities)
+            probs, labels = enlist_cv_results_from_dict(cr.cv_targets,
+                                                        cr.predictions,
+                                                        cr.probabilities)
 
             acc, sens, spec, \
             prec, f1, auc = classification_metrics(targets, preds, probs,
