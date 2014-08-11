@@ -79,6 +79,21 @@ class ClassifiersMcNemarTest(object):
         return mcnemar_test(self._a, self._b, self._c, self._d, 
                             alpha=alpha, onetailed=onetailed)
 
+    def is_significative(self, targets, c1_predictions, c2_predictions,
+                         alpha=0.1, onetailed=True):
+        """
+        See fit_transform docstring
+
+        :param targets:
+        :param c1_predictions:
+        :param c2_predictions:
+        :param alpha:
+        :param onetailed:
+        :return:
+        """
+        return not self.fit_transform(targets, c1_predictions, c2_predictions,
+                                      alpha, onetailed)
+
 
 def get_mcnemar_abcd(y_vals, c1_preds, c2_preds):
     """Returns the McNemar's confusion matrix values A, B, C, D
