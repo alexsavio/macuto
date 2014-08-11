@@ -5,7 +5,7 @@ import scipy.stats as stats
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.cross_validation import LeaveOneOut
 
-from .strategy import ClassificationPipeline
+from .pipeline import ClassificationPipeline
 
 
 class FeaturesGiniIndex(object):
@@ -13,8 +13,7 @@ class FeaturesGiniIndex(object):
      Gini indices from a set of features using an sklearn.ExtraTreesClassifier
     """
 
-    @staticmethod
-    def fit_transform(self, samples, targets):
+    def fit_transform(self, samples, targets, n_cpus=1):
         """Return the average Gini-index for each sample in a LeaveOneOut
         classification Cross-validation test using ExtraTreesClassifier.
 
@@ -24,14 +23,14 @@ class FeaturesGiniIndex(object):
         Vector of the size of number of features in each sample.
         """
 
-        n_feats = samples.shape[0]
+        n_feats = samples.shape[1]
 
-        pipe = ClassificationPipeline(n_feats, fsmethod1=None, fsmethod2=None,
-                                      clfmethod='extratrees', cvmethod='loo')
+        pipe = ClassificationPipeline(clfmethod='extratrees', n_feats=n_feats,
+                                        cvmethod='loo', n_cpus=n_cpus)
 
-        results, _ = pipe.cross_validation(samples, targets)
+        self.results_, self.metrics_ = pipe.cross_validation(samples, targets)
 
-        ginis = np.array(list(results.features_importance.values()))
+        ginis = np.array(list(self.results_.features_importance.values()))
 
         return ginis.mean(axis=0)
 
