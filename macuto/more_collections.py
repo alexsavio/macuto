@@ -4,6 +4,11 @@ from collections import OrderedDict, Callable
 log = logging.getLogger(__name__)
 
 
+def dictify(a_named_tuple):
+    """Transforms a named tuple into a dictionary"""
+    return dict((s, getattr(a_named_tuple, s)) for s in a_named_tuple._fields)
+
+
 class ItemSet(object):
 
     def __iter__(self):
