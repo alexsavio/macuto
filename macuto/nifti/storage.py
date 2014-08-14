@@ -22,14 +22,14 @@ from nipy import save_image
 log = logging.getLogger(__name__)
 
 
-def save_niigz(vol, filepath, affine=None, header=None):
+def save_niigz(file_path, vol, affine=None, header=None):
     """Saves a volume into a Nifti (.nii.gz) file.
 
     Parameters
     ----------
     vol: Numpy 3D or 4D array
         Volume with the data to be saved.
-    filepath: string
+    file_path: string
         Output file name path
     affine: 4x4 Numpy array
         Array with the affine transform of the file.
@@ -42,17 +42,17 @@ def save_niigz(vol, filepath, affine=None, header=None):
 
     """
     if isinstance(vol, np.ndarray):
-        log.debug('Saving numpy nifti file: ' + filepath)
+        log.debug('Saving numpy nifti file: ' + file_path)
         ni = nib.Nifti1Image(vol, affine, header)
-        nib.save(ni, filepath)
+        nib.save(ni, file_path)
 
     elif isinstance(vol, nib.Nifti1Image):
-        log.debug('Saving nibabel nifti file: ' + filepath)
-        nib.save(vol, filepath)
+        log.debug('Saving nibabel nifti file: ' + file_path)
+        nib.save(vol, file_path)
 
     elif isinstance(vol, niim.Image):
-        log.debug('Saving nibabel nifti file: ' + filepath)
-        save_image(vol, filepath)
+        log.debug('Saving nibabel nifti file: ' + file_path)
+        save_image(vol, file_path)
 
 
 def spatialimg_to_hdfgroup(h5group, spatial_img):
@@ -89,12 +89,13 @@ def spatialimg_to_hdfgroup(h5group, spatial_img):
         log.error(ve)
         raise
 
-def spatialimg_to_hdfpath(fname, spatial_img, h5path=None, append=True):
+
+def spatialimg_to_hdfpath(file_path, spatial_img, h5path=None, append=True):
     """Saves a Nifti1Image into an HDF5 file.
 
     Parameters
     ----------
-    fname: string
+    file_path: string
         Output HDF5 file path
 
     spatial_img: nibabel SpatialImage
@@ -125,11 +126,11 @@ def spatialimg_to_hdfpath(fname, spatial_img, h5path=None, append=True):
         h5path = '/img'
 
     mode = 'w'
-    if os.path.exists(fname):
+    if os.path.exists(file_path):
         if append:
             mode = 'a'
 
-    with h5py.File(fname, mode) as f:
+    with h5py.File(file_path, mode) as f:
         try:
             h5img = f.create_group(h5path)
             spatialimg_to_hdfgroup(h5img, spatial_img)
@@ -140,22 +141,22 @@ def spatialimg_to_hdfpath(fname, spatial_img, h5path=None, append=True):
             raise
 
 
-def hdfpath_to_nifti1image(fname, h5path):
+def hdfpath_to_nifti1image(file_path, h5path):
     """Returns a nibabel Nifti1Image from a HDF5 group datasets
 
     Parameters
     ----------
-    fname: string
+    file_path: string
         HDF5 file path
 
     h5path:
-        HDF5 group path in fname
+        HDF5 group path in file_path
 
     Returns
     -------
         nibabel Nifti1Image
     """
-    with h5py.File(fname, 'r') as f: 
+    with h5py.File(file_path, 'r') as f:
         return hdfgroup_to_nifti1image(f[h5path])
 
 
@@ -237,14 +238,14 @@ def all_childnodes_to_nifti1img(h5group):
     return vols
 
 
-def insert_volumes_in_one_dataset(fname, h5path, file_list, newshape=None,
+def insert_volumes_in_one_dataset(file_path, h5path, file_list, newshape=None,
                                   concat_axis=0, dtype=None, append=True):
     """Inserts all given nifti files from file_list into one dataset in fname.
     This will not check if the dimensionality of all files match.
 
     Parameters
     ----------
-    fname: string
+    file_path: string
         HDF5 file path
 
     h5path: string
@@ -281,7 +282,7 @@ def insert_volumes_in_one_dataset(fname, h5path, file_list, newshape=None,
         return isinstance(v, type(lambda: None)) and v.__name__ == '<lambda>'
 
     mode = 'w'
-    if os.path.exists(fname):
+    if os.path.exists(file_path):
         if append:
             mode = 'a'
 
@@ -316,7 +317,7 @@ def insert_volumes_in_one_dataset(fname, h5path, file_list, newshape=None,
     if dtype is None:
         dtype = imgs[0].get_data_dtype()
 
-    with h5py.File(fname, mode) as f:
+    with h5py.File(file_path, mode) as f:
         try:
             ic = 0
             h5grp = f.create_group(os.path.dirname(h5path))
