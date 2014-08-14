@@ -1,5 +1,5 @@
 # coding=utf-8
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 #Author: Alexandre Manhaes Savio
 #Grupo de Inteligencia Computational <www.ehu.es/ccwintco>
@@ -9,7 +9,7 @@
 
 #2013, Alexandre Manhaes Savio
 #Use this at your own risk!
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 import subprocess
 import logging
@@ -45,19 +45,16 @@ def condor_submit(cmd):
     """
     try:
         is_running = subprocess.call('condor_status', shell=True) == 0
-    except:
-        return -1
+    except Exception as exc:
+        log.exception('Could not find a running instance of HTCondor.')
+        raise
 
-    if is_running:
-        sub_cmd = 'condor_qsub -shell n -b y -r y -N ' \
-                  + cmd.split()[0] + ' -m n'
+    sub_cmd = 'condor_qsub -shell n -b y -r y -N ' \
+              + cmd.split()[0] + ' -m n'
 
-        log.info('Calling: ' + sub_cmd)
+    log.info('Calling: ' + sub_cmd)
 
-        return subprocess.call(sub_cmd + ' ' + cmd, shell=True)
-    else:
-        return -1
-
+    return subprocess.call(sub_cmd + ' ' + cmd, shell=True)
 
 
 # if [ $scriptmode -ne 1 ] ; then
