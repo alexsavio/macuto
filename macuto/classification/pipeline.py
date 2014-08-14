@@ -237,9 +237,12 @@ class ClassificationPipeline(Printable):
             fold_count += 1
 
         #summarize results
-        if not any(probs.values()):
+        has_values = lambda adict: bool([i for i in adict
+                                         if adict[i] is not None])
+
+        if not has_values(probs):
             probs = None
-        if not any(importance.values()):
+        if not has_values(importance):
             importance = None
 
         self._results = ClassificationResult(preds, probs, truth, best_pars,
