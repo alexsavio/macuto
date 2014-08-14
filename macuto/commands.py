@@ -17,17 +17,38 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def check_call(cmd_args):
+    """
+    Calls the command
+
+    Parameters
+    ----------
+    cmd_args: list of str
+        Command name to call and its arguments in a list.
+
+    Returns
+    -------
+    Command output
+    """
+    p = subprocess.Popen(cmd_args, stdout=subprocess.PIPE)
+    (output, err) = p.communicate()
+    return output
+
+
 def condor_call(cmd, shell=True):
     """
     Tries to submit cmd to HTCondor, if it does not succeed, it will
     be called with subprocess.call.
 
-    @param cmd: string
-     Command to be submitted
+    Parameters
+    ----------
+    cmd: string
+        Command to be submitted
 
-    @return:
+    Returns
+    -------
     """
-    print(cmd)
+    log.info(cmd)
     ret = condor_submit(cmd)
     if ret != 0:
         subprocess.call(cmd, shell=shell)
@@ -37,11 +58,15 @@ def condor_submit(cmd):
     """
     Submits cmd to HTCondor queue
 
-    @param cmd: string
-     Command to be submitted
+    Parameters
+    ----------
+    cmd: string
+        Command to be submitted
 
-    @return: int
-    returncode value from calling the submission command.
+    Returns
+    -------
+    int
+        returncode value from calling the submission command.
     """
     try:
         is_running = subprocess.call('condor_status', shell=True) == 0
