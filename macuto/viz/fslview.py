@@ -47,13 +47,13 @@ class FslViewCaller(object):
         try:
             for volf in self._tmp_volume_files:
                 os.remove(volf)
-        except OSError as oserr:
+        except OSError:
             log.exception('Error closing {} on deleting '
                           'file {}.'.format(self.__name__, volf))
             raise
 
         try:
             shutil.rmtree(self._tmpdir.name)
-        except OSError as oserr:
+        except OSError:
             log.exception('Error closing {} on deleting '
                           'temp folder {}.'.format(self._tmpdir))
