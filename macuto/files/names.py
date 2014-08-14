@@ -344,6 +344,28 @@ def get_temp_file(dirpath=None, suffix='.nii.gz'):
     return tempfile.NamedTemporaryFile(dir=dirpath, suffix=suffix)
 
 
+def get_temp_folder(basepath=None):
+    """
+    Uses tempfile to create a TemporaryDirectory using
+    the default arguments.
+    The folder is created using tempfile.mkdtemp() function.
+
+    Parameters
+    ----------
+    basepath: str
+    Directory where the new folder must be created.
+    The default directory is chosen from a platform-dependent
+    list, but the user of the application can control the
+    directory location by setting the TMPDIR, TEMP or TMP
+    environment variables.
+
+    Returns
+    -------
+    folder object
+    """
+    return tempfile.TemporaryDirectory(prefix=basepath)
+
+
 def ux_file_len(filepath):
     """Returns the length of the file using the 'wc' GNU command
 
