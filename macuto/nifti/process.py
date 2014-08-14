@@ -152,7 +152,7 @@ def create_mask_file(filepath, outpath, threshold=0):
         vol = nibf.get_data() > threshold
 
         #vol, filepath, affine=None, header=None
-        save_niigz(vol, outpath, nibf.get_affine(), nibf.get_header())
+        save_niigz(outpath, vol, nibf.get_affine(), nibf.get_header())
 
     except Exception as exc:
         log.exception('Error creating mask from file {0}.'.format(filepath))
