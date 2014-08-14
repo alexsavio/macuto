@@ -237,6 +237,11 @@ class ClassificationPipeline(Printable):
             fold_count += 1
 
         #summarize results
+        if not any(probs.values()):
+            probs = None
+        if not any(importance.values()):
+            importance = None
+
         self._results = ClassificationResult(preds, probs, truth, best_pars,
                                              self._cv, importance, targets)
 
