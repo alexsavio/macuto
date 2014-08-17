@@ -23,31 +23,31 @@ from .files.names import (get_extension,
 log = logging.getLogger(__name__)
 
 
-def sav_to_pandas_rpy2(inputfile):
+def sav_to_pandas_rpy2(input_file):
     """
     SPSS .sav files to Pandas DataFrame through Rpy2
 
-    :param inputfile: string
+    :param input_file: string
 
     :return:
     """
     import pandas.rpy.common as com
 
-    w = com.robj.r('foreign::read.spss("%s", to.data.frame=TRUE)' % inputfile)
+    w = com.robj.r('foreign::read.spss("%s", to.data.frame=TRUE)' % input_file)
     return com.convert_robj(w)
 
 
-def sav_to_pandas_savreader(inputfile):
+def sav_to_pandas_savreader(input_file):
     """
     SPSS .sav files to Pandas DataFrame through savreader module
 
-    :param inputfile: string
+    :param input_file: string
 
     :return:
     """
     from savReaderWriter import SavReader
     lines = []
-    with SavReader(inputfile, returnHeader=True) as reader:
+    with SavReader(input_file, returnHeader=True) as reader:
         header = next(reader)
         for line in reader:
             lines.append(line)
@@ -55,73 +55,79 @@ def sav_to_pandas_savreader(inputfile):
     return pd.DataFrame(data=lines, columns=header)
 
 
-def save_variables_to_shelve(fname, variables):
+def save_variables_to_shelve(file_path, variables):
     """
 
-    @param fname: string
-    @param variables: dict
-    Dictionary with objects. Object name -> object
+    Parameters
+    ----------
+    file_path: str
 
-    @return:
+    variables: dict
+        Dictionary with objects. Object name -> object
 
-    @note:
-    Before calling this function, create a varlist this way:
+    Notes
+    -----
+        Before calling this function, create a varlist this way:
 
-    shelfvars = []
-    for v in varnames:
-        shelfvars.append(eval(v))
+        shelfvars = []
+        for v in varnames:
+            shelfvars.append(eval(v))
 
-    #to_restore variables from shelf
-    my_shelf = shelve.open(filename)
-    for key in my_shelf:
-       globals()[key]=my_shelf[key]
-    my_shelf.close()
+        #to_restore variables from shelf
+        my_shelf = shelve.open(filename)
+        for key in my_shelf:
+           globals()[key]=my_shelf[key]
+        my_shelf.close()
     """
-    mashelf = shelve.open(fname, 'n')
+    mashelf = shelve.open(file_path, 'n')
 
     for vn in variables.keys():
         try:
             mashelf[vn] = variables[vn]
         except:
-            log.error('Error shelving variable {0}'.format(vn))
-            log.error(sys.exc_info())
+            log.exception('Error shelving variable {0}'.format(vn))
             raise
 
     mashelf.close()
 
 
-def save_variables_to_mat(fname, variables):
+def save_variables_to_mat(file_path, variables):
     """
-    @param fname: string
-    @param variables: dict
-    Dictionary with objects. Object name -> object
+
+    Parameters
+    ---------
+    file_path: str
+
+    variables: dict
+        Dictionary with objects. Object name -> object
     """
 
     try:
-        sio.savemat(fname, variables, format='4')
+        sio.savemat(file_path, variables, format='4')
     except:
-        log.error('Error saving to' + fname)
-        log.error(sys.exc_info())
+        log.exception('Error saving to {}'.format(file_path))
         raise
 
 
-def save_variables_to_hdf5(fname, variables, mode='w', h5path='/'):
+def save_variables_to_hdf5(file_path, variables, mode='w', h5path='/'):
     """
-    @param fname: string
+    Parameters
+    ----------
+    file_path: str
 
-    @param variables: dict
-    Dictionary with objects. Object name -> object
+    variables: dict
+        Dictionary with objects. Object name -> object
 
-    @param mode: string
-    HDF5 file access mode
-    See h5py documentation for details.
-    Most used here:
-    'r+' for read/write
-    'w' for destroying then writing
+    mode: str
+        HDF5 file access mode
+        See h5py documentation for details.
+        Most used here:
+        'r+' for read/write
+        'w' for destroying then writing
     """
     #h5file = tabs.open_file(outfpath, mode=mode,
     #                        title=os.path.basename(outfpath))
-    h5file = h5py.File(fname, mode)
+    h5file = h5py.File(file_path, mode)
 
     h5group = h5file.require_group(h5path)
 
@@ -130,8 +136,7 @@ def save_variables_to_hdf5(fname, variables, mode='w', h5path='/'):
             h5group[vn] = variables[vn]
 
     except:
-        log.error('Error saving to .hdf5: {0}'.format(vn))
-        log.error(sys.exc_info())
+        log.exception('Error saving to .hdf5: {0}'.format(vn))
         raise
 
     h5file.close()
@@ -147,10 +152,12 @@ class ExportData(object):
         """
         Valid extensions '.pyshelf', '.mat', '.hdf5' or '.h5'
 
-        @param filename: string
+        Parameters
+        ----------
+        filename: str
 
-        @param variables: dict
-        Dictionary varname -> variable
+        variables: dict
+            Dictionary varname -> variable
         """
         ext = get_extension(filename).lower()
         out_exts = {'.pyshelf', '.mat', '.hdf5', '.h5'}
@@ -187,33 +194,33 @@ class ExportData(object):
         """
         variables = {}
         for i, vn in enumerate(varnames):
-            variables[vn] = varlist[i]
+            variables[vn] = eval(varlist[i])
 
         ExportData.save_variables(filename, variables)
 
 
-def load_varnames_from_hdf5(fname, h5path='/'):
+def load_varnames_from_hdf5(file_path, h5path='/'):
     """
-    Returns all dataset names from h5path group in fname.
+    Returns all dataset names from h5path group in file_path.
 
     Parameters
     ----------
-    @param fpath: string
-    HDF5 file path
+    file_path: string
+        HDF5 file path
 
-    @param h5path: string
-    HDF5 group path
+    h5path: str
+        HDF5 group path
 
     Returns
     -------
-    List of variable names contained in fpath
+    List of variable names contained in file_path
     """
     def walk(group, node_type=h5py.Dataset):
         for node in list(group.values()):
             if isinstance(node, node_type):
                 yield node
 
-    h5file  = h5py.File(fname, mode='r')
+    h5file  = h5py.File(file_path, mode='r')
     varlist = []
     try:
         h5group = h5file.require_group(h5path)
@@ -222,8 +229,7 @@ def load_varnames_from_hdf5(fname, h5path='/'):
             varlist.append(node.name)
 
     except:
-        log.error('ERROR reading .hdf5: {0}'.fpath)
-        log.error(sys.exc_info())
+        log.exception('ERROR reading .hdf5: {0}'.file_path)
         raise
 
     h5file.close()
@@ -231,28 +237,28 @@ def load_varnames_from_hdf5(fname, h5path='/'):
     return varlist
 
 
-def load_variables_from_hdf5(fname, h5path='/'):
+def load_variables_from_hdf5(file_path, h5path='/'):
     """
-    Returns all datasets from h5path group in fname.
+    Returns all datasets from h5path group in file_path.
 
     Parameters
     ----------
-    @param fpath: string
-    HDF5 file path
+    file_path: str
+        HDF5 file path
 
-    @param h5path: string
-    HDF5 group path
+    h5path: str
+        HDF5 group path
 
     Returns
     -------
-    Dict with variables contained in fpath
+    Dict with variables contained in file_path
     """
     def walk(group, node_type=h5py.Dataset):
         for node in list(group.values()):
             if isinstance(node, node_type):
                 yield node
 
-    h5file  = h5py.File(fname, mode='r')
+    h5file  = h5py.File(file_path, mode='r')
     vardict = {}
     try:
         h5group = h5file.require_group(h5path)
@@ -262,8 +268,7 @@ def load_variables_from_hdf5(fname, h5path='/'):
             vardict[node_name] = node.value
 
     except:
-        log.error('ERROR reading .hdf5: {0}'.fpath)
-        log.error(sys.exc_info())
+        log.exception('ERROR reading .hdf5: {0}'.file_path)
         raise
 
     h5file.close()
