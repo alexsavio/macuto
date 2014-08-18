@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 #Classification results namedtuple
 classif_results_varnames = ['predictions', 'probabilities', 'cv_targets',
                             'best_parameters', 'cv_folds',
-                            'features_importance', 'targets']
+                            'features_importance', 'targets', 'labels']
 
 
 class ClassificationResult(collections.namedtuple('Classification_Result',
