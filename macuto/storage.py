@@ -10,7 +10,6 @@
 #-------------------------------------------------------------------------------
 
 import os
-import sys
 import shelve
 import logging
 import h5py
@@ -194,7 +193,7 @@ class ExportData(object):
         """
         variables = {}
         for i, vn in enumerate(varnames):
-            variables[vn] = eval(varlist[i])
+            variables[vn] = varlist[i]
 
         ExportData.save_variables(filename, variables)
 
