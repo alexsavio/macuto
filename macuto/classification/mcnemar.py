@@ -39,7 +39,7 @@ class ClassifiersMcNemarTest(object):
 
         """
         self.fit(targets, c1_predictions, c2_predictions)
-        return self.transform(alpha, onetailed)
+        return self.transform(alpha=alpha, onetailed=onetailed)
 
     def fit(self, targets, c1_predictions, c2_predictions):
         """
@@ -76,23 +76,31 @@ class ClassifiersMcNemarTest(object):
             True if Null hypotheses pi1 == pi2 is accepted
             else False.
         """
-        return mcnemar_test(self._a, self._b, self._c, self._d, 
-                            alpha=alpha, onetailed=onetailed)
+        return mcnemar(self._a, self._b, self._c, self._d,
+                       alpha=alpha, onetailed=onetailed)
 
     def is_significative(self, targets, c1_predictions, c2_predictions,
                          alpha=0.1, onetailed=True):
         """
         See fit_transform docstring
 
-        :param targets:
-        :param c1_predictions:
-        :param c2_predictions:
-        :param alpha:
-        :param onetailed:
-        :return:
+        Parameters
+        ----------
+        targets:
+
+        c1_predictions:
+
+        c2_predictions:
+
+        alpha:
+
+        onetailed:
+
+        Returns
+        -------
         """
         return not self.fit_transform(targets, c1_predictions, c2_predictions,
-                                      alpha, onetailed)
+                                      alpha=alpha, onetailed=onetailed)
 
 
 def get_mcnemar_abcd(y_vals, c1_preds, c2_preds):
