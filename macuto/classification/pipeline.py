@@ -22,6 +22,7 @@ from scipy import stats
 from collections import OrderedDict
 from sklearn.grid_search import GridSearchCV
 from sklearn.preprocessing import StandardScaler
+from sklearn.cross_validation import LeaveOneOut
 
 from ..utils.printable import Printable
 from .sklearn_utils import (get_pipeline,
@@ -29,7 +30,7 @@ from .sklearn_utils import (get_pipeline,
 
 from .results import (ClassificationResult, ClassificationMetrics,
                       classification_metrics, get_cv_classification_metrics,
-                      enlist_cv_results_from_dict)
+                      enlist_cv_results_from_dict, enlist_cv_results)
 
 log = logging.getLogger(__name__)
 
@@ -167,15 +168,15 @@ class ClassificationPipeline(Printable):
         #because we will need to identify all sets of results to one fold.
         #If we used lists, we would loose track of folds if something went
         #wrong.
-        preds      = OrderedDict()
-        probs      = OrderedDict()
-        truth      = OrderedDict()
-        best_pars  = OrderedDict()
+        preds = OrderedDict()
+        probs = OrderedDict()
+        truth = OrderedDict()
+        best_pars = OrderedDict()
         importance = OrderedDict()
 
         fold_count = 0
         for train, test in self._cv:
-            log.info('Processing fold ' + str(fold_count))
+            log.debug('Processing fold ' + str(fold_count))
 
             #data cv separation
             x_train, x_test, \
@@ -200,15 +201,15 @@ class ClassificationPipeline(Printable):
             #scaling
             #if clfmethod == 'linearsvc' or clfmethod == 'onevsonesvc':
             if self.scaler is not None:
-                log.info('Normalizing data with: {}'.format(str(self.scaler)))
+                log.debug('Normalizing data with: {}'.format(str(self.scaler)))
                 x_train = self.scaler.fit_transform(x_train)
                 x_test = self.scaler.transform(x_test)
 
             #do it
-            log.info('Running grid search')
+            log.debug('Running grid search for fold {}'.format(fold_count))
             self._gs.fit(x_train, y_train)
 
-            log.info('Predicting on test set')
+            log.debug('Predicting on test set')
 
             #predictions
             preds[fold_count] = self._gs.predict(x_test)
@@ -231,8 +232,8 @@ class ClassificationPipeline(Printable):
             except Exception as exc:
                 probs[fold_count] = None
 
-            log.info('Result: {} classifies as {}.'.format(y_test,
-                                                           preds[fold_count]))
+            log.debug('Result: {} classifies as {}.'.format(y_test,
+                                                            preds[fold_count]))
 
             fold_count += 1
 
@@ -245,8 +246,13 @@ class ClassificationPipeline(Printable):
         if not has_values(importance):
             importance = None
 
+        if isinstance(self._cv, LeaveOneOut):
+            targets, preds, \
+            probs, labels = enlist_cv_results_from_dict(truth, preds, probs)
+
         self._results = ClassificationResult(preds, probs, truth, best_pars,
-                                             self._cv, importance, targets)
+                                             self._cv, importance, targets,
+                                             labels)
 
         #calculate performance metrics
         self._metrics = self.result_metrics()
@@ -280,14 +286,12 @@ class ClassificationPipeline(Printable):
                 cr = self._results
 
         if self.cvmethod == 'loo':
-            targets, preds, \
-            probs, labels = enlist_cv_results_from_dict(cr.cv_targets,
-                                                        cr.predictions,
-                                                        cr.probabilities)
 
             acc, sens, spec, \
-            prec, f1, auc = classification_metrics(targets, preds, probs,
-                                                   labels)
+            prec, f1, auc = classification_metrics(cr.targets,
+                                                   cr.predictions,
+                                                   cr.probabilities,
+                                                   cr.labels)
 
             return ClassificationMetrics(acc, sens, spec, prec, f1, auc)
 
