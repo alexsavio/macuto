@@ -143,7 +143,7 @@ class ClassificationPipeline(Printable):
         self._gs = GridSearchCV(self._pipe, self._params, n_jobs=self.n_cpus,
                                 verbose=0, scoring=self.gs_scoring)
 
-    def cross_validation(self, samples, targets, cv=None):
+    def cross_validation(self, samples, targets, cvmethod=None):
         """Performs a cross-validation against a dataset and its labels.
 
         Parameters
@@ -153,14 +153,16 @@ class ClassificationPipeline(Printable):
         targets: vector or list
             Class labels set in the same order as in samples
 
+        cv: sklearn.crossvalidation class
+
         Returns
         -------
         Classification_Results, Classification Metrics
         """
-        if cv is None:
+        if cvmethod is None:
             self._cv = get_cv_method(targets, self.cvmethod, self.stratified)
         else:
-            self._cv = cv
+            self._cv = cvmethod
 
         self.n_feats = samples.shape[1]
 
@@ -247,10 +249,10 @@ class ClassificationPipeline(Printable):
             importance = None
 
         if isinstance(self._cv, LeaveOneOut):
-            targets, preds, \
+            cv_targets, preds, \
             probs, labels = enlist_cv_results_from_dict(truth, preds, probs)
 
-        self._results = ClassificationResult(preds, probs, truth, best_pars,
+        self._results = ClassificationResult(preds, probs, cv_targets, best_pars,
                                              self._cv, importance, targets,
                                              labels)
 
@@ -259,7 +261,7 @@ class ClassificationPipeline(Printable):
 
         return self._results, self._metrics
 
-    def result_metrics(self, classification_results=None):
+    def result_metrics(self, classification_results=None, cvmethod=None):
         """Return the Accuracy, Sensitivity, Specificity, Precision, F1-Score
         and Area-under-ROC of given classification results or self._results
         if None.
@@ -267,10 +269,15 @@ class ClassificationPipeline(Printable):
         Parameters
         ----------
         classification_results: results.Classification_Result
+            If None, will use the ones from self.
+
+        cvmethod: sklearn.crossvalidation class
+            CV method used to obtain the results.
+            If None, will use the one from self.
 
         Returns
         -------
-        If self.cvmethod is 'loo' then return the average values for
+        If self.cvmethod is LeaveOneOut then return the average values for
         each measure cited above in a results.Classification_Metrics object.
 
         Otherwhise return two results.Classification_Metrics, the first is the
@@ -285,10 +292,13 @@ class ClassificationPipeline(Printable):
             else:
                 cr = self._results
 
-        if self.cvmethod == 'loo':
+        if cvmethod is None:
+            cvmethod = self._cv
+
+        if isinstance(cvmethod, LeaveOneOut):
 
             acc, sens, spec, \
-            prec, f1, auc = classification_metrics(cr.targets,
+            prec, f1, auc = classification_metrics(cr.cv_targets,
                                                    cr.predictions,
                                                    cr.probabilities,
                                                    cr.labels)
