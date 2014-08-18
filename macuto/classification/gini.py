@@ -26,7 +26,7 @@ class FeaturesGiniIndex(object):
         n_feats = samples.shape[1]
 
         pipe = ClassificationPipeline(clfmethod='extratrees', n_feats=n_feats,
-                                        cvmethod='loo', n_cpus=n_cpus)
+                                      cvmethod='loo', n_cpus=n_cpus)
 
         self.results_, self.metrics_ = pipe.cross_validation(samples, targets)
 
