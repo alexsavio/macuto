@@ -252,9 +252,9 @@ class ClassificationPipeline(Printable):
             cv_targets, preds, \
             probs, labels = enlist_cv_results_from_dict(truth, preds, probs)
 
-        self._results = ClassificationResult(preds, probs, cv_targets, best_pars,
-                                             self._cv, importance, targets,
-                                             labels)
+        self._results = ClassificationResult(preds, probs, cv_targets,
+                                             best_pars, self._cv, importance,
+                                             targets, labels)
 
         #calculate performance metrics
         self._metrics = self.result_metrics()
