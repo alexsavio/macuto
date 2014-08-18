@@ -29,11 +29,11 @@ class ItemSet(object):
     def __len__(self):
         return len(self.items)
 
-    def save_to_file(self, out_path):
-        import pickle
-        with open(out_path, 'w') as f:
-            for member in vars(self):
-                pickle.dump(member, f)
+    def save_to_file(self, file_path, var_name=['itemset']):
+        from .storage import ExportData
+
+        data_exporter = ExportData()
+        data_exporter.save_varlist(file_path, var_name, [self])
 
 
 class DefaultOrderedDict(OrderedDict):
