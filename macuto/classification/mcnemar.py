@@ -176,7 +176,7 @@ def mcnemar(a, b, c, d, alpha=0.05, onetailed=False, verbose=False):
     if verbose:
     #    print "McNemar Test with A,B,C,D = ", A,B, C,D
     #    print "Ratios:p1, p2 = ",(A+B)/tot, (C + D) /tot
-        print("Z test statistic Z = {}".format(Z))
+        print("Z test statistic Z = {}".format(z))
 
     if onetailed:
         if (b - c) > 0:
