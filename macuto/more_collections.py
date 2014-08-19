@@ -9,7 +9,7 @@ def dictify(a_named_tuple):
     return dict((s, getattr(a_named_tuple, s)) for s in a_named_tuple._fields)
 
 
-def append_dict_values(list_of_dicts, keys):
+def append_dict_values(list_of_dicts, keys=None):
     """
     Return a dict of lists from a list of dicts with the same keys.
     For each dict in list_of_dicts with look for the values of the
@@ -21,11 +21,17 @@ def append_dict_values(list_of_dicts, keys):
 
     keys: list of str
         List of keys to create in the output dict
-
+        If None will use all keys in the first element of list_of_dicts
     Returns
     -------
     DefaultOrderedDict of lists
     """
+    if keys is None:
+        try:
+            keys = list(list_of_dicts[0].keys())
+        except IndexError as ie:
+            log.exception('Could not get the first element of the list.')
+            raise
 
     dict_of_lists = DefaultOrderedDict(list)
     for d in list_of_dicts:
