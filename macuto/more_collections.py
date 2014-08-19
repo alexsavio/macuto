@@ -5,8 +5,37 @@ log = logging.getLogger(__name__)
 
 
 def dictify(a_named_tuple):
-    """Transforms a named tuple into a dictionary"""
+    """Transform a named tuple into a dictionary"""
     return dict((s, getattr(a_named_tuple, s)) for s in a_named_tuple._fields)
+
+
+def append_dict_values(list_of_dicts, keys):
+    """
+    Return a dict of lists from a list of dicts with the same keys.
+    For each dict in list_of_dicts with look for the values of the
+    given keys and append it to the output dict.
+
+    Parameters
+    ----------
+    list_of_dicts: list of dicts
+
+    keys: list of str
+        List of keys to create in the output dict
+
+    Returns
+    -------
+    DefaultOrderedDict of lists
+    """
+
+    dict_of_lists = DefaultOrderedDict(list)
+    for d in list_of_dicts:
+        for k in keys:
+            try:
+                dict_of_lists[k].append(d[k])
+            except KeyError as ke:
+                log.exception('Error looking for key {} in dict.'.format(k))
+                raise
+    return dict_of_lists
 
 
 class ItemSet(object):
