@@ -1,7 +1,10 @@
 
+import logging
 import numpy as np
 from math import sqrt
 from scipy import stats
+
+log = logging.getLogger(__name__)
 
 
 class ClassifiersMcNemarTest(object):
@@ -76,11 +79,15 @@ class ClassifiersMcNemarTest(object):
             True if Null hypotheses pi1 == pi2 is accepted
             else False.
         """
+        if self._a is None:
+            log.exception('You should call fit() first.')
+            raise ValueError('Class members not initialized.')
+
         return mcnemar(self._a, self._b, self._c, self._d,
                        alpha=alpha, onetailed=onetailed)
 
-    def is_significative(self, targets, c1_predictions, c2_predictions,
-                         alpha=0.1, onetailed=True):
+    def is_significant(self, targets, c1_predictions, c2_predictions,
+                       alpha=0.1, onetailed=True):
         """
         See fit_transform docstring
 
