@@ -4,21 +4,15 @@ import os
 import logging
 import numpy as np
 
-from ..more_collections import DefaultOrderedDict
+from ..more_collections import DefaultOrderedDict, merge_dict_of_lists
 from ..files.names import get_folder_subpath
 from ..config import DICOM_FIELD_WEIGHTS
+from ..classification.distance import DistanceMeasure
 
 from .utils import DicomFile
 from .sets import DicomFileSet
 
 log = logging.getLogger(__name__)
-
-
-class DistanceMeasure(object):
-    #TODO
-    #will be declared in ..classification.distance
-    #currently from another branch
-    pass
 
 
 class DicomFileDistance(DistanceMeasure):
@@ -240,7 +234,8 @@ class DicomFilesClustering(object):
         self.dicom_groups = group_dicom_files(self._dicoms.items, self.headers)
 
     @staticmethod
-    def _calculate_file_distances(dicom_files, field_weights):
+    def calculate_file_distances(dicom_files, field_weights,
+                                 dist_method=None):
         """
         Calculates the DicomFileDistance between all files in dicom_files,
         using an weighted Levenshtein measure between all field names in
@@ -256,17 +251,23 @@ class DicomFilesClustering(object):
         indicate a distance measure ratio for the levenshtein distance
         averaging of all the header field names in it. e.g., {'PatientID': 1}
 
+        dist_method: DicomFileDistance object
+        Distance method object to compare the files.
+        If None, the default DicomFileDistance method using Levenshtein
+        distance between the field_wieghts will be used.
+
         Returns
         -------
         file_dists: np.ndarray or scipy.sparse.lil_matrix of shape NxN
         Levenshtein distances between each of the N items in dicom_files.
         """
-        log.info('Calculating Levenshtein distances between {0} DICOM '
-                 'files.'.format(len(dicom_files)))
+        if dist_method is None:
+            log.info('Calculating Levenshtein distances between {0} DICOM '
+                     'files.'.format(len(dicom_files)))
+            dist_method = DicomFileDistance(field_weights)
 
         dist_dtype = np.float16
         n_files = len(dicom_files)
-        dist_method = DicomFileDistance(field_weights)
 
         try:
             file_dists = np.zeros((n_files, n_files), dtype=dist_dtype)
@@ -465,8 +466,23 @@ if __name__ == '__main__':
         bday_dists, thr = levenshtein_thr_plot(dcmgroups, {'PatientBirthDate': 1}, 0.05)
         name_dists, thr = levenshtein_thr_plot(dcmgroups, {'PatientName': 1}, 0.10)
 
+
+        fw = {'PatientName': 1}
+        dist_method = SimpleDicomFileDistance(fw)
+        key_dcms = list(dcmgroups.dicom_groups.keys())
+        fdists = DicomFilesClustering.calculate_file_distances(key_dcms, fw,
+                                                               dist_method)
+        DicomFilesClustering.plot_file_distances(fdists)
+
+        merge_dict_of_lists(dcmgroups.dicom_groups, np.where(fdists))
+
+        #def print_dcm_attributes(field_names, )
+        indices = np.where(fdists)[0]
+        for i in indices:
+            print(DicomFile(key_dcms[i]).get_attributes(fw.keys()))
+
         #--------------------- test
-        def print_group_names_from(self, bin_dist_matrix):
+        def print_group_names_from(self, dcmgroups, bin_dist_matrix):
             """
             Print in stdout the pair of group names for each True value in the
             binary distance matrix bin_dist_matrix
@@ -474,17 +490,21 @@ if __name__ == '__main__':
             :param bin_dist_matrix: np.ndarray
              array with shape NxN where N is the number of groups
             """
-            key_dicoms = list(dcmclusters.dicom_groups.keys())
+            key_dicoms = list(dcmgroups.dicom_groups.keys())
             for i, j in zip(*np.where(bin_dist_matrix)):
                 print(key_dicoms[i] + ' and \n' + key_dicoms[j])
                 print('\n')
 
 
+        #import pickle
+        #pickle.dump(dcmgroups, open('/home/alexandre/Desktop/dcmcluster.pickle', 'wb'))
 
-
-
-        dm = dcmclusters._file_dists
-        dcmclusters.plot_file_distances(dm.take(dm <= dm.mean()))
+        dm = dcmgroups.dicom_groups
+        dcmgroups.plot_file_distances(dm.take(dm <= dm.mean()))
         #TODO
 
         #'PatientID'/'ProtocolName'
+        #join experiment
+
+
+
