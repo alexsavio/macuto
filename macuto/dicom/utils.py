@@ -93,6 +93,7 @@ def find_all_dicom_files(root_path):
 
     return dicoms
 
+
 def is_dicom_file(filepath):
     """
     Tries to read the file using dicom.read_file,
