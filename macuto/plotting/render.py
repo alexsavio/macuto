@@ -529,7 +529,7 @@ def draw_square_matrix_channels(in_m, channel_names=None, fig=None,
                                 x_tick_rot=None, size=None, cmap=plt.cm.RdBu_r,
                                 colorbar=True, color_anchor=None, title=None):
     """
-    Copied from nitime.viz import drawmatrix_channels
+    Copied from nitime.plotting import drawmatrix_channels
 
     Creates a full-matrix or lower-triangle of the matrix of an nxn set of values.
     This is the typical format to show a symmetrical bivariate quantity (such as
