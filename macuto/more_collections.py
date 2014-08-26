@@ -9,6 +9,19 @@ def dictify(a_named_tuple):
     return dict((s, getattr(a_named_tuple, s)) for s in a_named_tuple._fields)
 
 
+def merge_dict_of_lists(adict, indices, copy=True):
+    """
+    """
+    rdict = adict.copy() if copy else adict
+
+    dict_keys = list(rdict.keys())
+    for i, j in zip(*indices):
+        rdict[dict_keys[i]].extend(rdict[dict_keys[j]])
+        rdict.pop(dict_keys[j])
+
+    return rdict
+
+
 def append_dict_values(list_of_dicts, keys=None):
     """
     Return a dict of lists from a list of dicts with the same keys.
@@ -59,7 +72,9 @@ class ItemSet(object):
         if hasattr(self.items, '__getitem__'):
             return self.items[item]
         else:
-            raise log.exception('Item set has no __getitem__ implemented.')
+            msg = 'Item set has no __getitem__ implemented.'
+            log.exception(msg)
+            raise RuntimeError(msg)
 
     def __len__(self):
         return len(self.items)
@@ -69,6 +84,16 @@ class ItemSet(object):
 
         data_exporter = ExportData()
         data_exporter.save_varlist(file_path, var_name, [self])
+
+    def extend(self, other_set):
+        if isinstance(self.items, list):
+            self.items.exted(other_set)
+        elif isinstance(self.items, set):
+            self.items.union(other_set)
+        else:
+            msg = 'ItemSet item has no extend implemented.'
+            log.exception(msg)
+            raise RuntimeError(msg)
 
 
 class DefaultOrderedDict(OrderedDict):
