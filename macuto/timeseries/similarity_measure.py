@@ -381,7 +381,7 @@ class SimilarityMeasureFactory(object):
 # import nitime.analysis as nta
 # import nitime.timeseries as ts
 # import nitime.utils as tsu
-# from nitime.viz import drawmatrix_channels
+# from nitime.plotting import drawmatrix_channels
 #
 # TR = 1.89
 # f_ub = 0.15
