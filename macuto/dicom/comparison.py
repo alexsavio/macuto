@@ -392,8 +392,9 @@ class DicomFilesClustering(object):
         self._dicoms = dicom_set
 
     def merge_groups(self, indices):
-        """Extend the lists within DICOM groups dictionary. The indices will
-        indicate which list have to be extended by which other list.
+        """Extend the lists within the DICOM groups dictionary.
+        The indices will indicate which list have to be extended by which
+        other list.
 
         Parameters
         ----------
@@ -403,10 +404,6 @@ class DicomFilesClustering(object):
              list that will be extended with the list of the second index.
              The indices can be constructed with Numpy e.g.,
              indices = np.where(square_matrix)
-
-        Returns
-        -------
-        Dicom groups dict with merged lists
         """
         from ..more_collections import merge_dict_of_lists
 
@@ -490,7 +487,7 @@ if __name__ == '__main__':
                                                                dist_method)
         DicomFilesClustering.plot_file_distances(fdists)
 
-        merge_dict_of_lists(np.where(fdists))
+        dcmgroups.merge_dict_of_lists(np.where(fdists))
 
         #def print_dcm_attributes(field_names, )
         indices = np.where(fdists)[0]
