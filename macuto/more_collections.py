@@ -132,7 +132,7 @@ class ItemSet(object):
 
     def extend(self, other_set):
         if isinstance(self.items, list):
-            self.items.exted(other_set)
+            self.items.extend(other_set)
         elif isinstance(self.items, set):
             self.items.union(other_set)
         else:
