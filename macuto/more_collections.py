@@ -62,7 +62,7 @@ def merge_dict_of_lists(adict, indices, pop_later=True, copy=True):
 
     if pop_later:
         for i, j in zip(*indices):
-            rdict.pop(dict_keys[j])
+            rdict.pop(dict_keys[j], '')
 
     return rdict
 
