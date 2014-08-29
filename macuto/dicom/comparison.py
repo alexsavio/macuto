@@ -391,17 +391,32 @@ class DicomFilesClustering(object):
     def from_dicom_set(self, dicom_set):
         self._dicoms = dicom_set
 
-    def _update_subjs_dict(self):
-        raise NotImplementedError
-        #TODO
+    def merge_groups(self, indices):
+        """Extend the lists within DICOM groups dictionary. The indices will
+        indicate which list have to be extended by which other list.
 
-    def _reorder_file_list(self):
-        raise NotImplementedError
-        #TODO
-        #mylist=['a','b','c','d','e']
-        #myorder=[3,2,0,1,4]
-        #mylist = [ mylist[i] for i in myorder]
-        #print mylist
+        Parameters
+        ----------
+        indices: list or tuple of 2 iterables of int, bot having the same len
+             The indices of the lists that have to be merged, both iterables
+             items will be read pair by pair, the first is the index to the
+             list that will be extended with the list of the second index.
+             The indices can be constructed with Numpy e.g.,
+             indices = np.where(square_matrix)
+
+        Returns
+        -------
+        Dicom groups dict with merged lists
+        """
+        from ..more_collections import merge_dict_of_lists
+
+        try:
+            merged = merge_dict_of_lists(self.dicom_groups, indices,
+                                         pop_later=True, copy=True)
+            self.dicom_groups = merged
+        except IndexError as ie:
+            log.exception('Index out of range to merge DICOM groups.')
+            return None
 
 
 if __name__ == '__main__':
@@ -425,7 +440,8 @@ if __name__ == '__main__':
 
 
     def test_DicomFilesClustering():
-        from macuto.dicom.comparison import DicomFilesClustering
+        from macuto.dicom.comparison import (SimpleDicomFileDistance,
+                                             DicomFilesClustering)
 
         from macuto.config import DICOM_FIELD_WEIGHTS
         import matplotlib.pyplot as plt
@@ -474,7 +490,7 @@ if __name__ == '__main__':
                                                                dist_method)
         DicomFilesClustering.plot_file_distances(fdists)
 
-        merge_dict_of_lists(dcmgroups.dicom_groups, np.where(fdists))
+        merge_dict_of_lists(np.where(fdists))
 
         #def print_dcm_attributes(field_names, )
         indices = np.where(fdists)[0]
@@ -498,6 +514,7 @@ if __name__ == '__main__':
 
         #import pickle
         #pickle.dump(dcmgroups, open('/home/alexandre/Desktop/dcmcluster.pickle', 'wb'))
+        #dcmgroups = pickle.load(open('/home/alexandre/Desktop/dcmcluster.pickle', 'rb'))
 
         dm = dcmgroups.dicom_groups
         dcmgroups.plot_file_distances(dm.take(dm <= dm.mean()))
