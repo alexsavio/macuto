@@ -29,6 +29,7 @@ class DicomFileSet(ItemSet):
                 self._store_dicom_paths(folders)
             except FolderNotFound as fe:
                 log.error('Error storing dicom file paths. {}'.format(fe.msg))
+                raise
 
     def _store_dicom_paths(self, folders):
         """Search for dicoms in folders and save file paths into
@@ -186,6 +187,7 @@ class DicomGenericSet(DicomFileSet):
         except Exception as exc:
             log.exception('Error reading DICOM file: {} '
                           '\n {}'.format(dcmf, str(exc)))
+            raise
 
     # def scrape_dicom_pairs(self):
     #     """
@@ -214,7 +216,9 @@ class DicomGenericSet(DicomFileSet):
         if hasattr(self.items, '__getitem__'):
             return self.read_dcm(self.items[item])
         else:
-            raise log.exception('Item set has no __getitem__ implemented.')
+            msg = 'ItemSet has no __get_item__ implemented'
+            log.exception(msg)
+            raise NotImplementedError(msg)
 
 
 # def batch(input_folder, output_folder, header_field='PatientID',
@@ -297,6 +301,7 @@ def create_dicom_subject_folders(out_path, dicom_sets):
 
     except:
         log.exception('Creating DICOM subject folders.')
+        raise
 
 
 def rename_file_group_to_serial_nums(file_lst):
