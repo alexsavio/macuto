@@ -68,6 +68,9 @@ class DicomFile(FileDataset):
         -------
         Value of the field or list of values.
         """
+        if isinstance(attributes, str):
+            attributes = [attributes]
+
         attrs = [getattr(self, attr, default) for attr in attributes]
 
         if len(attrs) == 1:
