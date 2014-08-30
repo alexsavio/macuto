@@ -11,35 +11,36 @@ log = logging.getLogger(__name__)
 
 
 class DicomFile(FileDataset):
+    """Store the contents of a DICOM file
 
+    Parameters
+    ----------
+    file_path: str
+     Full path and filename to the file.
+     Use None if is a BytesIO.
+
+    header_fields: subset of DICOM header fields to be
+     stored here, the rest will be ignored.
+
+    dataset: dict
+     Some form of dictionary, usually a Dataset from read_dataset()
+
+    preamble: the 128-byte DICOM preamble
+
+    file_meta: dataset
+     The file meta info dataset, as returned by _read_file_meta,
+     or an empty dataset if no file meta information is in the file
+
+    is_implicit_VR: bool
+     True if implicit VR transfer syntax used; False if explicit VR.
+     Default is True.
+
+    is_little_endian: bool
+     True if little-endian transfer syntax used; False if big-endian.
+     Default is True.
+    """
     def __init__(self, file_path, preamble=None, file_meta=None,
                  is_implicit_VR=True, is_little_endian=True):
-        """
-
-        :param file_path: str
-        Full path and filename to the file.
-        Use None if is a BytesIO.
-
-        :param header_fields: subset of DICOM header fields to be
-         stored here, the rest will be ignored.
-
-        :param dataset:
-        some form of dictionary, usually a Dataset from read_dataset()
-
-        :param preamble: the 128-byte DICOM preamble
-
-        :param file_meta: dataset
-        The file meta info dataset, as returned by _read_file_meta,
-        or an empty dataset if no file meta information is in the file
-
-        :param is_implicit_VR: bool
-        True if implicit VR transfer syntax used; False if explicit VR.
-        Default is True.
-
-        :param is_little_endian: bool
-         True if little-endian transfer syntax used; False if big-endian.
-         Default is True.
-        """
         try:
             dcm = dicom.read_file(file_path, force=True)
 
@@ -50,14 +51,27 @@ class DicomFile(FileDataset):
 
         except Exception as exc:
             log.exception('Error reading file {0}.'.format(file_path))
+            raise
 
     def get_attributes(self, attributes, default=''):
+        """Return the attributes values from this DicomFile
+
+        Parameters
+        ----------
+        attributes: str or list of str
+         DICOM field names
+
+        default: str
+         Default value if the attribute does not exist.
+
+        Returns
+        -------
+        Value of the field or list of values.
         """
-        """
-        try:
-            attrs = [getattr(self, attr, default) for attr in attributes]
-        except Exception as exc:
-            log.exception('Error reading fields.')
+        attrs = [getattr(self, attr, default) for attr in attributes]
+
+        if len(attrs) == 1:
+            return attrs[0]
 
         return tuple(attrs)
 
