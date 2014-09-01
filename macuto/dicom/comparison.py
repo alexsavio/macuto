@@ -81,7 +81,7 @@ class DicomFileDistance(DistanceMeasure):
             str1, str2 = '', ''
             try:
                 str1 = str(getattr(self.dcmf1, field_name))
-            except AttributeError as ae:
+            except AttributeError:
                 log.exception('Error reading attribute {} from '
                               'file {}'.format(field_name,
                                                self.dcmf1.file_path))
@@ -89,7 +89,7 @@ class DicomFileDistance(DistanceMeasure):
 
             try:
                 str2 = str(getattr(self.dcmf2, field_name))
-            except AttributeError as ae:
+            except AttributeError:
                 log.exception('Error reading attribute {} from '
                               'file {}'.format(field_name,
                                                self.dcmf2.file_path))
@@ -110,10 +110,11 @@ class DicomFileDistance(DistanceMeasure):
 
                 if simil > 0:
                     weight = self.field_weights[field_name]
-                    dist += (1/simil) * (weight/sum_weights)
+                    dist += (1-simil) * (weight/sum_weights)
 
-            except Exception as exc:
+            except Exception:
                 log.exception('Error calculating DICOM file distance.')
+                raise
 
         if len(field_weights) == 0:
             return 1
@@ -309,7 +310,7 @@ class DicomFilesClustering(object):
                 raise ValueError(msg)
 
         key_dicoms = list(self.dicom_groups.keys())
-        file_dists = self._calculate_file_distances(key_dicoms, field_weights)
+        file_dists = self.calculate_file_distances(key_dicoms, field_weights)
         return file_dists
 
     @staticmethod
@@ -388,6 +389,13 @@ class DicomFilesClustering(object):
         #ax.set_yticks(list(range(len(all_patients))))
         #ax.set_yticklabels(all_patients)
 
+    @property
+    def num_files(self):
+        n_files = 0
+        for dcmg in self.dicom_groups:
+            n_files += len(self.dicom_groups[dcmg])
+        return n_files
+
     def from_dicom_set(self, dicom_set):
         self._dicoms = dicom_set
 
@@ -411,9 +419,92 @@ class DicomFilesClustering(object):
             merged = merge_dict_of_lists(self.dicom_groups, indices,
                                          pop_later=True, copy=True)
             self.dicom_groups = merged
-        except IndexError as ie:
+        except IndexError:
             log.exception('Index out of range to merge DICOM groups.')
             return None
+
+    def move_to_folder(self, folder_path, groupby_field_name=None):
+        """Copy the file groups to folder_path. Each group will be copied into
+        a subfolder with named given by groupby_field.
+
+        Parameters
+        ----------
+        folder_path: str
+         Path to where copy the DICOM files.
+
+        groupby_field_name: str
+         DICOM field name. Will get the value of this field to name the group
+         folder. If empty or None will use the basename of the group key file.
+        """
+        def create_folder(path):
+            if not os.path.exists(path):
+                try:
+                    os.mkdir(path)
+                except Exception:
+                    log.exception('Error creating folder for '
+                                  'DicomFilesClustering')
+                    raise
+
+        create_folder(folder_path)
+
+        for dcmg in self.dicom_groups:
+            if groupby_field_name is not None and len(groupby_field_name) > 0:
+                dir_name = DicomFile(dcmg).get_attributes(groupby_field_name)
+                dir_name = str(dir_name)
+            else:
+                dir_name = os.path.basename(dcmg)
+
+            group_folder = os.path.join(folder_path, dir_name)
+            create_folder(group_folder)
+
+            import shutil
+            dcm_files = self.dicom_groups[dcmg]
+            try:
+                for srcf in dcm_files:
+                    destf = os.path.join(group_folder, os.path.basename(srcf))
+                    while os.path.exists(destf):
+                        destf += '+'
+                    shutil.copyfile(srcf, destf)
+            except Exception:
+                msg = 'Error copying file {} to {}'.format(srcf, group_folder)
+                print(msg)
+                log.exception(msg)
+                raise
+
+    def get_unique_field_values_per_group(self, field_name,
+                                          field_to_use_as_key=None):
+        """Return a dictionary where the key is the group key file path and
+        the values are sets of unique values of the field name of all DICOM
+        files in the group.
+
+        Parameters
+        ----------
+        field_name: str
+         Name of the field to read from all files
+
+        field_to_use_as_key: str
+         Name of the field to get the value and use as key.
+         If None, will use the same key as the dicom_groups.
+
+        Returns
+        -------
+        Dict of sets
+        """
+        unique_vals = DefaultOrderedDict(set)
+        for dcmg in self.dicom_groups:
+            for f in self.dicom_groups[dcmg]:
+                field_val = DicomFile(f).get_attributes(field_name)
+                key_val = dcmg
+                if field_to_use_as_key is not None:
+                    try:
+                        key_val = str(DicomFile(dcmg).get_attributes(field_to_use_as_key))
+                    except Exception:
+                        log.exception('Error getting field {} from '
+                                      'file {}'.format(field_to_use_as_key,
+                                                       dcmg))
+                unique_vals[key_val].add(field_val)
+
+        return unique_vals
 
 
 if __name__ == '__main__':
@@ -478,16 +569,6 @@ if __name__ == '__main__':
         file_dists, thr = levenshtein_thr_plot(dcmgroups, field_weights, 0.05)
         bday_dists, thr = levenshtein_thr_plot(dcmgroups, {'PatientBirthDate': 1}, 0.05)
         name_dists, thr = levenshtein_thr_plot(dcmgroups, {'PatientName': 1}, 0.10)
-
-
-        fw = {'PatientName': 1}
-        dist_method = SimpleDicomFileDistance(fw)
-        key_dcms = list(dcmgroups.dicom_groups.keys())
-        fdists = DicomFilesClustering.calculate_file_distances(key_dcms, fw,
-                                                               dist_method)
-        DicomFilesClustering.plot_file_distances(fdists)
-
-        dcmgroups.merge_dict_of_lists(np.where(fdists))
 
         #def print_dcm_attributes(field_names, )
         indices = np.where(fdists)[0]
