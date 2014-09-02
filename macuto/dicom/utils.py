@@ -85,6 +85,30 @@ def get_dicom_files(dirpath):
             for f in filenames if is_dicom_file(os.path.join(dp, f))]
 
 
+def get_unique_field_values(dcm_file_list, field_name):
+    """Return a set of unique field values from a list of DICOM files
+
+    Parameters
+    ----------
+    dcm_file_list: iterable of DICOM file paths
+
+    field_name: str
+     Name of the field from where to get each value
+
+    Returns
+    -------
+    Set of field values
+    """
+    field_values = set()
+    try:
+        for dcm in dcm_file_list:
+            field_values.add(str(DicomFile(dcm).get_attributes(field_name)))
+        return field_values
+    except Exception:
+        log.exception('Error reading file {}'.format(dcm))
+        raise
+
+
 def find_all_dicom_files(root_path):
     """
     Returns a list of the dicom files within root_path
