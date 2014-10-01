@@ -235,7 +235,7 @@ class DicomFilesClustering(object):
         self.dicom_groups = group_dicom_files(self._dicoms.items, self.headers)
 
     @staticmethod
-    def calculate_file_distances(dicom_files, field_weights,
+    def calculate_file_distances(dicom_files, field_weights=None,
                                  dist_method=None):
         """
         Calculates the DicomFileDistance between all files in dicom_files,
@@ -576,7 +576,7 @@ if __name__ == '__main__':
             print(DicomFile(key_dcms[i]).get_attributes(fw.keys()))
 
         #--------------------- test
-        def print_group_names_from(self, dcmgroups, bin_dist_matrix):
+        def print_group_names_from(dcmgroups, bin_dist_matrix):
             """
             Print in stdout the pair of group names for each True value in the
             binary distance matrix bin_dist_matrix
@@ -589,13 +589,13 @@ if __name__ == '__main__':
                 print(key_dicoms[i] + ' and \n' + key_dicoms[j])
                 print('\n')
 
-
         #import pickle
         #pickle.dump(dcmgroups, open('/home/alexandre/Desktop/dcmcluster.pickle', 'wb'))
         #dcmgroups = pickle.load(open('/home/alexandre/Desktop/dcmcluster.pickle', 'rb'))
 
-        dm = dcmgroups.dicom_groups
+        dm = name_dists
         dcmgroups.plot_file_distances(dm.take(dm <= dm.mean()))
+        print_group_names_from(dcmgroups, dm.take(dm <= dm.mean()))
         #TODO
 
         #'PatientID'/'ProtocolName'

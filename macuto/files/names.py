@@ -10,6 +10,7 @@
 #------------------------------------------------------------------------------
 
 import os
+import os.path as op
 import sys
 import tempfile
 import numpy as np
@@ -26,14 +27,14 @@ def get_abspath(folderpath):
     """Returns the absolute path of folderpath.
     If the path does not exist, will raise IOError.
     """
-    if not os.path.exists(folderpath):
+    if not op.exists(folderpath):
         raise FolderNotFound(folderpath)
 
-    return os.path.abspath(folderpath)
+    return op.abspath(folderpath)
 
 
 def get_files(folderpath):
-    return [os.path.join(dp, f) for dp, dn, filenames in
+    return [op.join(dp, f) for dp, dn, filenames in
             os.walk(folderpath) for f in filenames]
 
 
@@ -53,16 +54,16 @@ def get_extension(filepath, check_if_exists=False):
     The extension of the file name or path
     """
     if check_if_exists:
-        if not os.path.exists(filepath):
+        if not op.exists(filepath):
             err = 'File not found: ' + filepath
             log.error(err)
             raise IOError(err)
 
     try:
-        rest, ext = os.path.splitext(filepath)
+        rest, ext = op.splitext(filepath)
         if ext in ALLOWED_EXTS:
             alloweds = ALLOWED_EXTS[ext]
-            _, ext2 = os.path.splitext(filepath)
+            _, ext2 = op.splitext(filepath)
             if ext2 in alloweds:
                 ext = ext2 + ext
 
@@ -94,7 +95,7 @@ def add_extension_if_needed(filepath, ext, check_if_exists=False):
         filepath += ext
 
     if check_if_exists:
-        if not os.path.exists(filepath):
+        if not op.exists(filepath):
             err = 'File not found: ' + filepath
             log.error(err)
             raise IOError(err)
@@ -188,7 +189,7 @@ def parse_subjects_list(filepath, datadir='', split=':', labelsf=None):
     subjs  = []
 
     if datadir:
-        datadir += os.path.sep
+        datadir += op.sep
 
     try:
         with open(filepath, 'r') as f:
@@ -200,7 +201,7 @@ def parse_subjects_list(filepath, datadir='', split=':', labelsf=None):
                 else:
                     subjf = line.strip()
 
-                if not os.path.isabs(subjf):
+                if not op.isabs(subjf):
                     subjs.append(datadir + subjf)
                 else:
                     subjs.append(subjf)
@@ -257,7 +258,7 @@ def join_path_to_filelist(path, filelist):
     -------
     list of filepaths
     """
-    return [os.path.join(path, str(item)) for item in filelist]
+    return [op.join(path, str(item)) for item in filelist]
 
 
 def remove_all(filelist, folder=''):
@@ -281,7 +282,7 @@ def remove_all(filelist, folder=''):
     else:
         try:
             for f in filelist:
-                os.remove(os.path.join(folder, f))
+                os.remove(op.join(folder, f))
         except OSError as err:
             log.error(err)
             pass
@@ -306,7 +307,7 @@ def get_folder_subpath(path, folder_depth):
     >>> get_folder_subpath('/home/user/mydoc/work/notes.txt', 3)
     >>> '/home/user/mydoc'
     """
-    if path[0] == os.path.sep:
+    if path[0] == op.sep:
         folder_depth += 1
 
     return '/'.join(path.split('/')[0:folder_depth])
@@ -422,7 +423,7 @@ def file_size(filepath):
     -------
     float
     """
-    return os.path.getsize(filepath)
+    return op.getsize(filepath)
 
 
 def fileobj_size(file_obj):
