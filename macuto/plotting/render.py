@@ -18,8 +18,8 @@ import matplotlib.cm as cm
 
 from nipy.labs.viz_tools.edge_detect import _edge_detect
 
-from .math import makespread
-from .files.names import get_temp_file
+from ..math import makespread
+from ..files.names import get_temp_file
 
 #-------------------------------------------------------------------------------------
 # Matplotlib-based options
@@ -288,7 +288,7 @@ def slicesdir_paired_overlays(output_dir, file_list1, file_list2, dpi=150,
         img_files.append(os.path.basename(png_path))
 
     #Create the index.html file with all images
-    create_imglist_html(output_dir, img_files)
+    #create_imglist_html(output_dir, img_files)
 
     return img_files
 
@@ -302,7 +302,7 @@ def export_figure(fig, filepath, dpi=150):
     return filepath
 
 
-def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
+def slicesdir_oneset(output_dir, file_list, dpi=150, **kwargs):
     """
     Creates a folder with a html file and png images of slices
     of each of nifti file in file_list1.
@@ -310,24 +310,21 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
     @param output_dir: string
     Path to the output folder
 
-    @param file_list1: list of strings
+    @param file_list: list of strings
     Paths to the background image, can be either 3D or 4D images.
     If they are 4D images, will pick one of the center.
-
-    @param file_list2: list of strings
-    Paths to the overlay images, must be 3D images.
 
     @param kwargs: arguments to show_many_slices
     See macuto.render.show_many_slices docstring.
 
     @return:
     """
-    assert(len(file_list1) > 0)
+    assert(len(file_list) > 0)
 
     import os
     import matplotlib.pyplot as plt
-    from .nifti.read import get_nii_data
-    from .files.names import remove_ext
+    from ..nifti.read import get_nii_data
+    from ..files.names import remove_ext
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -336,17 +333,18 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
 
     show_colorbar = kwargs.pop('show_colorbar', False)
 
-    #CREATE separate images of each file_list2 file
-    # on the corresponding file_list1 file
-    for idx in list(range(len(file_list1))):
-        f1_vol = get_nii_data(file_list1[idx])
+    for idx in range(len(file_list)):
+        file_path = file_list[idx]
+        f1_vol = get_nii_data(file_path)
+
+        print(file_path)
 
         if len(f1_vol.shape) > 3:
             f1_vol = f1_vol[..., int(np.floor(f1_vol.shape[3]/2))]
 
         fig = show_many_slices(f1_vol, show_colorbar=show_colorbar, **kwargs)
 
-        png_fname = os.path.relpath(remove_ext(file_list1[idx]))
+        png_fname = os.path.relpath(remove_ext(file_path))
         png_fname = png_fname.replace('.', '').replace('/', '_').replace('__', '') + '.png'
         png_path = os.path.join(output_dir, png_fname)
 
@@ -357,7 +355,7 @@ def slicesdir_oneset(output_dir, file_list1, dpi=150, **kwargs):
         img_files.append(os.path.basename(png_path))
 
     #Create the index.html file with all images
-    create_imglist_html(output_dir, img_files)
+    #create_imglist_html(output_dir, img_files)
 
     return img_files
 
@@ -520,7 +518,7 @@ def slicesdir_connectivity_matrices(output_dir, cmat_list, dpi=150,
         plt.close()
 
     #Create the index.html file with all images
-    create_imglist_html(output_dir, img_files)
+    #create_imglist_html(output_dir, img_files)
 
     return img_files
 
