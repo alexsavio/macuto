@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import os
+import os.path as op
 import logging
 
 import baker
-from path import path
 
 from macuto.files.search import recursive_find_match
 from macuto.scriptutils import whoami
@@ -58,12 +58,12 @@ def vols(inputdir='', outdir='', regex1='', regex2='',
     :param dpi: int
     Dots-per-inch of the result images.
     """
-    #assert(os.path.exists(inputdir))
-    log.info('Running {0} {1} {2}'.format(os.path.basename(__file__),
+    #assert(op.exists(inputdir))
+    log.info('Running {0} {1} {2}'.format(op.basename(__file__),
                                     whoami(),
                                     locals()))
 
-    assert(os.path.isdir(inputdir))
+    assert(op.isdir(inputdir))
 
     from viz.render import (slicesdir_oneset,
                                slicesdir_paired_overlays)
@@ -78,7 +78,7 @@ def vols(inputdir='', outdir='', regex1='', regex2='',
 
     #check if output folder exists
     outdir = path(outdir)
-    if not os.path.exists(outdir):
+    if not op.exists(outdir):
         log.info('Creating folder {0}'.format(outdir))
         outdir.makedirs_p()
 
@@ -113,10 +113,10 @@ def find_nearest_match(basefile, pattern, max_jumps=3):
     Path to the first found match.
     """
     reffile = basefile
-    if not os.path.isabs(reffile):
-        reffile = os.path.abspath(reffile)
+    if not op.isabs(reffile):
+        reffile = op.abspath(reffile)
 
-    basedir = path(os.path.dirname(reffile))
+    basedir = path(op.dirname(reffile))
     for i in range(max_jumps):
         matches = recursive_find_match(basedir, pattern)
         if len(matches) > 0:
